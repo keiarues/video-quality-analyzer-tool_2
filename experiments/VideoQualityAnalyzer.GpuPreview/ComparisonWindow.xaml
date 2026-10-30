@@ -56,7 +56,9 @@
                 <Grid Name="WipeViewport" Background="Black" ClipToBounds="True"
                       SizeChanged="WipeViewport_SizeChanged">
                     <Image Name="WipeLeftImage" Stretch="Uniform" />
-                    <Image Name="WipeRightImage" Stretch="Uniform" />
+                    <Grid Name="WipeRightLayer">
+                        <Image Name="WipeRightImage" Stretch="Uniform" />
+                    </Grid>
                     <Border Name="WipeBoundary" Width="3" Background="#FFE651"
                             HorizontalAlignment="Left" />
                 </Grid>

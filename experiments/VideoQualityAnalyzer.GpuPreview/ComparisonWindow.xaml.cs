@@ -68,7 +68,7 @@ public partial class ComparisonWindow : Window
 
     private void UpdateWipeBoundary()
     {
-        if (WipeViewport is null || WipeSlider is null || WipeRightImage is null ||
+        if (WipeViewport is null || WipeSlider is null || WipeRightLayer is null ||
             WipeBoundary is null || WipePositionText is null) return;
         var width = WipeViewport.ActualWidth;
         var height = WipeViewport.ActualHeight;
@@ -77,7 +77,7 @@ public partial class ComparisonWindow : Window
         var imageWidth = Math.Min(width, height * aspect);
         var imageLeft = (width - imageWidth) / 2;
         var boundary = imageLeft + imageWidth * fraction;
-        WipeRightImage.Clip = new RectangleGeometry(new Rect(boundary, 0,
+        WipeRightLayer.Clip = new RectangleGeometry(new Rect(boundary, 0,
             Math.Max(0, width - boundary), height));
         WipeBoundary.Margin = new Thickness(boundary - WipeBoundary.Width / 2, 0, 0, 0);
         WipeBoundary.Visibility = fraction > 0 && fraction < 1 ? Visibility.Visible : Visibility.Collapsed;
