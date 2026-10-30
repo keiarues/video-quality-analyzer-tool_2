@@ -85,6 +85,15 @@ public sealed class FfprobeService
         return result;
     }
 
+    public async Task<TimeSpan> ReadVideoStartTimeAsync(string path, CancellationToken cancellationToken)
+    {
+        var output = await RunAsync(["-v", "error", "-select_streams", "v:0", "-show_entries",
+            "stream=start_time", "-of", "default=noprint_wrappers=1:nokey=1", "-i", path], cancellationToken);
+        if (!double.TryParse(output.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var seconds))
+            throw new InvalidDataException("映像の開始時刻を取得できませんでした。");
+        return TimeSpan.FromSeconds(seconds);
+    }
+
     private async Task<string> RunAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {
         var startInfo = new ProcessStartInfo(probePath)

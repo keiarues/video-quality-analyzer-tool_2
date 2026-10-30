@@ -31,10 +31,38 @@ internal sealed class GpuVideoHost(int videoWidth, int videoHeight, bool statist
     private uint repeatedSourcePts;
     private TimeSpan? previousCountedPts;
     private readonly Queue<(long Tick, uint Count)> presentationHistory = new();
+    private readonly List<TimeSpan> confirmedSourcePts = new();
     private string statisticsState = "統計準備中";
 
     public nint Device => device;
     public bool StatisticsEnabled => statistics;
+    public TimeSpan? LastPresentedSourcePts
+    {
+        get { ObservePresentation(); return lastPresentedPts; }
+    }
+    public PresentationWindowMetrics WindowMetrics
+    {
+        get
+        {
+            ObservePresentation();
+            var counts = new int[30];
+            var unique = new HashSet<long>();
+            var presentedPtsTicks = new List<long>();
+            foreach (var pts in confirmedSourcePts)
+            {
+                var second = (int)Math.Floor(pts.TotalSeconds) - 2;
+                if (second < 0 || second >= counts.Length) continue;
+                counts[second]++;
+                unique.Add(pts.Ticks);
+                presentedPtsTicks.Add(pts.Ticks);
+            }
+            var complete = confirmedSourcePts.Count > 0 &&
+                confirmedSourcePts[0] <= TimeSpan.FromSeconds(2) &&
+                confirmedSourcePts[^1] >= TimeSpan.FromSeconds(32);
+            return new PresentationWindowMetrics(complete, counts.Sum(), unique.Count, counts,
+                unmatchedPresentedIds, repeatedSourcePts, presentedPtsTicks.ToArray());
+        }
+    }
     public string PresentationStatus
     {
         get
@@ -55,6 +83,7 @@ internal sealed class GpuVideoHost(int videoWidth, int videoHeight, bool statist
         copiedInputTexture = 0;
         frameNumber = 0;
         sourcePtsByPresentId.Clear();
+        confirmedSourcePts.Clear();
         presentationHistory.Clear();
         lastPresentedId = null;
         presentedIdIncrease = unmatchedPresentedIds = repeatedSourcePts = 0;
@@ -175,6 +204,7 @@ internal sealed class GpuVideoHost(int videoWidth, int videoHeight, bool statist
                 {
                     if (previousCountedPts == presentedPts) repeatedSourcePts++;
                     previousCountedPts = presentedPts;
+                    confirmedSourcePts.Add(presentedPts);
                 }
             }
         }
@@ -348,3 +378,6 @@ internal sealed class GpuVideoHost(int videoWidth, int videoHeight, bool statist
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate void GetTextureDescriptionDelegate(nint self, out TextureDescription description);
 }
+
+internal sealed record PresentationWindowMetrics(bool Complete, int PresentedIds, int DistinctSourcePts,
+    int[] OneSecondCounts, uint UnmatchedIds, uint RepeatedPts, long[] PresentedSourcePtsTicks);

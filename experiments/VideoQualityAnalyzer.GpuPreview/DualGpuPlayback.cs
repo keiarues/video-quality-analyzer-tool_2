@@ -1,13 +1,18 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Channels;
 using System.Windows.Threading;
+using VideoQualityAnalyzer.Media;
 
 namespace VideoQualityAnalyzer.GpuPreview;
 
 // 左右のReaderを独立させ、選択変更とシークでは古い世代の結果を破棄する。
 internal sealed class DualGpuPlayback : IDisposable
 {
+    private static readonly ConcurrentDictionary<string, TimeSpan> videoStartPtsCache =
+        new(StringComparer.OrdinalIgnoreCase);
     private readonly GpuVideoHost leftHost;
     private readonly GpuVideoHost rightHost;
     private readonly Stopwatch clock = new();
@@ -17,7 +22,11 @@ internal sealed class DualGpuPlayback : IDisposable
     private TimeSpan basePosition;
     private string? failure;
     private bool finished;
+    private bool paused;
+    private bool stopped;
     private bool disposed;
+    private readonly Guid runId = Guid.NewGuid();
+    private string? summaryState;
 
     public DualGpuPlayback(GpuVideoHost leftHost, GpuVideoHost rightHost)
     {
@@ -27,12 +36,19 @@ internal sealed class DualGpuPlayback : IDisposable
     }
 
     public TimeSpan Position => basePosition + clock.Elapsed;
+    public bool IsPaused => paused || stopped;
+    public FramePair CaptureFramePair() => new(left?.Submitted > 0, right?.Submitted > 0,
+        left?.LastPts.Ticks ?? 0, right?.LastPts.Ticks ?? 0,
+        left?.StartPts.Ticks ?? 0, right?.StartPts.Ticks ?? 0,
+        leftHost.LastPresentedSourcePts?.Ticks, rightHost.LastPresentedSourcePts?.Ticks);
     public string Status => failure is not null ? $"GPU同時表示に失敗: {failure}" :
+        (stopped ? "停止中 / " : paused ? "一時停止中 / " : "再生中 / ") +
         $"共通時計 {Position.TotalSeconds:F2}秒 / 左描画要求: {left?.Submitted ?? 0}枚 PTS {left?.LastPts.TotalSeconds ?? 0:F2}秒 " +
         $"(破棄 {left?.Dropped ?? 0}) / 右描画要求: {right?.Submitted ?? 0}枚 PTS {right?.LastPts.TotalSeconds ?? 0:F2}秒 " +
         $"(破棄 {right?.Dropped ?? 0}) / 要求PTS差 {((left?.LastPts ?? TimeSpan.Zero) - (right?.LastPts ?? TimeSpan.Zero)).Duration().TotalMilliseconds:F0}ms" +
         (right?.SwitchMs is { } switchMs ? $" / 右切替後の初回描画要求 {switchMs:F0}ms" : "") +
         (finished ? " / 読み取り終了" : "") +
+        (summaryState is null ? "" : $" / {summaryState}") +
         (leftHost.StatisticsEnabled ? $" / 左 {leftHost.PresentationStatus} / 右 {rightHost.PresentationStatus}" : "") +
         (leftHost.StatisticsEnabled ? "（DXGI観測値。外部照合・性能判定は未実施）" : "（実提示fpsは未測定）");
 
@@ -43,7 +59,82 @@ internal sealed class DualGpuPlayback : IDisposable
         _ = StartWhenReady(left, right, "開始");
     }
 
+    public void SaveWindowMetricsIfReady()
+    {
+        if (summaryState is not null || !leftHost.StatisticsEnabled || left is null || right is null) return;
+        var leftMetrics = leftHost.WindowMetrics;
+        var rightMetrics = rightHost.WindowMetrics;
+        if (!leftMetrics.Complete || !rightMetrics.Complete) return;
+        try
+        {
+            var workspace = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
+            var directory = Path.Combine(workspace, "measurement-results");
+            Directory.CreateDirectory(directory);
+            var name = $"gpu-{runId:N}.json";
+            var report = new
+            {
+                SchemaVersion = 1,
+                RunId = runId,
+                RecordedAt = DateTimeOffset.Now,
+                WindowStartPtsSeconds = 2,
+                WindowEndPtsSeconds = 32,
+                Method = "DXGI提示IDとソースPTSの対応。各フレームの厳密な提示時刻は未記録。",
+                PresentSyncInterval = 0,
+                VisibilityVerified = false,
+                LeftVideo = Path.GetFileName(left.Path),
+                RightVideo = Path.GetFileName(right.Path),
+                Left = leftMetrics,
+                Right = rightMetrics,
+                LeftDroppedSourcePtsTicks = left.DroppedSourcePtsTicks,
+                RightDroppedSourcePtsTicks = right.DroppedSourcePtsTicks
+            };
+            File.WriteAllText(Path.Combine(directory, name),
+                JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+            summaryState = $"30秒集計保存 {name}";
+        }
+        catch (Exception exception)
+        {
+            summaryState = $"集計保存失敗 0x{exception.HResult:X8}";
+        }
+    }
+
     public void Seek(TimeSpan position)
+        => SeekInternal(position, strict: false);
+
+    public void TogglePause()
+    {
+        if (disposed || left is null || right is null) return;
+        if (paused || stopped)
+        {
+            paused = false;
+            stopped = false;
+            SeekInternal(left.LastPts, strict: false);
+        }
+        else
+        {
+            paused = true;
+            SeekInternal(left.LastPts, strict: false);
+        }
+    }
+
+    public void Step()
+    {
+        if (disposed || left is null || right is null) return;
+        var target = left.LastPts + TimeSpan.FromMilliseconds(5);
+        paused = true;
+        stopped = false;
+        SeekInternal(target, strict: true);
+    }
+
+    public void Stop()
+    {
+        if (disposed || left is null || right is null) return;
+        paused = false;
+        stopped = true;
+        SeekInternal(TimeSpan.Zero, strict: false);
+    }
+
+    private void SeekInternal(TimeSpan position, bool strict)
     {
         if (disposed || left is null || right is null) return;
         position = TimeSpan.FromSeconds(Math.Max(0, position.TotalSeconds));
@@ -59,9 +150,9 @@ internal sealed class DualGpuPlayback : IDisposable
         StopSlot(oldRight);
         leftHost.ResetInput();
         rightHost.ResetInput();
-        left = BeginSlot(oldLeft.Path, leftHost, position);
-        right = BeginSlot(oldRight.Path, rightHost, position);
-        _ = StartWhenReady(left, right, "シーク");
+        left = BeginSlot(oldLeft.Path, leftHost, position, strict);
+        right = BeginSlot(oldRight.Path, rightHost, position, strict);
+        _ = StartWhenReady(left, right, "シーク", paused || stopped);
     }
 
     public void SwitchRight(string path)
@@ -69,7 +160,7 @@ internal sealed class DualGpuPlayback : IDisposable
         var currentLeft = left;
         if (disposed || currentLeft is null || right is null ||
             string.Equals(right.Path, path, StringComparison.OrdinalIgnoreCase)) return;
-        var stayPaused = finished;
+        var stayPaused = finished || paused || stopped;
         var oldRight = right;
         StopSlot(oldRight);
         rightHost.ResetInput();
@@ -87,9 +178,18 @@ internal sealed class DualGpuPlayback : IDisposable
         {
             await Task.WhenAll(expectedLeft.FirstFrame.Task, expectedRight.FirstFrame.Task);
             if (disposed || !ReferenceEquals(left, expectedLeft) || !ReferenceEquals(right, expectedRight)) return;
-            if (stayPaused || finished)
+            var firstCommonPts = expectedLeft.FirstQueuedPts > expectedRight.FirstQueuedPts ?
+                expectedLeft.FirstQueuedPts : expectedRight.FirstQueuedPts;
+            if (Position + TimeSpan.FromMilliseconds(17) < firstCommonPts)
             {
+                SeekInternal(firstCommonPts, strict: false);
+                return;
+            }
+            if (stayPaused || finished || paused || stopped)
+            {
+                PresentSlot(expectedLeft, forceFirst: true);
                 PresentSlot(expectedRight, forceFirst: true);
+                StopSlot(expectedLeft);
                 StopSlot(expectedRight);
                 return;
             }
@@ -103,21 +203,26 @@ internal sealed class DualGpuPlayback : IDisposable
         }
     }
 
-    private static Slot BeginSlot(string path, GpuVideoHost host, TimeSpan target)
+    private static Slot BeginSlot(string path, GpuVideoHost host, TimeSpan target, bool strict = false)
     {
         var slot = new Slot(path, host);
-        slot.Worker = Task.Run(() => ReadFrames(slot, target));
+        slot.Worker = Task.Run(() => ReadFrames(slot, target, strict));
         return slot;
     }
 
-    private static void ReadFrames(Slot slot, TimeSpan target)
+    private static void ReadFrames(Slot slot, TimeSpan target, bool strict)
     {
         var token = slot.Cancellation.Token;
         try
         {
+            var probePath = FfprobeService.FindExecutable() ??
+                throw new FileNotFoundException("FFprobeが見つかりません。");
+            var videoStartPts = videoStartPtsCache.GetOrAdd(slot.Path, path =>
+                new FfprobeService(probePath).ReadVideoStartTimeAsync(path, token).GetAwaiter().GetResult());
             using var reader = new GpuSurfaceReader(slot.Path, slot.Host.Device);
             using var origin = reader.ReadNext() ?? throw new InvalidDataException("映像フレームがありません。");
-            slot.StartPts = origin.Position;
+            // Readerの初回サンプルが素材の開始フレームとは限らない。
+            slot.StartPts = videoStartPts;
             if (target > TimeSpan.Zero)
                 reader.Seek(slot.StartPts + target);
             var count = 0;
@@ -127,7 +232,7 @@ internal sealed class DualGpuPlayback : IDisposable
                 reader.Seek(slot.StartPts);
             }
             var retriedEarlier = false;
-            while (count < 900 && !token.IsCancellationRequested)
+            while (!token.IsCancellationRequested)
             {
                 GpuFrame? frame;
                 try { frame = reader.ReadNext(); }
@@ -144,7 +249,7 @@ internal sealed class DualGpuPlayback : IDisposable
                     continue;
                 }
                 if (frame is null) break;
-                if (frame.Position - slot.StartPts < target - TimeSpan.FromMilliseconds(17))
+                if (frame.Position - slot.StartPts < (strict ? target : target - TimeSpan.FromMilliseconds(17)))
                 {
                     frame.Dispose();
                     continue;
@@ -152,6 +257,7 @@ internal sealed class DualGpuPlayback : IDisposable
                 try
                 {
                     slot.Frames.Writer.WriteAsync(frame, token).AsTask().GetAwaiter().GetResult();
+                    if (count == 0) slot.FirstQueuedPts = frame.Position - slot.StartPts;
                     slot.FirstFrame.TrySetResult();
                     count++;
                 }
@@ -207,7 +313,14 @@ internal sealed class DualGpuPlayback : IDisposable
         GpuFrame? latest = null;
         while (slot.Pending is { } frame && frame.Position - slot.StartPts <= Position)
         {
-            if (latest is not null) { latest.Dispose(); slot.Dropped++; }
+            if (latest is not null)
+            {
+                var droppedPts = latest.Position - slot.StartPts;
+                if (droppedPts >= TimeSpan.FromSeconds(2) && droppedPts < TimeSpan.FromSeconds(32))
+                    slot.DroppedSourcePtsTicks.Add(droppedPts.Ticks);
+                latest.Dispose();
+                slot.Dropped++;
+            }
             latest = frame;
             slot.Pending = slot.Frames.Reader.TryRead(out var next) ? next : null;
         }
@@ -219,7 +332,7 @@ internal sealed class DualGpuPlayback : IDisposable
         if (latest is null) return;
         using (latest)
         {
-            slot.Host.Render(latest, sourcePts: latest.Position - slot.StartPts);
+            slot.Host.Render(latest, synchronize: false, sourcePts: latest.Position - slot.StartPts);
             slot.LastPts = latest.Position - slot.StartPts;
             slot.Submitted++;
             if (slot.SwitchStarted != 0)
@@ -268,11 +381,16 @@ internal sealed class DualGpuPlayback : IDisposable
         public GpuFrame? Pending;
         public int Submitted;
         public int Dropped;
+        public List<long> DroppedSourcePtsTicks { get; } = new();
         public TimeSpan LastPts;
         public TimeSpan StartPts;
+        public TimeSpan FirstQueuedPts;
         public string? Error;
         public bool Stopped;
         public long SwitchStarted;
         public double? SwitchMs;
     }
 }
+
+internal sealed record FramePair(bool LeftReady, bool RightReady, long LeftPtsTicks, long RightPtsTicks,
+    long LeftFirstPtsTicks, long RightFirstPtsTicks, long? LeftPresentedPtsTicks, long? RightPresentedPtsTicks);

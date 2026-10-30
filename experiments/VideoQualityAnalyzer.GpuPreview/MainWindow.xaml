@@ -11,6 +11,9 @@
             <Button Content="-5秒" Margin="16,0,0,0" Padding="12,3" Click="BackFive_Click" />
             <Button Content="+5秒" Margin="6,0,0,0" Padding="12,3" Click="ForwardFive_Click" />
             <Button Content="先頭へ" Margin="6,0,0,0" Padding="12,3" Click="Start_Click" />
+            <Button Name="PauseButton" Content="一時停止" Margin="16,0,0,0" Padding="12,3" Click="Pause_Click" />
+            <Button Content="1コマ進む" Margin="6,0,0,0" Padding="12,3" Click="Step_Click" />
+            <Button Content="停止" Margin="6,0,0,0" Padding="12,3" Click="Stop_Click" />
         </StackPanel>
         <Grid>
             <Grid.ColumnDefinitions>

@@ -12,3 +12,4 @@
 **/TestResults/
 /.vs/
 /tools/dotnet-home/
+/measurement-results/
