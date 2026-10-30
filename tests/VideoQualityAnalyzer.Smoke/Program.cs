@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using VideoQualityAnalyzer.Core;
 using VideoQualityAnalyzer.Diagnostics;
 using VideoQualityAnalyzer.Media;
@@ -70,6 +71,27 @@ Check(lines.Length == 2 && lines[0].Contains("\"run_id\"") && lines[1].Contains(
 Check(!lines.Any(line => line.Contains(reference.Path, StringComparison.OrdinalIgnoreCase)), "ログにフルパスを残さない");
 
 Console.WriteLine("素材確認・選択規則・診断ログ: 合格");
+
+if (args.Contains("--benchmark"))
+{
+    var target = videos.Single(video => video.Name == "攻殻機動隊_icq50.mp4");
+    foreach (var frameNumber in new long[] { 150, 450 })
+    {
+        for (var run = 1; run <= 3; run++)
+        {
+            var timer = Stopwatch.StartNew();
+            var frames = await Task.WhenAll(
+                comparison.ReadFrameAsync(reference.Path, frameNumber, CancellationToken.None),
+                comparison.ReadFrameAsync(target.Path, frameNumber, CancellationToken.None));
+            var decodeMs = timer.Elapsed.TotalMilliseconds;
+            var heatmap = FrameComparisonService.CreateHeatmap(frames[0], frames[1]);
+            var heatmapMs = timer.Elapsed.TotalMilliseconds - decodeMs;
+            Check(heatmap.MeanAbsoluteRgbDifference > 0, "計測したフレームの差分");
+            Console.WriteLine($"比較計測 frame={frameNumber}, run={run}, 復号={decodeMs:F1}ms, " +
+                $"ヒートマップ={heatmapMs:F1}ms, 合計={timer.Elapsed.TotalMilliseconds:F1}ms");
+        }
+    }
+}
 
 static void Check(bool condition, string label)
 {
