@@ -37,6 +37,7 @@ internal sealed class DualGpuPlayback : IDisposable
 
     public TimeSpan Position => basePosition + clock.Elapsed;
     public bool IsPaused => paused || stopped;
+    public string? CurrentRightName => right is null ? null : Path.GetFileName(right.Path);
     public FramePair CaptureFramePair() => new(left?.Submitted > 0, right?.Submitted > 0,
         left?.LastPts.Ticks ?? 0, right?.LastPts.Ticks ?? 0,
         left?.StartPts.Ticks ?? 0, right?.StartPts.Ticks ?? 0,

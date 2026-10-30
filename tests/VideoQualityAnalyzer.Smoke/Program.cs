@@ -25,6 +25,26 @@ Check(videos.Count(video => video.Codec == "ffv1") == 1, "FFV1素材");
 Check(videos.Count(video => video.Codec == "hevc") == 2, "H.265素材");
 Check(videos.Count(video => video.Codec == "av1") == 2, "AV1素材");
 
+var ffmpegPath = FfmpegRgbReader.FindExecutable() ??
+    throw new FileNotFoundException("FFmpegが見つかりません。");
+var comparison = new FrameComparisonService(ffmpegPath, probePath);
+var referenceFrame = await comparison.ReadFrameAsync(
+    videos.Single(video => video.Codec == "ffv1").Path, 150, CancellationToken.None);
+Check(referenceFrame.Pixels.Length == 1440 * 1080 * 4, "参照フレームを復号");
+Check(FrameComparisonService.CreateHeatmap(referenceFrame, referenceFrame)
+    .MeanAbsoluteRgbDifference == 0, "同一フレームの差は0");
+foreach (var video in videos.Where(video => video.Codec != "ffv1"))
+{
+    var encodedFrame = await comparison.ReadFrameAsync(video.Path, 150, CancellationToken.None);
+    Check(encodedFrame.Pixels.Length == referenceFrame.Pixels.Length, $"比較フレームを復号: {video.Name}");
+    var difference = FrameComparisonService.CreateHeatmap(referenceFrame, encodedFrame);
+    Check(difference.MeanAbsoluteRgbDifference > 0, $"圧縮差を検出: {video.Name}");
+    Check(difference.MeanAbsoluteRgbDifference ==
+        FrameComparisonService.CreateHeatmap(referenceFrame, encodedFrame, 4).MeanAbsoluteRgbDifference,
+        $"差分強調は元の平均差を変えない: {video.Name}");
+    Console.WriteLine($"参照 vs {video.Name}: フレーム150の平均RGB差 {difference.MeanAbsoluteRgbDifference:F2}");
+}
+
 var reference = videos.Single(video => video.Codec == "ffv1");
 var firstComparison = videos.First(video => video.Id != reference.Id);
 var empty = SelectionService.Resolve(videos, reference.Id, [], null, 1);

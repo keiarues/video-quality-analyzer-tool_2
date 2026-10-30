@@ -1,4 +1,4 @@
-param([switch]$Stats)
+param([switch]$Stats, [switch]$Compare)
 
 $ErrorActionPreference = 'Stop'
 $workspace = Split-Path $PSScriptRoot -Parent
@@ -17,6 +17,12 @@ $rightAv1 = Select-Video 'av1.*32.*mkv$'
 $dotnet = Join-Path $workspace 'tools/dotnet/dotnet.exe'
 $gpuApp = Join-Path $workspace 'experiments/VideoQualityAnalyzer.GpuPreview/bin/Release/net10.0-windows/VideoQualityAnalyzer.GpuPreview.dll'
 if (-not (Test-Path -LiteralPath $gpuApp)) { throw 'Build the GPU experiment in Release first.' }
+
+if ($Compare) {
+    $reference = Select-Video 'reference.*mkv$'
+    & $dotnet $gpuApp '--compare-frame=150' $reference $rightH265
+    exit $LASTEXITCODE
+}
 
 $arguments = @($gpuApp, '--direct')
 if ($Stats) { $arguments += '--stats' }

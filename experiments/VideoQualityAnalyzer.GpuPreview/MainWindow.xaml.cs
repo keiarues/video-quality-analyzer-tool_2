@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     private GpuVideoHost? rightHost;
     private DualGpuPlayback? dualPlayback;
     private readonly DispatcherTimer statusTimer = new() { Interval = TimeSpan.FromMilliseconds(200) };
+    private string? verificationOperation;
 
     public MainWindow(string path, string[] rightPaths, bool direct, bool statistics, bool verifyFrames)
     {
@@ -85,6 +86,24 @@ public partial class MainWindow : Window
 
     private void Stop_Click(object sender, RoutedEventArgs e) => dualPlayback?.Stop();
 
+    private void Compare_Click(object sender, RoutedEventArgs e)
+    {
+        if (dualPlayback is null || !dualPlayback.IsPaused)
+        {
+            StatusText.Text = "一時停止または停止してから静止フレームを比較してください。";
+            return;
+        }
+        var pair = dualPlayback.CaptureFramePair();
+        if (pair.LeftFrameNumber is not { } frameNumber ||
+            pair.RightFrameNumber != frameNumber ||
+            RightSelect.SelectedItem is not ComboBoxItem { Tag: string selectedRight })
+        {
+            StatusText.Text = "左右の元フレーム番号がそろってから比較してください。";
+            return;
+        }
+        new ComparisonWindow(path, selectedRight, frameNumber) { Owner = this }.Show();
+    }
+
     private async Task VerifyFrameOperationsAsync()
     {
         if (dualPlayback is null) return;
@@ -129,21 +148,42 @@ public partial class MainWindow : Window
         catch (Exception exception)
         {
             StatusText.Text = $"操作検証に失敗: 0x{exception.HResult:X8} {exception.GetType().Name}";
+            try
+            {
+                var directory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../measurement-results"));
+                Directory.CreateDirectory(directory);
+                var failure = new { LeftVideo = Path.GetFileName(path), RightVideo = Path.GetFileName(rightPaths[0]),
+                    FailedOperation = verificationOperation, ErrorType = exception.GetType().Name,
+                    ErrorCode = $"0x{exception.HResult:X8}", PlaybackStatus = dualPlayback?.Status,
+                    Observations = observations };
+                File.WriteAllText(Path.Combine(directory, $"frame-operations-failed-{Guid.NewGuid():N}.json"),
+                    System.Text.Json.JsonSerializer.Serialize(failure,
+                        new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            }
+            catch { }
+            Application.Current.Shutdown(1);
         }
         finally { Close(); }
     }
 
     private async Task<object> CaptureWhenReadyAsync(string operation)
     {
+        verificationOperation = operation;
         if (dualPlayback is null) throw new InvalidOperationException("再生が準備されていません。");
         for (var attempt = 0; attempt < 200; attempt++)
         {
             var frame = dualPlayback.CaptureFramePair();
             if (frame.LeftReady && frame.RightReady &&
-                frame.LeftPresentedPtsTicks == frame.LeftPtsTicks &&
-                frame.RightPresentedPtsTicks == frame.RightPtsTicks)
-                return new { Operation = operation, frame.LeftPtsTicks, frame.RightPtsTicks,
+                frame.LeftFrameNumber is { } leftNumber && frame.RightFrameNumber is { } rightNumber &&
+                leftNumber == rightNumber &&
+                (attempt >= 20 ||
+                 (frame.LeftPresentedPtsTicks == frame.LeftPtsTicks &&
+                  frame.RightPresentedPtsTicks == frame.RightPtsTicks)))
+                return new { Operation = operation, RightVideo = dualPlayback.CurrentRightName,
+                    frame.LeftPtsTicks, frame.RightPtsTicks,
                     frame.LeftPresentedPtsTicks, frame.RightPresentedPtsTicks,
+                    PresentationConfirmed = frame.LeftPresentedPtsTicks == frame.LeftPtsTicks &&
+                        frame.RightPresentedPtsTicks == frame.RightPtsTicks,
                     frame.LeftFrameNumber, frame.RightFrameNumber,
                     frame.LeftFirstPtsTicks, frame.RightFirstPtsTicks,
                     DifferenceMilliseconds = Math.Abs(frame.LeftPtsTicks - frame.RightPtsTicks) / 10000.0 };

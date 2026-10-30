@@ -14,6 +14,7 @@
             <Button Name="PauseButton" Content="一時停止" Margin="16,0,0,0" Padding="12,3" Click="Pause_Click" />
             <Button Content="1コマ進む" Margin="6,0,0,0" Padding="12,3" Click="Step_Click" />
             <Button Content="停止" Margin="6,0,0,0" Padding="12,3" Click="Stop_Click" />
+            <Button Content="静止フレーム比較" Margin="16,0,0,0" Padding="12,3" Click="Compare_Click" />
         </StackPanel>
         <Grid>
             <Grid.ColumnDefinitions>
