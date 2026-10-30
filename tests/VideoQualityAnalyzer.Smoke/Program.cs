@@ -1,0 +1,58 @@
+using VideoQualityAnalyzer.Core;
+using VideoQualityAnalyzer.Diagnostics;
+using VideoQualityAnalyzer.Media;
+
+var root = args.Length > 0 ? Path.GetFullPath(args[0]) :
+    throw new ArgumentException("作業フォルダーのパスを指定してください。");
+var probePath = FfprobeService.FindExecutable() ??
+    throw new FileNotFoundException("FFprobeが見つかりません。");
+var service = new FfprobeService(probePath);
+var files = Directory.GetFiles(Path.Combine(root, "test-data"));
+Check(files.Length == 5, "動画は5本必要です。");
+
+var videos = new List<VideoDescriptor>();
+foreach (var file in files)
+{
+    var video = await service.ProbeAsync(file, CancellationToken.None);
+    Check(video.Width == 1440 && video.Height == 1080, $"解像度: {video.Name}");
+    Check(Math.Abs(video.AverageFrameRate - 30000d / 1001d) < 0.001, $"fps: {video.Name}");
+    Check(!video.HasAudio, $"音声なし: {video.Name}");
+    videos.Add(video);
+    Console.WriteLine($"{video.Codec,-5} {video.AverageFrameRate:F3} fps {video.Name}");
+}
+
+Check(videos.Count(video => video.Codec == "ffv1") == 1, "FFV1素材");
+Check(videos.Count(video => video.Codec == "hevc") == 2, "H.265素材");
+Check(videos.Count(video => video.Codec == "av1") == 2, "AV1素材");
+
+var reference = videos.Single(video => video.Codec == "ffv1");
+var firstComparison = videos.First(video => video.Id != reference.Id);
+var empty = SelectionService.Resolve(videos, reference.Id, [], null, 1);
+Check(empty.LeftVideoId == reference.Id && empty.RightVideoId == firstComparison.Id, "選択なし");
+
+var single = SelectionService.Resolve(videos, reference.Id, [firstComparison.Id], null, 2);
+Check(single.LeftVideoId == reference.Id && single.RightVideoId == firstComparison.Id, "比較動画1本選択");
+
+var pair = videos.Where(video => video.Id != reference.Id).Take(2).ToArray();
+var multiple = SelectionService.Resolve(videos, reference.Id, pair.Select(video => video.Id).ToArray(), null, 3);
+Check(multiple.LeftVideoId == pair[0].Id && multiple.RightVideoId == pair[1].Id, "比較動画2本選択");
+
+var previous = SelectionService.Resolve(videos, reference.Id, [], pair[1].Id, 4);
+Check(previous.RightVideoId == pair[1].Id, "直前の右動画を維持");
+
+var log = new MeasurementLog(Path.Combine(root, "tests", ".smoke-output"));
+log.Record("probe", "left", reference.Id, "ok");
+log.RecordPerformance("both", reference.Id, reference.AverageFrameRate,
+    $"{reference.Width}x{reference.Height}", reference.Codec, 1.5, 100);
+await log.DisposeAsync();
+var lines = await File.ReadAllLinesAsync(log.FilePath);
+Check(lines.Length == 2 && lines[0].Contains("\"run_id\"") && lines[1].Contains("\"cpu_percent\""), "診断ログ");
+Check(!lines.Any(line => line.Contains(reference.Path, StringComparison.OrdinalIgnoreCase)), "ログにフルパスを残さない");
+
+Console.WriteLine("素材確認・選択規則・診断ログ: 合格");
+
+static void Check(bool condition, string label)
+{
+    if (!condition)
+        throw new InvalidOperationException($"確認失敗: {label}");
+}

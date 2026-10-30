@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>VideoQualityAnalyzer.StageA</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VideoQualityAnalyzer.Core\VideoQualityAnalyzer.Core.csproj" />
+    <ProjectReference Include="..\VideoQualityAnalyzer.Media\VideoQualityAnalyzer.Media.csproj" />
+    <ProjectReference Include="..\VideoQualityAnalyzer.Diagnostics\VideoQualityAnalyzer.Diagnostics.csproj" />
+  </ItemGroup>
+</Project>

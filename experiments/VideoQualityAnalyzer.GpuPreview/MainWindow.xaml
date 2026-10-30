@@ -1,0 +1,25 @@
+<Window x:Class="VideoQualityAnalyzer.GpuPreview.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="GPUプレビュー検証" Width="1500" Height="650"
+        Background="#141B26" Foreground="White" Loaded="Window_Loaded" Closed="Window_Closed">
+    <DockPanel Margin="12">
+        <TextBlock Name="StatusText" DockPanel.Dock="Bottom" Margin="4,10,0,0" TextWrapping="Wrap" Text="準備中" />
+        <StackPanel Name="ControlBar" DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="右動画" VerticalAlignment="Center" Margin="0,0,8,0" />
+            <ComboBox Name="RightSelect" Width="390" SelectionChanged="RightSelect_SelectionChanged" />
+            <Button Content="-5秒" Margin="16,0,0,0" Padding="12,3" Click="BackFive_Click" />
+            <Button Content="+5秒" Margin="6,0,0,0" Padding="12,3" Click="ForwardFive_Click" />
+            <Button Content="先頭へ" Margin="6,0,0,0" Padding="12,3" Click="Start_Click" />
+        </StackPanel>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="Black"><Grid Name="HostContainer" /></Border>
+            <Border Grid.Column="2" Background="Black" Name="RightBorder"><Grid Name="RightHostContainer" /></Border>
+        </Grid>
+    </DockPanel>
+</Window>

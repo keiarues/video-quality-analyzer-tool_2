@@ -1,0 +1,14 @@
+/.dotnet-home/
+/.nuget-packages/
+/build-diagnostic.log
+/restore-diagnostic.log
+/tests/.smoke-output/
+/test-data/
+/tools/dotnet/
+/tools/dotnet-install.ps1
+/tools/ffmpeg-9.0.2-essentials_build/
+**/bin/
+**/obj/
+**/TestResults/
+/.vs/
+/tools/dotnet-home/
