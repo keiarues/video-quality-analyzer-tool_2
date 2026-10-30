@@ -11,7 +11,7 @@ namespace VideoQualityAnalyzer.GpuPreview;
 // 左右のReaderを独立させ、選択変更とシークでは古い世代の結果を破棄する。
 internal sealed class DualGpuPlayback : IDisposable
 {
-    private static readonly ConcurrentDictionary<string, TimeSpan> videoStartPtsCache =
+    private static readonly ConcurrentDictionary<string, VideoTiming> videoTimingCache =
         new(StringComparer.OrdinalIgnoreCase);
     private readonly GpuVideoHost leftHost;
     private readonly GpuVideoHost rightHost;
@@ -40,7 +40,11 @@ internal sealed class DualGpuPlayback : IDisposable
     public FramePair CaptureFramePair() => new(left?.Submitted > 0, right?.Submitted > 0,
         left?.LastPts.Ticks ?? 0, right?.LastPts.Ticks ?? 0,
         left?.StartPts.Ticks ?? 0, right?.StartPts.Ticks ?? 0,
-        leftHost.LastPresentedSourcePts?.Ticks, rightHost.LastPresentedSourcePts?.Ticks);
+        leftHost.LastPresentedSourcePts?.Ticks, rightHost.LastPresentedSourcePts?.Ticks,
+        left is { Submitted: > 0 } ? FrameNumber(left.LastPts, left.FrameRate) : null,
+        right is { Submitted: > 0 } ? FrameNumber(right.LastPts, right.FrameRate) : null);
+    private static long? FrameNumber(TimeSpan pts, double frameRate) =>
+        frameRate > 0 ? (long)Math.Round(pts.TotalSeconds * frameRate, MidpointRounding.AwayFromZero) : null;
     public string Status => failure is not null ? $"GPU同時表示に失敗: {failure}" :
         (stopped ? "停止中 / " : paused ? "一時停止中 / " : "再生中 / ") +
         $"共通時計 {Position.TotalSeconds:F2}秒 / 左描画要求: {left?.Submitted ?? 0}枚 PTS {left?.LastPts.TotalSeconds ?? 0:F2}秒 " +
@@ -49,8 +53,18 @@ internal sealed class DualGpuPlayback : IDisposable
         (right?.SwitchMs is { } switchMs ? $" / 右切替後の初回描画要求 {switchMs:F0}ms" : "") +
         (finished ? " / 読み取り終了" : "") +
         (summaryState is null ? "" : $" / {summaryState}") +
+        (IsPaused ? FrameIdentityStatus() : "") +
         (leftHost.StatisticsEnabled ? $" / 左 {leftHost.PresentationStatus} / 右 {rightHost.PresentationStatus}" : "") +
         (leftHost.StatisticsEnabled ? "（DXGI観測値。外部照合・性能判定は未実施）" : "（実提示fpsは未測定）");
+
+    private string FrameIdentityStatus()
+    {
+        var pair = CaptureFramePair();
+        if (pair.LeftFrameNumber is not { } leftNumber || pair.RightFrameNumber is not { } rightNumber)
+            return " / フレーム対応は準備中";
+        return $" / CFR換算 左#{leftNumber}・右#{rightNumber} " +
+            (leftNumber == rightNumber ? "同じ元フレーム候補" : "対応ずれ");
+    }
 
     public void Start(string leftPath, string rightPath)
     {
@@ -217,12 +231,18 @@ internal sealed class DualGpuPlayback : IDisposable
         {
             var probePath = FfprobeService.FindExecutable() ??
                 throw new FileNotFoundException("FFprobeが見つかりません。");
-            var videoStartPts = videoStartPtsCache.GetOrAdd(slot.Path, path =>
-                new FfprobeService(probePath).ReadVideoStartTimeAsync(path, token).GetAwaiter().GetResult());
+            var timing = videoTimingCache.GetOrAdd(slot.Path, path =>
+            {
+                var probe = new FfprobeService(probePath);
+                var startPts = probe.ReadVideoStartTimeAsync(path, token).GetAwaiter().GetResult();
+                var descriptor = probe.ProbeAsync(path, token).GetAwaiter().GetResult();
+                return new VideoTiming(startPts, descriptor.AverageFrameRate);
+            });
             using var reader = new GpuSurfaceReader(slot.Path, slot.Host.Device);
             using var origin = reader.ReadNext() ?? throw new InvalidDataException("映像フレームがありません。");
             // Readerの初回サンプルが素材の開始フレームとは限らない。
-            slot.StartPts = videoStartPts;
+            slot.StartPts = timing.StartPts;
+            slot.FrameRate = timing.FrameRate;
             if (target > TimeSpan.Zero)
                 reader.Seek(slot.StartPts + target);
             var count = 0;
@@ -384,6 +404,7 @@ internal sealed class DualGpuPlayback : IDisposable
         public List<long> DroppedSourcePtsTicks { get; } = new();
         public TimeSpan LastPts;
         public TimeSpan StartPts;
+        public double FrameRate;
         public TimeSpan FirstQueuedPts;
         public string? Error;
         public bool Stopped;
@@ -393,4 +414,7 @@ internal sealed class DualGpuPlayback : IDisposable
 }
 
 internal sealed record FramePair(bool LeftReady, bool RightReady, long LeftPtsTicks, long RightPtsTicks,
-    long LeftFirstPtsTicks, long RightFirstPtsTicks, long? LeftPresentedPtsTicks, long? RightPresentedPtsTicks);
+    long LeftFirstPtsTicks, long RightFirstPtsTicks, long? LeftPresentedPtsTicks, long? RightPresentedPtsTicks,
+    long? LeftFrameNumber, long? RightFrameNumber);
+
+internal sealed record VideoTiming(TimeSpan StartPts, double FrameRate);

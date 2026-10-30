@@ -94,17 +94,29 @@ public partial class MainWindow : Window
             await Task.Delay(2000, cancellation.Token);
             dualPlayback.TogglePause();
             observations.Add(await CaptureWhenReadyAsync("一時停止"));
-            for (var index = 1; index <= 3; index++)
+            var frozen = dualPlayback.CaptureFramePair();
+            await Task.Delay(1000, cancellation.Token);
+            var afterHold = dualPlayback.CaptureFramePair();
+            if (frozen.LeftPtsTicks != afterHold.LeftPtsTicks || frozen.RightPtsTicks != afterHold.RightPtsTicks)
+                throw new InvalidOperationException("一時停止中にフレームが進みました。");
+            for (var index = 1; index <= 10; index++)
             {
                 dualPlayback.Step();
                 observations.Add(await CaptureWhenReadyAsync($"{index}コマ進む"));
             }
+            dualPlayback.Seek(TimeSpan.FromSeconds(8));
+            observations.Add(await CaptureWhenReadyAsync("一時停止中に8秒へシーク"));
             dualPlayback.Stop();
             observations.Add(await CaptureWhenReadyAsync("停止"));
             dualPlayback.Seek(TimeSpan.FromSeconds(5));
             observations.Add(await CaptureWhenReadyAsync("停止中に5秒へシーク"));
             dualPlayback.Seek(TimeSpan.FromSeconds(15));
             observations.Add(await CaptureWhenReadyAsync("停止中に15秒へシーク"));
+            if (rightPaths.Length > 1)
+            {
+                dualPlayback.SwitchRight(rightPaths[1]);
+                observations.Add(await CaptureWhenReadyAsync("停止中に右動画を切り替え"));
+            }
             var directory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../measurement-results"));
             Directory.CreateDirectory(directory);
             var report = new { LeftVideo = Path.GetFileName(path), RightVideo = Path.GetFileName(rightPaths[0]),
@@ -132,6 +144,7 @@ public partial class MainWindow : Window
                 frame.RightPresentedPtsTicks == frame.RightPtsTicks)
                 return new { Operation = operation, frame.LeftPtsTicks, frame.RightPtsTicks,
                     frame.LeftPresentedPtsTicks, frame.RightPresentedPtsTicks,
+                    frame.LeftFrameNumber, frame.RightFrameNumber,
                     frame.LeftFirstPtsTicks, frame.RightFirstPtsTicks,
                     DifferenceMilliseconds = Math.Abs(frame.LeftPtsTicks - frame.RightPtsTicks) / 10000.0 };
             await Task.Delay(50, cancellation.Token);
