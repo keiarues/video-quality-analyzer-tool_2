@@ -1,4 +1,4 @@
-param([switch]$Stats, [switch]$Compare)
+param([switch]$Stats, [switch]$Compare, [switch]$Wipe)
 
 $ErrorActionPreference = 'Stop'
 $workspace = Split-Path $PSScriptRoot -Parent
@@ -18,9 +18,10 @@ $dotnet = Join-Path $workspace 'tools/dotnet/dotnet.exe'
 $gpuApp = Join-Path $workspace 'experiments/VideoQualityAnalyzer.GpuPreview/bin/Release/net10.0-windows/VideoQualityAnalyzer.GpuPreview.dll'
 if (-not (Test-Path -LiteralPath $gpuApp)) { throw 'Build the GPU experiment in Release first.' }
 
-if ($Compare) {
+if ($Compare -or $Wipe) {
     $reference = Select-Video 'reference.*mkv$'
-    & $dotnet $gpuApp '--compare-frame=150' $reference $rightH265
+    $mode = if ($Wipe) { '--wipe-frame=150' } else { '--compare-frame=150' }
+    & $dotnet $gpuApp $mode $reference $rightH265
     exit $LASTEXITCODE
 }
 

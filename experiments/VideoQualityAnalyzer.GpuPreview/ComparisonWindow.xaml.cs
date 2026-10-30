@@ -14,7 +14,7 @@ public partial class ComparisonWindow : Window
     private ComparisonFrame? currentLeft;
     private ComparisonFrame? currentRight;
 
-    public ComparisonWindow(string leftPath, string rightPath, long frameNumber)
+    public ComparisonWindow(string leftPath, string rightPath, long frameNumber, bool showWipe = false)
     {
         InitializeComponent();
         var ffmpegPath = FfmpegRgbReader.FindExecutable() ??
@@ -38,6 +38,8 @@ public partial class ComparisonWindow : Window
             .First(choice => string.Equals(choice.Path, rightPath, StringComparison.OrdinalIgnoreCase));
         FrameNumberBox.Text = frameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
         GainSelect.SelectedIndex = 1;
+        ViewSelect.SelectedIndex = showWipe ? 1 : 0;
+        UpdateWipeBoundary();
         ResultText.Text = "再生は停止したままです。左右に同じ元フレーム番号を指定して比較します。";
         Loaded += (_, _) => _ = LoadComparisonAsync();
     }
@@ -48,6 +50,38 @@ public partial class ComparisonWindow : Window
     {
         if (currentLeft is not null && currentRight is not null)
             RefreshHeatmap();
+    }
+
+    private void ViewSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ThreeViewGrid is null || WipeViewGrid is null) return;
+        var wipe = ViewSelect.SelectedIndex == 1;
+        ThreeViewGrid.Visibility = wipe ? Visibility.Collapsed : Visibility.Visible;
+        WipeViewGrid.Visibility = wipe ? Visibility.Visible : Visibility.Collapsed;
+        if (wipe) UpdateWipeBoundary();
+    }
+
+    private void WipeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) =>
+        UpdateWipeBoundary();
+
+    private void WipeViewport_SizeChanged(object sender, SizeChangedEventArgs e) => UpdateWipeBoundary();
+
+    private void UpdateWipeBoundary()
+    {
+        if (WipeViewport is null || WipeSlider is null || WipeRightImage is null ||
+            WipeBoundary is null || WipePositionText is null) return;
+        var width = WipeViewport.ActualWidth;
+        var height = WipeViewport.ActualHeight;
+        var fraction = WipeSlider.Value / 100;
+        var aspect = currentLeft is null ? 4d / 3 : (double)currentLeft.Width / currentLeft.Height;
+        var imageWidth = Math.Min(width, height * aspect);
+        var imageLeft = (width - imageWidth) / 2;
+        var boundary = imageLeft + imageWidth * fraction;
+        WipeRightImage.Clip = new RectangleGeometry(new Rect(boundary, 0,
+            Math.Max(0, width - boundary), height));
+        WipeBoundary.Margin = new Thickness(boundary - WipeBoundary.Width / 2, 0, 0, 0);
+        WipeBoundary.Visibility = fraction > 0 && fraction < 1 ? Visibility.Visible : Visibility.Collapsed;
+        WipePositionText.Text = $"境界 {WipeSlider.Value:F0}%（左側: 左動画 / 右側: 右動画）";
     }
 
     private async Task LoadComparisonAsync()
@@ -74,8 +108,11 @@ public partial class ComparisonWindow : Window
             if (token.IsCancellationRequested) return;
             currentLeft = leftFrame;
             currentRight = rightFrame;
-            LeftImage.Source = CreateBitmap(leftFrame.Width, leftFrame.Height, leftFrame.Pixels);
-            RightImage.Source = CreateBitmap(rightFrame.Width, rightFrame.Height, rightFrame.Pixels);
+            var leftBitmap = CreateBitmap(leftFrame.Width, leftFrame.Height, leftFrame.Pixels);
+            var rightBitmap = CreateBitmap(rightFrame.Width, rightFrame.Height, rightFrame.Pixels);
+            LeftImage.Source = WipeLeftImage.Source = leftBitmap;
+            RightImage.Source = WipeRightImage.Source = rightBitmap;
+            UpdateWipeBoundary();
             RefreshHeatmap();
         }
         catch (OperationCanceledException) { }
