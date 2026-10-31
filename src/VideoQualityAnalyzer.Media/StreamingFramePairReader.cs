@@ -44,10 +44,10 @@ public sealed class StreamingFramePairReader : IAsyncDisposable
             Math.Abs(right.AverageFrameRate - right.NominalFrameRate) > 0.001)
             throw new InvalidDataException("再生比較には同じ解像度・CFRフレームレートの動画を選んでください。");
 
-        var leftProcess = Start(ffmpegPath, leftPath, firstFrameNumber);
+        var leftProcess = Start(ffmpegPath, leftPath, firstFrameNumber, left.AverageFrameRate);
         try
         {
-            var rightProcess = Start(ffmpegPath, rightPath, firstFrameNumber);
+            var rightProcess = Start(ffmpegPath, rightPath, firstFrameNumber, right.AverageFrameRate);
             return new StreamingFramePairReader(leftProcess, rightProcess, left, firstFrameNumber);
         }
         catch
@@ -86,17 +86,23 @@ public sealed class StreamingFramePairReader : IAsyncDisposable
         return true;
     }
 
-    private static Process Start(string ffmpegPath, string path, long firstFrameNumber)
+    private static Process Start(string ffmpegPath, string path, long firstFrameNumber, double frameRate)
     {
         var info = new ProcessStartInfo(ffmpegPath)
         {
             UseShellExecute = false, CreateNoWindow = true,
             RedirectStandardOutput = true, RedirectStandardError = true
         };
-        foreach (var argument in new[] { "-hide_banner", "-loglevel", "error", "-nostdin", "-i", path,
-            "-map", "0:v:0", "-an", "-sn", "-dn", "-vf",
-            $"select=gte(n\\,{firstFrameNumber.ToString(CultureInfo.InvariantCulture)})",
-            "-fps_mode", "passthrough", "-pix_fmt", "bgra", "-f", "rawvideo", "pipe:1" })
+        var arguments = new List<string> { "-hide_banner", "-loglevel", "error", "-nostdin" };
+        if (firstFrameNumber > 0)
+        {
+            // 入力側の正確なシークで対象時刻より前を捨て、同じ元フレーム番号から連続復号する。
+            arguments.Add("-ss");
+            arguments.Add((firstFrameNumber / frameRate).ToString("F9", CultureInfo.InvariantCulture));
+        }
+        arguments.AddRange(["-i", path, "-map", "0:v:0", "-an", "-sn", "-dn",
+            "-fps_mode", "passthrough", "-pix_fmt", "bgra", "-f", "rawvideo", "pipe:1"]);
+        foreach (var argument in arguments)
             info.ArgumentList.Add(argument);
         var process = Process.Start(info) ?? throw new InvalidOperationException("FFmpegを起動できませんでした。");
         _ = process.StandardError.ReadToEndAsync();

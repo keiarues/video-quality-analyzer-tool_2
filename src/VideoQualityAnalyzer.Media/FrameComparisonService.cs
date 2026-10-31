@@ -31,10 +31,20 @@ public sealed class FrameComparisonService
             RedirectStandardOutput = true,
             RedirectStandardError = true
         };
-        foreach (var argument in new[] { "-hide_banner", "-loglevel", "error", "-i", path,
-            "-map", "0:v:0", "-an", "-sn", "-dn", "-vf",
-            $"select=eq(n\\,{frameNumber.ToString(CultureInfo.InvariantCulture)})",
-            "-frames:v", "1", "-pix_fmt", "bgra", "-f", "rawvideo", "pipe:1" })
+        var useFastSeek = frameNumber > 0 && descriptor.AverageFrameRate > 0 &&
+            Math.Abs(descriptor.AverageFrameRate - descriptor.NominalFrameRate) < 0.001;
+        var arguments = new List<string> { "-hide_banner", "-loglevel", "error" };
+        if (useFastSeek)
+        {
+            // CFR素材は時刻から対象フレームへ移動する。VFR素材は従来の番号指定を保つ。
+            arguments.Add("-ss");
+            arguments.Add((frameNumber / descriptor.AverageFrameRate).ToString("F9", CultureInfo.InvariantCulture));
+        }
+        arguments.AddRange(["-i", path, "-map", "0:v:0", "-an", "-sn", "-dn"]);
+        if (!useFastSeek)
+            arguments.AddRange(["-vf", $"select=eq(n\\,{frameNumber.ToString(CultureInfo.InvariantCulture)})"]);
+        arguments.AddRange(["-frames:v", "1", "-pix_fmt", "bgra", "-f", "rawvideo", "pipe:1"]);
+        foreach (var argument in arguments)
             info.ArgumentList.Add(argument);
 
         using var process = Process.Start(info) ?? throw new InvalidOperationException("FFmpegを起動できませんでした。");

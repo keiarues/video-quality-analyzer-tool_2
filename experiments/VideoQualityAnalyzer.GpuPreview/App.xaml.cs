@@ -8,6 +8,22 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        var seekTestOption = e.Args.FirstOrDefault(argument =>
+            argument.StartsWith("--seek-handoff-test=", StringComparison.Ordinal));
+        if (seekTestOption is not null)
+        {
+            var seekPaths = e.Args.Where(argument => argument != seekTestOption).ToArray();
+            if (seekPaths.Length != 2 ||
+                !long.TryParse(seekTestOption[(seekTestOption.IndexOf('=') + 1)..], out var frameNumber) ||
+                frameNumber < 0)
+            {
+                MessageBox.Show("元フレーム番号と左右の動画パスを指定してください。", "シーク検証");
+                Shutdown(2);
+                return;
+            }
+            new SeekHandoffTestWindow(seekPaths[0], seekPaths[1], frameNumber, automatic: true).Show();
+            return;
+        }
         var direct = e.Args.Contains("--direct");
         var verifyFrames = e.Args.Contains("--verify-frames");
         var statistics = e.Args.Contains("--stats") || verifyFrames;

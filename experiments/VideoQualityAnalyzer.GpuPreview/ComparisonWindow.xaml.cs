@@ -28,6 +28,10 @@ public partial class ComparisonWindow : Window
     private double benchmarkFrameRate;
     private CancellationTokenSource? loadCancellation;
     private CancellationTokenSource? playbackCancellation;
+    private StreamingFramePairReader? preparedReader;
+    private string? preparedLeftPath;
+    private string? preparedRightPath;
+    private bool lastPlaybackUsedPreparedReader;
     private ComparisonFrame? currentLeft;
     private ComparisonFrame? currentRight;
     private volatile bool playbackPaused;
@@ -120,11 +124,26 @@ public partial class ComparisonWindow : Window
             return;
         }
         loadCancellation?.Cancel();
+        StreamingFramePairReader? reusedReader = null;
+        (ComparisonFrame Left, ComparisonFrame Right)? firstPair = null;
+        if (preparedReader is not null)
+        {
+            if (string.Equals(preparedLeftPath, left.Path, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(preparedRightPath, right.Path, StringComparison.OrdinalIgnoreCase) &&
+                currentLeft?.FrameNumber == frameNumber && currentRight?.FrameNumber == frameNumber)
+            {
+                reusedReader = preparedReader;
+                firstPair = (currentLeft, currentRight);
+            }
+            else _ = preparedReader.DisposeAsync();
+            preparedReader = null;
+        }
         playbackPaused = false;
         PlayPauseButton.Content = "一時停止";
         var cancellation = new CancellationTokenSource();
         playbackCancellation = cancellation;
-        _ = PlayAsync(left.Path, right.Path, frameNumber, cancellation);
+        lastPlaybackUsedPreparedReader = reusedReader is not null;
+        _ = PlayAsync(left.Path, right.Path, frameNumber, cancellation, reusedReader, firstPair);
     }
 
     private void Stop_Click(object sender, RoutedEventArgs e) => StopPlayback();
@@ -143,7 +162,8 @@ public partial class ComparisonWindow : Window
     }
 
     private async Task PlayAsync(string leftPath, string rightPath, long firstFrameNumber,
-        CancellationTokenSource cancellation)
+        CancellationTokenSource cancellation, StreamingFramePairReader? reusedReader = null,
+        (ComparisonFrame Left, ComparisonFrame Right)? firstPair = null)
     {
         var token = cancellation.Token;
         ResultText.Text = "連続復号を準備中…";
@@ -151,8 +171,8 @@ public partial class ComparisonWindow : Window
         {
             await Task.Run(async () =>
             {
-            await using var reader = await StreamingFramePairReader.OpenAsync(ffmpegPath, ffprobePath,
-                leftPath, rightPath, firstFrameNumber, token);
+            await using var reader = reusedReader ?? await StreamingFramePairReader.OpenAsync(ffmpegPath,
+                ffprobePath, leftPath, rightPath, firstFrameNumber, token);
             var frameRate = reader.Descriptor.AverageFrameRate;
             var firstMeasured = firstFrameNumber + (long)Math.Ceiling(2 * frameRate);
             var afterMeasured = firstFrameNumber + (long)Math.Ceiling(32 * frameRate);
@@ -167,6 +187,7 @@ public partial class ComparisonWindow : Window
             var skipped = 0;
             var measuredSubmitted = new List<long>();
             var measuredLateDropped = new List<long>();
+            var pendingPair = firstPair;
             while (!token.IsCancellationRequested)
             {
                 if (playbackPaused)
@@ -175,7 +196,8 @@ public partial class ComparisonWindow : Window
                     await Task.Delay(20, token);
                     continue;
                 }
-                var pair = await reader.ReadNextAsync(token);
+                var pair = pendingPair ?? await reader.ReadNextAsync(token);
+                pendingPair = null;
                 if (pair is null) break;
                 while (playbackPaused)
                 {
@@ -232,7 +254,7 @@ public partial class ComparisonWindow : Window
             if (!token.IsCancellationRequested)
                 await Dispatcher.InvokeAsync(() => ResultText.Text =
                     $"再生比較終了 / 描画要求 {displayed}枚 / 遅延破棄 {skipped}枚。実画面提示fpsは未測定。");
-            }, token);
+            });
         }
         catch (OperationCanceledException) { }
         catch (Exception exception)
@@ -385,7 +407,13 @@ public partial class ComparisonWindow : Window
         var operation = "開始";
         try
         {
+            await LoadComparisonAsync();
+            if (preparedReader is null || CheckAlignedPair() != firstFrame)
+                throw new InvalidOperationException("静止表示の復号器を再生へ引き継げません。");
             PlayPause_Click(this, new RoutedEventArgs());
+            var initialPlaybackReusedDecoder = lastPlaybackUsedPreparedReader;
+            if (!initialPlaybackReusedDecoder)
+                throw new InvalidOperationException("再生時に復号器を再利用していません。");
             await WaitForFrameAsync(firstFrame + 15);
             operation = "一時停止";
             PlayPause_Click(this, new RoutedEventArgs());
@@ -441,6 +469,7 @@ public partial class ComparisonWindow : Window
                 LeftVideo = Path.GetFileName(leftPath), RightVideo = Path.GetFileName(rightPath),
                 FirstFrame = firstFrame, PausedFrame = pausedFrame,
                 ResumedFrame = resumedFrame, SeekedFrame = seekedFrame,
+                InitialPlaybackReusedDecoder = initialPlaybackReusedDecoder,
                 WipeBoundaryAligned = true, SeekedPixelsMatchStaticDecode = true,
                 PausedAndStoppedFrameStable = true, Result = "合格"
             });
@@ -538,16 +567,41 @@ public partial class ComparisonWindow : Window
         }
         loadCancellation?.Cancel();
         loadCancellation?.Dispose();
+        if (preparedReader is not null)
+        {
+            await preparedReader.DisposeAsync();
+            preparedReader = null;
+        }
         loadCancellation = new CancellationTokenSource();
         var token = loadCancellation.Token;
         ResultText.Text = $"フレーム #{frameNumber} を復号中…";
+        StreamingFramePairReader? candidate = null;
         try
         {
-            var leftTask = comparison.ReadFrameAsync(left.Path, frameNumber, token);
-            var rightTask = comparison.ReadFrameAsync(right.Path, frameNumber, token);
-            await Task.WhenAll(leftTask, rightTask);
-            var leftFrame = await leftTask;
-            var rightFrame = await rightTask;
+            ComparisonFrame leftFrame;
+            ComparisonFrame rightFrame;
+            try
+            {
+                candidate = await StreamingFramePairReader.OpenAsync(ffmpegPath, ffprobePath,
+                    left.Path, right.Path, frameNumber, token);
+                var pair = await candidate.ReadNextAsync(token) ??
+                    throw new InvalidDataException("指定フレームを取得できませんでした。");
+                (leftFrame, rightFrame) = pair;
+            }
+            catch (InvalidDataException)
+            {
+                // 再生できない組み合わせでも、従来の静止比較は利用できるようにする。
+                if (candidate is not null)
+                {
+                    await candidate.DisposeAsync();
+                    candidate = null;
+                }
+                var leftTask = comparison.ReadFrameAsync(left.Path, frameNumber, token);
+                var rightTask = comparison.ReadFrameAsync(right.Path, frameNumber, token);
+                await Task.WhenAll(leftTask, rightTask);
+                leftFrame = await leftTask;
+                rightFrame = await rightTask;
+            }
             if (token.IsCancellationRequested) return;
             currentLeft = leftFrame;
             currentRight = rightFrame;
@@ -558,12 +612,23 @@ public partial class ComparisonWindow : Window
             RightImage.Source = WipeRightImage.Source = rightBitmap;
             UpdateWipeBoundary();
             RefreshHeatmap();
+            if (candidate is not null)
+            {
+                preparedReader = candidate;
+                preparedLeftPath = left.Path;
+                preparedRightPath = right.Path;
+                candidate = null;
+            }
         }
         catch (OperationCanceledException) { }
         catch (Exception exception)
         {
             if (!token.IsCancellationRequested)
                 ResultText.Text = $"比較画像を作成できませんでした（0x{exception.HResult:X8}）。";
+        }
+        finally
+        {
+            if (candidate is not null) await candidate.DisposeAsync();
         }
     }
 
@@ -591,6 +656,7 @@ public partial class ComparisonWindow : Window
         StopPlayback();
         loadCancellation?.Cancel();
         loadCancellation?.Dispose();
+        if (preparedReader is not null) _ = preparedReader.DisposeAsync();
     }
 
     private sealed record VideoChoice(string Name, string Path);
