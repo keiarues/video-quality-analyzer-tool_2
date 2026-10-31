@@ -8,6 +8,23 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        var selectionTestOption = e.Args.FirstOrDefault(argument =>
+            argument.StartsWith("--selection-switch-test=", StringComparison.Ordinal));
+        if (selectionTestOption is not null)
+        {
+            var selectionPaths = e.Args.Where(argument => argument != selectionTestOption).ToArray();
+            if (selectionPaths.Length != 3 ||
+                !long.TryParse(selectionTestOption[(selectionTestOption.IndexOf('=') + 1)..], out var selectionFrame) ||
+                selectionFrame < 0)
+            {
+                MessageBox.Show("元フレーム番号と3本の動画パスを指定してください。", "動画選択の検証");
+                Shutdown(2);
+                return;
+            }
+            new SelectionSwitchTestWindow(selectionPaths[0], selectionPaths[1],
+                selectionPaths[2], selectionFrame).Show();
+            return;
+        }
         var seekTestOption = e.Args.FirstOrDefault(argument =>
             argument.StartsWith("--seek-handoff-test=", StringComparison.Ordinal));
         if (seekTestOption is not null)
@@ -34,7 +51,8 @@ public partial class App : Application
             argument.StartsWith("--benchmark-heatmap=", StringComparison.Ordinal) ||
             argument.StartsWith("--benchmark-capture-wipe=", StringComparison.Ordinal) ||
             argument.StartsWith("--benchmark-capture-heatmap=", StringComparison.Ordinal) ||
-            argument.StartsWith("--verify-comparison=", StringComparison.Ordinal));
+            argument.StartsWith("--verify-comparison=", StringComparison.Ordinal) ||
+            argument.StartsWith("--verify-selection=", StringComparison.Ordinal));
         var paths = e.Args.Where(argument => argument != "--direct" && argument != "--stats" &&
             argument != "--verify-frames" && argument != comparisonOption).ToArray();
         if (comparisonOption is not null)
@@ -44,6 +62,7 @@ public partial class App : Application
             var benchmark = comparisonOption.StartsWith("--benchmark-", StringComparison.Ordinal);
             var capture = comparisonOption.StartsWith("--benchmark-capture-", StringComparison.Ordinal);
             var verifyComparison = comparisonOption.StartsWith("--verify-comparison=", StringComparison.Ordinal);
+            var verifySelection = comparisonOption.StartsWith("--verify-selection=", StringComparison.Ordinal);
             var prefixLength = comparisonOption.IndexOf('=') + 1;
             if (!long.TryParse(comparisonOption.AsSpan(prefixLength), out var frameNumber) ||
                 frameNumber < 0 || paths.Length < 2 || !File.Exists(paths[0]) || !File.Exists(paths[1]))
@@ -53,7 +72,7 @@ public partial class App : Application
                 return;
             }
             new ComparisonWindow(paths[0], paths[1], frameNumber, showWipe,
-                benchmark, capture, verifyComparison).Show();
+                benchmark, capture, verifyComparison, verifySelection).Show();
             return;
         }
         var path = paths.FirstOrDefault() ?? Path.GetFullPath(

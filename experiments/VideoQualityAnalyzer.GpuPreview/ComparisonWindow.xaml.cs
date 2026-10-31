@@ -18,6 +18,7 @@ public partial class ComparisonWindow : Window
     private readonly bool benchmarkMode;
     private readonly bool captureBenchmark;
     private readonly bool verifyComparison;
+    private readonly bool verifySelection;
     private WriteableBitmap? markerBitmap;
     private readonly byte[] markerPixels = new byte[48 * 48 * 4];
     private readonly string leftPath;
@@ -32,6 +33,8 @@ public partial class ComparisonWindow : Window
     private string? preparedLeftPath;
     private string? preparedRightPath;
     private bool lastPlaybackUsedPreparedReader;
+    private long selectionGeneration;
+    private Task? selectionChangeTask;
     private ComparisonFrame? currentLeft;
     private ComparisonFrame? currentRight;
     private volatile bool playbackPaused;
@@ -43,7 +46,7 @@ public partial class ComparisonWindow : Window
 
     public ComparisonWindow(string leftPath, string rightPath, long frameNumber,
         bool showWipe = false, bool benchmarkMode = false, bool captureBenchmark = false,
-        bool verifyComparison = false)
+        bool verifyComparison = false, bool verifySelection = false)
     {
         InitializeComponent();
         this.leftPath = leftPath;
@@ -51,6 +54,7 @@ public partial class ComparisonWindow : Window
         this.benchmarkMode = benchmarkMode;
         this.captureBenchmark = captureBenchmark;
         this.verifyComparison = verifyComparison;
+        this.verifySelection = verifySelection;
         if (captureBenchmark)
         {
             Left = 0;
@@ -81,6 +85,8 @@ public partial class ComparisonWindow : Window
         ViewSelect.SelectedIndex = showWipe ? 1 : 0;
         UpdateWipeBoundary();
         ResultText.Text = "左右に同じ元フレーム番号を指定して比較します。再生中も表示を切り替えられます。";
+        LeftSelect.SelectionChanged += VideoSelectionChanged;
+        RightSelect.SelectionChanged += VideoSelectionChanged;
         Loaded += (_, _) =>
         {
             if (benchmarkMode)
@@ -90,14 +96,34 @@ public partial class ComparisonWindow : Window
                 PlayPause_Click(this, new RoutedEventArgs());
             }
             else if (verifyComparison) _ = VerifyComparisonAsync(frameNumber);
+            else if (verifySelection) _ = VerifySelectionAsync(frameNumber);
             else _ = LoadComparisonAsync();
         };
     }
 
-    private void Compare_Click(object sender, RoutedEventArgs e)
+    private void VideoSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (!IsLoaded || LeftSelect.SelectedItem is null || RightSelect.SelectedItem is null) return;
+        selectionChangeTask = SwitchSelectedVideosAsync();
+    }
+
+    private async Task SwitchSelectedVideosAsync()
+    {
+        var generation = ++selectionGeneration;
+        var frameNumber = currentLeft?.FrameNumber ??
+            (long.TryParse(FrameNumberBox.Text, out var requested) ? requested : 0);
+        var resume = playbackCancellation is not null && !playbackPaused;
         StopPlayback(keepRequestedFrame: true);
-        _ = LoadComparisonAsync();
+        FrameNumberBox.Text = frameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        currentLeft = null;
+        currentRight = null;
+        playingLeft = playingRight = playingHeatmap = null;
+        LeftImage.Source = RightImage.Source = HeatmapImage.Source = null;
+        WipeLeftImage.Source = WipeRightImage.Source = null;
+        await LoadComparisonAsync();
+        if (generation == selectionGeneration && resume && preparedReader is not null &&
+            currentLeft?.FrameNumber == frameNumber && currentRight?.FrameNumber == frameNumber)
+            PlayPause_Click(this, new RoutedEventArgs());
     }
 
     private void SeekPlay_Click(object sender, RoutedEventArgs e)
@@ -487,6 +513,100 @@ public partial class ComparisonWindow : Window
         finally { Close(); }
     }
 
+    private async Task VerifySelectionAsync(long firstFrame)
+    {
+        var operation = "初期表示";
+        try
+        {
+            await LoadComparisonAsync();
+            if (CheckAlignedPair() != firstFrame) throw new InvalidDataException("初期フレームが異なります。");
+            var original = (VideoChoice)RightSelect.SelectedItem;
+            var originalLeft = (VideoChoice)LeftSelect.SelectedItem;
+            var alternate = RightSelect.Items.Cast<VideoChoice>().First(choice =>
+                !string.Equals(choice.Path, original.Path, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(choice.Path, ((VideoChoice)LeftSelect.SelectedItem).Path,
+                    StringComparison.OrdinalIgnoreCase));
+
+            operation = "停止中の選択変更";
+            RightSelect.SelectedItem = alternate;
+            if (selectionChangeTask is not null) await selectionChangeTask;
+            if (CheckAlignedPair() != firstFrame || preparedRightPath != alternate.Path)
+                throw new InvalidDataException("新しい右動画のフレームが表示されません。");
+            var expected = await comparison.ReadFrameAsync(alternate.Path, firstFrame, CancellationToken.None);
+            if (!currentRight!.Pixels.AsSpan().SequenceEqual(expected.Pixels))
+                throw new InvalidDataException("新しい右動画の画素が一致しません。");
+
+            operation = "左動画の選択変更";
+            var alternateLeft = LeftSelect.Items.Cast<VideoChoice>().First(choice =>
+                !string.Equals(choice.Path, originalLeft.Path, StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(choice.Path, alternate.Path, StringComparison.OrdinalIgnoreCase));
+            LeftSelect.SelectedItem = alternateLeft;
+            if (selectionChangeTask is not null) await selectionChangeTask;
+            if (CheckAlignedPair() != firstFrame || preparedLeftPath != alternateLeft.Path)
+                throw new InvalidDataException("新しい左動画のフレームが表示されません。");
+            var expectedLeft = await comparison.ReadFrameAsync(alternateLeft.Path, firstFrame, CancellationToken.None);
+            if (!currentLeft!.Pixels.AsSpan().SequenceEqual(expectedLeft.Pixels))
+                throw new InvalidDataException("新しい左動画の画素が一致しません。");
+            LeftSelect.SelectedItem = originalLeft;
+            if (selectionChangeTask is not null) await selectionChangeTask;
+
+            operation = "連続選択";
+            RightSelect.SelectedItem = original;
+            RightSelect.SelectedItem = alternate;
+            if (selectionChangeTask is not null) await selectionChangeTask;
+            await Task.Delay(150);
+            if (CheckAlignedPair() != firstFrame || preparedRightPath != alternate.Path)
+                throw new InvalidDataException("古い選択の結果が画面を上書きしました。");
+
+            operation = "再生中の選択変更";
+            ViewSelect.SelectedIndex = 1;
+            PlayPause_Click(this, new RoutedEventArgs());
+            await WaitForFrameAsync(firstFrame + 10);
+            var beforeSwitch = CheckAlignedPair();
+            RightSelect.SelectedItem = original;
+            if (selectionChangeTask is not null) await selectionChangeTask;
+            if (playbackCancellation is null || playbackPaused ||
+                RightSelect.SelectedItem is not VideoChoice selectedRight ||
+                !string.Equals(selectedRight.Path, original.Path, StringComparison.OrdinalIgnoreCase) ||
+                CheckAlignedPair() < beforeSwitch || WipeRightImage.Source is null)
+                throw new InvalidDataException("動画変更後に同じ位置から再生できません。");
+            await WaitForFrameAsync(beforeSwitch + 5);
+
+            operation = "一時停止中の選択変更";
+            PlayPause_Click(this, new RoutedEventArgs());
+            var pausedFrame = CheckAlignedPair();
+            RightSelect.SelectedItem = alternate;
+            if (selectionChangeTask is not null) await selectionChangeTask;
+            await Task.Delay(150);
+            if (playbackCancellation is not null || CheckAlignedPair() != pausedFrame ||
+                preparedRightPath != alternate.Path)
+                throw new InvalidDataException("一時停止中の切り替え後にフレームが変わりました。");
+            ViewSelect.SelectedIndex = 0;
+            if (HeatmapImage.Source is null)
+                throw new InvalidDataException("切り替え後のヒートマップがありません。");
+            WriteVerificationResult("comparison-selection", new
+            {
+                LeftVideo = Path.GetFileName(leftPath),
+                OriginalRight = Path.GetFileName(original.Path),
+                AlternateRight = Path.GetFileName(alternate.Path),
+                InitialFrame = firstFrame, PlaybackSwitchFrame = beforeSwitch,
+                StaticPixelsMatched = true, LeftSelectionPixelsMatched = true,
+                OldResultDiscarded = true, PlaybackResumed = true,
+                PausedSelectionStable = true, WipeAndHeatmapUpdated = true, Result = "合格"
+            });
+        }
+        catch (Exception exception)
+        {
+            WriteVerificationResult("comparison-selection-failed", new
+            {
+                LeftVideo = Path.GetFileName(leftPath), RightVideo = Path.GetFileName(rightPath),
+                FailedOperation = operation, ErrorCode = $"0x{exception.HResult:X8}", Result = "失敗"
+            });
+            Application.Current.Shutdown(1);
+        }
+        finally { Close(); }
+    }
+
     private async Task WaitForFrameAsync(long target)
     {
         for (var attempt = 0; attempt < 400; attempt++)
@@ -624,7 +744,7 @@ public partial class ComparisonWindow : Window
         catch (Exception exception)
         {
             if (!token.IsCancellationRequested)
-                ResultText.Text = $"比較画像を作成できませんでした（0x{exception.HResult:X8}）。";
+                ResultText.Text = $"比較画像を表示できませんでした（0x{exception.HResult:X8}）。";
         }
         finally
         {

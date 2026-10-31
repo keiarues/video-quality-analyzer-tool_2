@@ -13,7 +13,6 @@
             <ComboBox Name="RightSelect" Width="360" DisplayMemberPath="Name" />
             <TextBlock Text="元フレーム番号" VerticalAlignment="Center" Margin="12,0,6,0" />
             <TextBox Name="FrameNumberBox" Width="80" VerticalContentAlignment="Center" />
-            <Button Content="比較画像を作成" Margin="12,0,0,0" Padding="12,4" Click="Compare_Click" />
             <Button Name="PlayPauseButton" Content="再生" Margin="8,0,0,0" Padding="12,4" Click="PlayPause_Click" />
             <Button Content="停止" Margin="6,0,0,0" Padding="12,4" Click="Stop_Click" />
             <TextBlock Text="差分強調" VerticalAlignment="Center" Margin="12,0,6,0" />
