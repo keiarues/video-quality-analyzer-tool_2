@@ -133,7 +133,7 @@ flowchart LR
 
 FFprobeは`ProcessStartInfo.ArgumentList`へ引数を個別に追加し、非表示で起動する。標準出力と標準エラーを非同期に読み、キャンセル時はプロセスを終了する。最初の映像ストリームを選び、平均fps、公称fps、長さ、コーデック、音声有無を取得する。VFRのフレームPTS取得は必要になった動画に限り、画面を止めずに行う。動画長さが長い場合に全フレーム時刻を無制限に保持しない設計を追加検討する。
 
-性能イベントはJSON LinesまたはCSVへ保存する。最低限の列は`run_id, phase, video_id, side, source_fps, resolution, codec, decode_mode, timestamp_monotonic, elapsed_ms, source_pts_ms, presented_frame_id, dropped_frames, cpu_percent, gpu_percent, memory_mb`。提示フレームIDと提示時刻は左右別に記録し、デコード完了やキュー投入とは区別する。計測器自身による負荷を比較するため、詳細記録のON/OFF両方を一度測る。画面のfps表示は直近数秒の窓で計算し、開始準備期間を含めない。動画以外のUIは目安4～10回/秒で値を更新してよく、その更新回数を動画fpsとして表示しない。約30 fpsの合否は30秒区間の期待フレーム数（`30000/1001` fpsなら約899枚）に対する提示数・欠落数と、1秒ごとの提示数で判定する。結果表には同じ動画と設定での現行版・段階A・段階Bを横並びにする。
+性能イベントはJSON LinesまたはCSVへ保存する。最低限の列は`run_id, phase, video_id, side, source_fps, resolution, codec, decode_mode, timestamp_monotonic, elapsed_ms, source_pts_ms, presented_frame_id, dropped_frames, cpu_percent, gpu_percent, memory_mb`。提示フレームIDと提示時刻は左右別に記録し、デコード完了やキュー投入とは区別する。計測器自身による負荷を比較するため、詳細記録のON/OFF両方を一度測る。画面のfps表示は直近数秒の窓で計算し、開始準備期間を含めない。動画以外のUIは目安4～10回/秒で値を更新してよく、その更新回数を動画fpsとして表示しない。約30 fpsの合否は30秒区間の期待フレーム数（`30000/1001` fpsなら900枚）に対する実画面表示の欠落率3%以下で判定し、1秒ごとの提示数は診断用に残す。結果表には同じ動画と設定での現行版・段階A・段階Bを横並びにする。
 
 ## 7. 完成版への拡張順
 

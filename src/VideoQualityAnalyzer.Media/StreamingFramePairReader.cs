@@ -23,6 +23,9 @@ public sealed class StreamingFramePairReader : IAsyncDisposable
     }
 
     public VideoDescriptor Descriptor { get; }
+    public double DecoderCpuSeconds => leftProcess.TotalProcessorTime.TotalSeconds +
+        rightProcess.TotalProcessorTime.TotalSeconds;
+    public long DecoderPeakWorkingSetBytes => leftProcess.PeakWorkingSet64 + rightProcess.PeakWorkingSet64;
 
     public static async Task<StreamingFramePairReader> OpenAsync(string ffmpegPath, string ffprobePath,
         string leftPath, string rightPath, long firstFrameNumber, CancellationToken token)

@@ -13,13 +13,22 @@ public partial class App : Application
         var statistics = e.Args.Contains("--stats") || verifyFrames;
         var comparisonOption = e.Args.FirstOrDefault(argument =>
             argument.StartsWith("--compare-frame=", StringComparison.Ordinal) ||
-            argument.StartsWith("--wipe-frame=", StringComparison.Ordinal));
+            argument.StartsWith("--wipe-frame=", StringComparison.Ordinal) ||
+            argument.StartsWith("--benchmark-wipe=", StringComparison.Ordinal) ||
+            argument.StartsWith("--benchmark-heatmap=", StringComparison.Ordinal) ||
+            argument.StartsWith("--benchmark-capture-wipe=", StringComparison.Ordinal) ||
+            argument.StartsWith("--benchmark-capture-heatmap=", StringComparison.Ordinal) ||
+            argument.StartsWith("--verify-comparison=", StringComparison.Ordinal));
         var paths = e.Args.Where(argument => argument != "--direct" && argument != "--stats" &&
             argument != "--verify-frames" && argument != comparisonOption).ToArray();
         if (comparisonOption is not null)
         {
-            var showWipe = comparisonOption.StartsWith("--wipe-frame=", StringComparison.Ordinal);
-            var prefixLength = showWipe ? "--wipe-frame=".Length : "--compare-frame=".Length;
+            var showWipe = comparisonOption.StartsWith("--wipe-frame=", StringComparison.Ordinal) ||
+                comparisonOption.Contains("wipe=", StringComparison.Ordinal);
+            var benchmark = comparisonOption.StartsWith("--benchmark-", StringComparison.Ordinal);
+            var capture = comparisonOption.StartsWith("--benchmark-capture-", StringComparison.Ordinal);
+            var verifyComparison = comparisonOption.StartsWith("--verify-comparison=", StringComparison.Ordinal);
+            var prefixLength = comparisonOption.IndexOf('=') + 1;
             if (!long.TryParse(comparisonOption.AsSpan(prefixLength), out var frameNumber) ||
                 frameNumber < 0 || paths.Length < 2 || !File.Exists(paths[0]) || !File.Exists(paths[1]))
             {
@@ -27,7 +36,8 @@ public partial class App : Application
                 Shutdown(2);
                 return;
             }
-            new ComparisonWindow(paths[0], paths[1], frameNumber, showWipe).Show();
+            new ComparisonWindow(paths[0], paths[1], frameNumber, showWipe,
+                benchmark, capture, verifyComparison).Show();
             return;
         }
         var path = paths.FirstOrDefault() ?? Path.GetFullPath(
