@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
@@ -10,16 +11,25 @@ namespace VideoQualityAnalyzer.GpuPreview;
 public partial class ComparisonWindow : Window
 {
     private readonly FrameComparisonService comparison;
+    private readonly string ffmpegPath;
+    private readonly string ffprobePath;
     private CancellationTokenSource? loadCancellation;
+    private CancellationTokenSource? playbackCancellation;
     private ComparisonFrame? currentLeft;
     private ComparisonFrame? currentRight;
+    private volatile bool playbackPaused;
+    private volatile bool wipeMode;
+    private volatile int heatmapGain = 16;
+    private WriteableBitmap? playingLeft;
+    private WriteableBitmap? playingRight;
+    private WriteableBitmap? playingHeatmap;
 
     public ComparisonWindow(string leftPath, string rightPath, long frameNumber, bool showWipe = false)
     {
         InitializeComponent();
-        var ffmpegPath = FfmpegRgbReader.FindExecutable() ??
+        ffmpegPath = FfmpegRgbReader.FindExecutable() ??
             throw new FileNotFoundException("FFmpegが見つかりません。");
-        var ffprobePath = FfprobeService.FindExecutable() ??
+        ffprobePath = FfprobeService.FindExecutable() ??
             throw new FileNotFoundException("FFprobeが見つかりません。");
         comparison = new FrameComparisonService(ffmpegPath, ffprobePath);
         var workspace = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
@@ -40,15 +50,166 @@ public partial class ComparisonWindow : Window
         GainSelect.SelectedIndex = 1;
         ViewSelect.SelectedIndex = showWipe ? 1 : 0;
         UpdateWipeBoundary();
-        ResultText.Text = "再生は停止したままです。左右に同じ元フレーム番号を指定して比較します。";
+        ResultText.Text = "左右に同じ元フレーム番号を指定して比較します。再生中も表示を切り替えられます。";
         Loaded += (_, _) => _ = LoadComparisonAsync();
     }
 
-    private void Compare_Click(object sender, RoutedEventArgs e) => _ = LoadComparisonAsync();
+    private void Compare_Click(object sender, RoutedEventArgs e)
+    {
+        StopPlayback(keepRequestedFrame: true);
+        _ = LoadComparisonAsync();
+    }
+
+    private void PlayPause_Click(object sender, RoutedEventArgs e)
+    {
+        if (playbackCancellation is not null)
+        {
+            playbackPaused = !playbackPaused;
+            PlayPauseButton.Content = playbackPaused ? "再生" : "一時停止";
+            return;
+        }
+        if (LeftSelect.SelectedItem is not VideoChoice left ||
+            RightSelect.SelectedItem is not VideoChoice right ||
+            !long.TryParse(FrameNumberBox.Text, out var frameNumber) || frameNumber < 0)
+        {
+            ResultText.Text = "0以上の元フレーム番号と左右の動画を指定してください。";
+            return;
+        }
+        loadCancellation?.Cancel();
+        playbackPaused = false;
+        PlayPauseButton.Content = "一時停止";
+        var cancellation = new CancellationTokenSource();
+        playbackCancellation = cancellation;
+        _ = PlayAsync(left.Path, right.Path, frameNumber, cancellation);
+    }
+
+    private void Stop_Click(object sender, RoutedEventArgs e) => StopPlayback();
+
+    private void StopPlayback(bool keepRequestedFrame = false)
+    {
+        var wasPlaying = playbackCancellation is not null;
+        playbackCancellation?.Cancel();
+        playbackCancellation = null;
+        playbackPaused = false;
+        PlayPauseButton.Content = "再生";
+        if (!keepRequestedFrame && currentLeft is not null)
+            FrameNumberBox.Text = currentLeft.FrameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        if (wasPlaying && currentLeft is not null)
+            ResultText.Text = $"比較再生を停止しました。表示中の元フレーム #{currentLeft.FrameNumber}。";
+    }
+
+    private async Task PlayAsync(string leftPath, string rightPath, long firstFrameNumber,
+        CancellationTokenSource cancellation)
+    {
+        var token = cancellation.Token;
+        ResultText.Text = "連続復号を準備中…";
+        try
+        {
+            await Task.Run(async () =>
+            {
+            await using var reader = await StreamingFramePairReader.OpenAsync(ffmpegPath, ffprobePath,
+                leftPath, rightPath, firstFrameNumber, token);
+            var frameRate = reader.Descriptor.AverageFrameRate;
+            var clock = new Stopwatch();
+            var displayed = 0;
+            var skipped = 0;
+            while (!token.IsCancellationRequested)
+            {
+                if (playbackPaused)
+                {
+                    clock.Stop();
+                    await Task.Delay(20, token);
+                    continue;
+                }
+                var pair = await reader.ReadNextAsync(token);
+                if (pair is null) break;
+                while (playbackPaused)
+                {
+                    clock.Stop();
+                    await Task.Delay(20, token);
+                }
+                clock.Start();
+                var (left, right) = pair.Value;
+                var due = TimeSpan.FromSeconds((left.FrameNumber - firstFrameNumber) / frameRate);
+                var wait = due - clock.Elapsed;
+                if (wait > TimeSpan.Zero) await Task.Delay(wait, token);
+                if (clock.Elapsed - due > TimeSpan.FromMilliseconds(100))
+                {
+                    skipped++;
+                    continue;
+                }
+                var difference = wipeMode ? null : FrameComparisonService.CreateHeatmap(left, right, heatmapGain);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    if (token.IsCancellationRequested) return;
+                    currentLeft = left;
+                    currentRight = right;
+                    UpdatePlayingBitmaps(left, right, difference);
+                    displayed++;
+                    if (displayed % 6 == 0)
+                    {
+                        FrameNumberBox.Text = left.FrameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                        ResultText.Text = $"再生比較 #{left.FrameNumber} / 描画要求 {displayed / Math.Max(0.001, clock.Elapsed.TotalSeconds):F1} fps" +
+                            $" / 遅延破棄 {skipped}枚" +
+                            (difference is null ? "" : $" / 平均RGB差 {difference.MeanAbsoluteRgbDifference:F2}") +
+                            "。実画面提示fpsは未測定。";
+                    }
+                });
+            }
+            if (!token.IsCancellationRequested)
+                await Dispatcher.InvokeAsync(() => ResultText.Text =
+                    $"再生比較終了 / 描画要求 {displayed}枚 / 遅延破棄 {skipped}枚。実画面提示fpsは未測定。");
+            }, token);
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception exception)
+        {
+            if (!token.IsCancellationRequested)
+                ResultText.Text = $"再生比較に失敗しました（0x{exception.HResult:X8} {exception.Message}）。";
+        }
+        finally
+        {
+            if (ReferenceEquals(playbackCancellation, cancellation))
+            {
+                playbackCancellation = null;
+                PlayPauseButton.Content = "再生";
+            }
+            cancellation.Dispose();
+        }
+    }
+
+    private int SelectedGain() => GainSelect.SelectedItem is ComboBoxItem { Tag: string text } &&
+        int.TryParse(text, out var value) ? value : 16;
+
+    private void UpdatePlayingBitmaps(ComparisonFrame left, ComparisonFrame right, FrameDifferenceResult? difference)
+    {
+        if (playingLeft is null || playingLeft.PixelWidth != left.Width || playingLeft.PixelHeight != left.Height)
+        {
+            playingLeft = CreateWritable(left.Width, left.Height);
+            playingRight = CreateWritable(right.Width, right.Height);
+            playingHeatmap = CreateWritable(left.Width, left.Height);
+            LeftImage.Source = WipeLeftImage.Source = playingLeft;
+            RightImage.Source = WipeRightImage.Source = playingRight;
+            HeatmapImage.Source = playingHeatmap;
+        }
+        var bounds = new Int32Rect(0, 0, left.Width, left.Height);
+        playingLeft.WritePixels(bounds, left.Pixels, left.Width * 4, 0);
+        playingRight!.WritePixels(bounds, right.Pixels, right.Width * 4, 0);
+        if (difference is not null)
+        {
+            HeatmapImage.Source = playingHeatmap;
+            playingHeatmap!.WritePixels(bounds, difference.Heatmap, difference.Width * 4, 0);
+        }
+        UpdateWipeBoundary();
+    }
+
+    private static WriteableBitmap CreateWritable(int width, int height) =>
+        new(width, height, 96, 96, PixelFormats.Bgra32, null);
 
     private void GainSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (currentLeft is not null && currentRight is not null)
+        heatmapGain = SelectedGain();
+        if (playbackCancellation is null && currentLeft is not null && currentRight is not null)
             RefreshHeatmap();
     }
 
@@ -56,9 +217,11 @@ public partial class ComparisonWindow : Window
     {
         if (ThreeViewGrid is null || WipeViewGrid is null) return;
         var wipe = ViewSelect.SelectedIndex == 1;
+        wipeMode = wipe;
         ThreeViewGrid.Visibility = wipe ? Visibility.Collapsed : Visibility.Visible;
         WipeViewGrid.Visibility = wipe ? Visibility.Visible : Visibility.Collapsed;
         if (wipe) UpdateWipeBoundary();
+        else if (currentLeft is not null && currentRight is not null) RefreshHeatmap();
     }
 
     private void WipeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) =>
@@ -108,6 +271,7 @@ public partial class ComparisonWindow : Window
             if (token.IsCancellationRequested) return;
             currentLeft = leftFrame;
             currentRight = rightFrame;
+            playingLeft = playingRight = playingHeatmap = null;
             var leftBitmap = CreateBitmap(leftFrame.Width, leftFrame.Height, leftFrame.Pixels);
             var rightBitmap = CreateBitmap(rightFrame.Width, rightFrame.Height, rightFrame.Pixels);
             LeftImage.Source = WipeLeftImage.Source = leftBitmap;
@@ -126,8 +290,7 @@ public partial class ComparisonWindow : Window
     private void RefreshHeatmap()
     {
         if (currentLeft is null || currentRight is null) return;
-        var gain = GainSelect.SelectedItem is ComboBoxItem { Tag: string text } && int.TryParse(text, out var value)
-            ? value : 16;
+        var gain = SelectedGain();
         var difference = FrameComparisonService.CreateHeatmap(currentLeft, currentRight, gain);
         HeatmapImage.Source = CreateBitmap(difference.Width, difference.Height, difference.Heatmap);
         ResultText.Text = $"元フレーム #{currentLeft.FrameNumber} / 平均RGB差 {difference.MeanAbsoluteRgbDifference:F2}（0～255）" +
@@ -144,6 +307,7 @@ public partial class ComparisonWindow : Window
 
     private void Window_Closed(object? sender, EventArgs e)
     {
+        StopPlayback();
         loadCancellation?.Cancel();
         loadCancellation?.Dispose();
     }

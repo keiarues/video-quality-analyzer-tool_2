@@ -72,6 +72,52 @@ Check(!lines.Any(line => line.Contains(reference.Path, StringComparison.OrdinalI
 
 Console.WriteLine("素材確認・選択規則・診断ログ: 合格");
 
+if (args.Contains("--stream-test"))
+{
+    var target = videos.Single(video => video.Name == "攻殻機動隊_icq50.mp4");
+    var targetFrame = await comparison.ReadFrameAsync(target.Path, 150, CancellationToken.None);
+    await using var stream = await StreamingFramePairReader.OpenAsync(ffmpegPath, probePath,
+        reference.Path, target.Path, 150, CancellationToken.None);
+    var timer = Stopwatch.StartNew();
+    for (var index = 0; index < 30; index++)
+    {
+        var streamed = await stream.ReadNextAsync(CancellationToken.None) ??
+            throw new InvalidOperationException("連続比較の30フレームを取得できませんでした。");
+        Check(streamed.Left.FrameNumber == 150 + index &&
+            streamed.Right.FrameNumber == 150 + index, "連続比較の左右フレーム番号");
+        if (index == 0)
+        {
+            Check(streamed.Left.Pixels.AsSpan().SequenceEqual(referenceFrame.Pixels),
+                "連続復号の左先頭と静止比較が一致");
+            Check(streamed.Right.Pixels.AsSpan().SequenceEqual(targetFrame.Pixels),
+                "連続復号の右先頭と静止比較が一致");
+        }
+        Check(FrameComparisonService.CreateHeatmap(streamed.Left, streamed.Right)
+            .MeanAbsoluteRgbDifference > 0, "再生中の比較差分");
+    }
+    Console.WriteLine($"連続比較: 30組のフレーム対応・差分を確認、処理 {timer.Elapsed.TotalSeconds:F2}秒");
+    var av1 = videos.Where(video => video.Codec == "av1").ToArray();
+    var hevc = videos.Where(video => video.Codec == "hevc").ToArray();
+    foreach (var (leftVideo, rightVideo) in new[]
+        {
+            (reference, av1[0]), (av1[0], hevc[0]), (av1[0], av1[1]), (hevc[0], hevc[1])
+        })
+    {
+        await using var other = await StreamingFramePairReader.OpenAsync(ffmpegPath, probePath,
+            leftVideo.Path, rightVideo.Path, 150, CancellationToken.None);
+        for (var index = 0; index < 5; index++)
+        {
+            var streamed = await other.ReadNextAsync(CancellationToken.None) ??
+                throw new InvalidOperationException("連続比較フレームが不足しています。");
+            Check(streamed.Left.FrameNumber == 150 + index &&
+                streamed.Right.FrameNumber == 150 + index, "別コーデックの連続フレーム対応");
+            Check(FrameComparisonService.CreateHeatmap(streamed.Left, streamed.Right)
+                .MeanAbsoluteRgbDifference > 0, "別コーデックの連続差分");
+        }
+        Console.WriteLine($"連続比較: {leftVideo.Codec}＋{rightVideo.Codec} の5組を確認");
+    }
+}
+
 if (args.Contains("--benchmark"))
 {
     var target = videos.Single(video => video.Name == "攻殻機動隊_icq50.mp4");
