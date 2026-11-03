@@ -21,6 +21,20 @@ public partial class MainWindow
                 throw new InvalidOperationException("並べ替えで選択が失われました。");
             SortSelect.SelectedIndex = 0;
             if (!videos.SequenceEqual(original)) throw new InvalidOperationException("登録順に戻りません。");
+            if (VideoList.Columns.Count != 9 || original.Any(entry => entry.Descriptor.AverageBitrate is not > 0))
+                throw new InvalidOperationException("動画情報の列または平均ビットレートが不足しています。");
+            qualityResults[(original[1].Descriptor.Id, QualityMetric.Ssim)] = new QualityResult(QualityMetric.Ssim, 2, [new QualityFrame(0, 2)]);
+            qualityResults[(original[2].Descriptor.Id, QualityMetric.Ssim)] = new QualityResult(QualityMetric.Ssim, 10, [new QualityFrame(0, 10)]);
+            RefreshQualityValues();
+            var scoreColumn = VideoList.Columns.Single(column => column.SortMemberPath == "Ssim");
+            VideoList_Sorting(this, new System.Windows.Controls.DataGridSortingEventArgs(scoreColumn));
+            if (videos[0] != original[1] || videos[1] != original[2])
+                throw new InvalidOperationException("評価列の昇順が数値順になりません。");
+            VideoList_Sorting(this, new System.Windows.Controls.DataGridSortingEventArgs(scoreColumn));
+            if (videos[0] != original[2] || videos[1] != original[1] ||
+                !VideoList.SelectedItems.Contains(original[1]) || !VideoList.SelectedItems.Contains(original[2]))
+                throw new InvalidOperationException("評価列の降順または選択維持が不正です。");
+            SortSelect.SelectedIndex = 0;
             var result = new QualityResult(QualityMetric.Ssim, 1, [new QualityFrame(0, 1)]);
             qualityResults[(original[2].Descriptor.Id, QualityMetric.Ssim)] = result;
             VideoList.SelectedItems.Clear();
@@ -39,7 +53,7 @@ public partial class MainWindow
             Remove_Click(this, new RoutedEventArgs());
             if (qualityResults.Count != 0 || videos.Count(entry => entry.IsReference) != 1)
                 throw new InvalidOperationException("元動画削除時の結果破棄が不正です。");
-            Console.WriteLine("主画面: 並べ替え・選択維持・元動画変更・削除時の評価結果破棄が合格");
+            Console.WriteLine("主画面: 動画情報列・評価列の昇降順・選択維持・元動画変更・削除時の結果破棄が合格");
             Application.Current.Shutdown(0);
         }
         catch (Exception exception)

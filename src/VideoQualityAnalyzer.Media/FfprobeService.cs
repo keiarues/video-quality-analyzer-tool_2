@@ -41,7 +41,7 @@ public sealed class FfprobeService
     public async Task<VideoDescriptor> ProbeAsync(string path, CancellationToken cancellationToken)
     {
         var output = await RunAsync(["-v", "error", "-show_entries",
-            "format=duration:stream=codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,duration,nb_frames,sample_aspect_ratio",
+            "format=duration,bit_rate:stream=codec_type,codec_name,width,height,avg_frame_rate,r_frame_rate,duration,nb_frames,sample_aspect_ratio,bit_rate",
             "-of", "json", "-i", path], cancellationToken);
         using var document = JsonDocument.Parse(output);
         var root = document.RootElement;
@@ -54,6 +54,10 @@ public sealed class FfprobeService
         if (!double.TryParse(durationText, NumberStyles.Float, CultureInfo.InvariantCulture, out var durationSeconds))
             durationSeconds = 0;
 
+        var bitrateText = GetString(video, "bit_rate") ?? GetString(root.GetProperty("format"), "bit_rate");
+        long? bitrate = long.TryParse(bitrateText, out var parsedBitrate) && parsedBitrate > 0 ? parsedBitrate : null;
+        if (bitrate is null && durationSeconds > 0) bitrate = (long)(new FileInfo(path).Length * 8d / durationSeconds);
+
         return new VideoDescriptor(
             Guid.NewGuid().ToString("N"),
             path,
@@ -65,7 +69,7 @@ public sealed class FfprobeService
             TimeSpan.FromSeconds(Math.Max(0, durationSeconds)),
             streams.Any(stream => GetString(stream, "codec_type") == "audio"),
             long.TryParse(GetString(video, "nb_frames"), out var totalFrames) && totalFrames > 0 ? totalFrames : null,
-            ParseAspectRatio(GetString(video, "sample_aspect_ratio")));
+            ParseAspectRatio(GetString(video, "sample_aspect_ratio")), bitrate);
     }
 
     public async Task<IReadOnlyList<TimeSpan>> ReadFrameTimesAsync(string path, TimeSpan position, CancellationToken cancellationToken)

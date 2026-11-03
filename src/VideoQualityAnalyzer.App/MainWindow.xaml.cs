@@ -23,6 +23,9 @@ public partial class MainWindow : Window
     private readonly SlotState left;
     private readonly SlotState right;
     private CancellationTokenSource frameTimesCancellation = new();
+    private VideoSortOrder activeSort;
+    private bool sortDescending;
+    private bool updatingSort;
     private string? referenceId;
     private readonly Dictionary<(string VideoId, QualityMetric Metric), QualityResult> qualityResults = [];
     private string? previousRightId;
@@ -138,7 +141,7 @@ public partial class MainWindow : Window
         }
 
         UpdateSelection();
-        if (SortSelect.SelectedIndex > 0) RefreshVideoOrder();
+        if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
         StatusText.Text = $"{videos.Count}本を登録しました。";
     }
 
@@ -150,6 +153,7 @@ public partial class MainWindow : Window
         referenceId = entry.Descriptor.Id;
         foreach (var item in videos)
             item.IsReference = item.Descriptor.Id == referenceId;
+        RefreshQualityValues();
         suppressSelection = true;
         VideoList.Items.Refresh();
         suppressSelection = false;
@@ -174,6 +178,7 @@ public partial class MainWindow : Window
             qualityResults.Remove(key);
         foreach (var item in videos)
             item.IsReference = item.Descriptor.Id == referenceId;
+        RefreshQualityValues();
         VideoList.Items.Refresh();
         suppressSelection = false;
         UpdateSelection();
@@ -365,13 +370,42 @@ public partial class MainWindow : Window
 
     private void SortSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (initialized) RefreshVideoOrder();
+        if (!initialized || updatingSort || SortSelect.SelectedIndex < 0) return;
+        activeSort = (VideoSortOrder)SortSelect.SelectedIndex;
+        sortDescending = false;
+        foreach (var column in VideoList.Columns) column.SortDirection = null;
+        RefreshVideoOrder();
+    }
+
+    private void VideoList_Sorting(object sender, DataGridSortingEventArgs e)
+    {
+        e.Handled = true;
+        if (!Enum.TryParse<VideoSortOrder>(e.Column.SortMemberPath, out var order)) return;
+        sortDescending = e.Column.SortDirection == System.ComponentModel.ListSortDirection.Ascending;
+        activeSort = order;
+        foreach (var column in VideoList.Columns) column.SortDirection = null;
+        e.Column.SortDirection = sortDescending ? System.ComponentModel.ListSortDirection.Descending
+            : System.ComponentModel.ListSortDirection.Ascending;
+        updatingSort = true;
+        SortSelect.SelectedIndex = order is VideoSortOrder.Name or VideoSortOrder.Group ? (int)order : -1;
+        updatingSort = false;
+        RefreshVideoOrder();
+    }
+
+    private void RefreshQualityValues()
+    {
+        foreach (var entry in videos)
+        {
+            entry.VmafAverage = qualityResults.TryGetValue((entry.Descriptor.Id, QualityMetric.Vmaf), out var vmaf) ? vmaf.Average : null;
+            entry.SsimAverage = qualityResults.TryGetValue((entry.Descriptor.Id, QualityMetric.Ssim), out var ssim) ? ssim.Average : null;
+            entry.PsnrAverage = qualityResults.TryGetValue((entry.Descriptor.Id, QualityMetric.Psnr), out var psnr) ? psnr.Average : null;
+        }
     }
 
     private void RefreshVideoOrder()
     {
         var selected = VideoList.SelectedItems.Cast<VideoEntry>().ToArray();
-        var ordered = VideoLibrary.Sort(videos, (VideoSortOrder)Math.Max(0, SortSelect.SelectedIndex));
+        var ordered = VideoLibrary.Sort(videos, activeSort, sortDescending);
         suppressSelection = true;
         for (var index = 0; index < ordered.Length; index++) videos.Move(videos.IndexOf(ordered[index]), index);
         VideoList.Items.Refresh();
@@ -392,13 +426,16 @@ public partial class MainWindow : Window
             return;
         }
         Pause_Click(sender, e);
-        new EvaluationWindow(reference, candidates, qualityResults, seek: ApplySeek,
+        var evaluationWindow = new EvaluationWindow(reference, candidates, qualityResults, seek: ApplySeek,
             select: id =>
             {
                 var entry = videos.FirstOrDefault(item => item.Descriptor.Id == id);
                 if (entry is not null) VideoList.SelectedItem = entry;
             }, allVideos: videos.Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray(),
-            groups: videos.ToDictionary(entry => entry.Descriptor.Id, entry => entry.Group)) { Owner = this }.ShowDialog();
+            groups: videos.ToDictionary(entry => entry.Descriptor.Id, entry => entry.Group)) { Owner = this };
+        evaluationWindow.ShowDialog();
+        RefreshQualityValues();
+        RefreshVideoOrder();
     }
 
     private void OpenComparison_Click(object sender, RoutedEventArgs e)
