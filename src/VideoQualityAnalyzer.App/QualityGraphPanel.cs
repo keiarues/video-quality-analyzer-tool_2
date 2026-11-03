@@ -12,7 +12,7 @@ public sealed class QualityGraphPanel : UserControl
     private readonly Canvas timeline = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
     private readonly Canvas averages = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
     private readonly TabControl metric = new();
-    private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8) };
+    private readonly TextBlock status = new() { FontSize = UiTheme.Small, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8) };
     private double maximumTime;
     private readonly Brush[] colors = [Brushes.RoyalBlue, Brushes.OrangeRed, Brushes.SeaGreen, Brushes.DarkViolet, Brushes.DarkGoldenrod];
 
@@ -21,8 +21,9 @@ public sealed class QualityGraphPanel : UserControl
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
         VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null)
     {
+        Style = (Style)Application.Current.FindResource(typeof(UserControl));
         Background = Brushes.White;
-        Foreground = Brushes.Black;
+        Foreground = UiTheme.OnLight;
         var panel = new DockPanel { Margin = new Thickness(4) };
         Content = panel;
         foreach (var value in Enum.GetValues<QualityMetric>())
@@ -217,7 +218,7 @@ public sealed class QualityGraphPanel : UserControl
         canvas.Children.Add(new Polyline { Stroke = Brushes.DimGray, StrokeThickness = 1,
             IsHitTestVisible = false, Tag = "軸", Points = new PointCollection
                 { new(area.Left, area.Top), new(area.Left, area.Bottom), new(area.Right, area.Bottom) } });
-        var caption = new TextBlock { Text = unit, Foreground = Brushes.Black, IsHitTestVisible = false };
+        var caption = new TextBlock { Text = unit, Foreground = UiTheme.OnLight, IsHitTestVisible = false };
         caption.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(caption, area.Left + (area.Width - caption.DesiredSize.Width) / 2);
         Canvas.SetTop(caption, area.Bottom + 28);
@@ -226,7 +227,7 @@ public sealed class QualityGraphPanel : UserControl
 
     private static void AddTick(Canvas canvas, string text, double x, double y, bool horizontal)
     {
-        var label = new TextBlock { Text = text, Foreground = Brushes.Black, FontSize = 11,
+        var label = new TextBlock { Text = text, Foreground = UiTheme.OnLight, FontSize = UiTheme.Small,
             Tag = "目盛り", IsHitTestVisible = false };
         label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(label, horizontal ? x - label.DesiredSize.Width / 2 : x - label.DesiredSize.Width);

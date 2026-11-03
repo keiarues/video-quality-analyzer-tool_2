@@ -16,6 +16,7 @@
 - 段階 B（Media Foundation と GPU 描画）は、段階 A でAV1の再生不能と実提示fpsの測定不能を確認したため着手済み。通常アプリの映像プレビューは全形式をFFmpegでRGB変換しWPF画像へコピーする暫定経路に統一した。GPU提示や性能合格と混同しない。
 - 設計書は当初、実装先を「別の新規プロジェクト」としていたが、ユーザーがこのフォルダー内への段階A実装を明示的に指定した。以後は`VideoQualityAnalyzer.Wpf.sln`を段階Aの実装先とする。
 - 現行 Python 版のコード、設定、成果物は変更しない。比較測定のための変更が必要なら、別の作業コピーを使う。
+- フォント・文字色は `src/VideoQualityAnalyzer.App/Styles/UiTheme.xaml` のプリセットを利用し、用途は同フォルダーの `README.md` に従う。派生Window/UserControlにも基底用Styleを明示適用する。
 - UI の表示文言、作業文書、必要なコードコメントは日本語にする。コード上の型名・公開メンバーは `PascalCase`、局所変数は `camelCase` とする。
 
 ## 実装と検証の重要事項

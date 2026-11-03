@@ -1,0 +1,12 @@
+using System.Windows;
+using System.Windows.Media;
+
+namespace VideoQualityAnalyzer.App;
+
+internal static class UiTheme
+{
+    public static double Small => (double)Application.Current.FindResource("UiFontSmall");
+    public static Brush OnLight => (Brush)Application.Current.FindResource("UiOnLightBrush");
+    public static Brush Emphasis => (Brush)Application.Current.FindResource("UiEmphasisBrush");
+    public static Brush Warning => (Brush)Application.Current.FindResource("UiWarningBrush");
+}

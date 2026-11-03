@@ -32,6 +32,7 @@ public sealed class EvaluationWindow : Window
         this.reference = reference;
         this.candidates = candidates;
         this.results = results;
+        Style = (Style)Application.Current.FindResource(typeof(Window));
         Title = "品質評価";
         Width = 850;
         Height = 520;

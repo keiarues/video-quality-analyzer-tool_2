@@ -40,6 +40,15 @@ public partial class MainWindow
                 !Equals(EvaluationStartButton.Content, "評価を開始"))
                 throw new InvalidOperationException("評価中止後の結果またはボタン状態が不正です。");
             UpdateLayout();
+            var checks = new[] { VmafCheck, SsimCheck, PsnrCheck };
+            if (checks[0].TranslatePoint(new Point(), this).Y >= checks[1].TranslatePoint(new Point(), this).Y ||
+                checks[1].TranslatePoint(new Point(), this).Y >= checks[2].TranslatePoint(new Point(), this).Y ||
+                checks.Any(check => Math.Abs(check.TranslatePoint(new Point(), this).X - checks[0].TranslatePoint(new Point(), this).X) > 1))
+                throw new InvalidOperationException("指標のチェックが縦に並んでいません。");
+            if (FontFamily.Source != "Yu Gothic UI" || FontSize != (double)FindResource("UiFontMedium") ||
+                checks.Any(check => check.FontFamily.Source != FontFamily.Source || check.FontSize != FontSize) ||
+                (double)FindResource("UiFontSmall") >= FontSize || (double)FindResource("UiFontLarge") <= FontSize)
+                throw new InvalidOperationException("共通フォントのプリセットが適用されていません。");
             if (EvaluationControls.TranslatePoint(new Point(0, 0), this).Y <
                 VideoList.TranslatePoint(new Point(0, VideoList.ActualHeight), this).Y)
                 throw new InvalidOperationException("評価操作がファイル一覧の下にありません。");

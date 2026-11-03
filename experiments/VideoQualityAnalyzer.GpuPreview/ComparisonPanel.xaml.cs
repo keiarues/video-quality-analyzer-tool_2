@@ -89,7 +89,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
         FrameNumberBox.Text = frameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
         GainSelect.SelectedIndex = 1;
         BlurSelect.SelectedIndex = 0;
-        ViewSelect.SelectedIndex = showWipe ? 1 : (showBlur ? 0 : 2);
+        ViewSelect.SelectedIndex = showWipe ? 1 : (showBlur ? 2 : 0);
         UpdateWipeBoundary();
         ResultText.Text = "左右に同じ元フレーム番号を指定して比較します。再生中も表示を切り替えられます。";
         LeftSelect.SelectionChanged += VideoSelectionChanged;
@@ -567,14 +567,15 @@ public partial class ComparisonPanel : UserControl, IDisposable
                     WipeBoundary.Visibility != Visibility.Visible)
                     throw new InvalidOperationException("ワイプ境界と切り替え位置が一致しません。");
             }
-            ViewSelect.SelectedIndex = 2;
+            ViewSelect.SelectedIndex = 0;
             UpdateLayout();
-            if (ViewSelect.Items.Count != 3 || ViewSelect.SelectedItem != TwoScreenTab || HeatmapOptions.IsVisible)
+            if (ViewSelect.Items.Count != 3 || ViewSelect.Items[0] != TwoScreenTab || ViewSelect.Items[1] != WipeTab ||
+                ViewSelect.Items[2] != HeatmapTab || ViewSelect.SelectedItem != TwoScreenTab || HeatmapOptions.IsVisible)
                 throw new InvalidOperationException("2画面タブに専用外のオプションが表示されています。");
             if (HeatmapPanel.Visibility != Visibility.Collapsed || HeatmapColumn.Width.Value != 0)
                 throw new InvalidOperationException("2画面表示に切り替わりません。");
             CheckAlignedPair();
-            ViewSelect.SelectedIndex = 0;
+            ViewSelect.SelectedIndex = 2;
             UpdateLayout();
             if (!HeatmapOptions.IsVisible || !HeatmapOptions.IsAncestorOf(GainSelect) ||
                 HeatmapTab.Content is not DockPanel optionsPanel || !optionsPanel.Children.Contains(HeatmapOptions))
@@ -721,7 +722,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
             if (playbackCancellation is not null || CheckAlignedPair() != pausedFrame ||
                 preparedRightPath != alternate.Path)
                 throw new InvalidDataException("一時停止中の切り替え後にフレームが変わりました。");
-            ViewSelect.SelectedIndex = 0;
+            ViewSelect.SelectedIndex = 2;
             if (HeatmapImage.Source is null)
                 throw new InvalidDataException("切り替え後のヒートマップがありません。");
             WriteVerificationResult("comparison-selection", new
@@ -810,7 +811,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
             HeatmapContent is null || TwoScreenContent is null) return;
         var wipe = ViewSelect.SelectedIndex == 1;
         wipeMode = wipe;
-        twoScreenMode = ViewSelect.SelectedIndex == 2;
+        twoScreenMode = ViewSelect.SelectedIndex == 0;
         if (twoScreenMode && !ReferenceEquals(TwoScreenContent.Content, ThreeViewGrid))
         {
             HeatmapContent.Content = null;

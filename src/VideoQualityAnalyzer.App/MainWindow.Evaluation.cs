@@ -72,9 +72,10 @@ public partial class MainWindow
                 catch (OperationCanceledException) { throw; }
                 catch (Exception exception) { failures.Add($"{candidate.Name} / {metric}: {exception.Message}"); }
             }
+            EvaluationStatus.Foreground = failures.Count == 0 ? UiTheme.Emphasis : UiTheme.Warning;
             EvaluationStatus.Text = failures.Count == 0 ? "評価が完了しました。" : $"評価を終了しました。失敗{failures.Count}件。{failures[^1]}";
         }
-        catch (OperationCanceledException) { EvaluationStatus.Text = "評価を中止しました。完了済みの結果は保持しています。"; }
+        catch (OperationCanceledException) { EvaluationStatus.Foreground = UiTheme.Warning; EvaluationStatus.Text = "評価を中止しました。完了済みの結果は保持しています。"; }
         finally
         {
             evaluationCancellation = null;
@@ -87,6 +88,7 @@ public partial class MainWindow
 
     private void SetEvaluationState(bool running)
     {
+        if (running) EvaluationStatus.Foreground = UiTheme.Emphasis;
         EvaluationStartButton.Content = running ? "評価を中止" : "評価を開始";
         EvaluationStartButton.IsEnabled = true;
         VmafCheck.IsEnabled = SsimCheck.IsEnabled = PsnrCheck.IsEnabled = !running;

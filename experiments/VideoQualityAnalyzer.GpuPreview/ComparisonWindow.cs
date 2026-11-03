@@ -10,6 +10,7 @@ public sealed class ComparisonWindow : Window
         bool verifyComparison = false, bool verifySelection = false,
         IEnumerable<string>? videoPaths = null, bool showBlur = true)
     {
+        Style = (Style)Application.Current.FindResource(typeof(Window));
         Title = "フレーム比較";
         Width = 1500;
         Height = 700;

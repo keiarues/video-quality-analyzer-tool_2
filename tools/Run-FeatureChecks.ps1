@@ -1,15 +1,18 @@
-param([switch]$NoBuild)
+param([switch]$NoBuild, [ValidateSet("Release", "ThemeVerification")][string]$OutputFolder = "Release")
 
 $ErrorActionPreference = 'Stop'
 $workspace = Split-Path $PSScriptRoot -Parent
 $env:DOTNET_CLI_HOME = Join-Path $workspace '.dotnet-home'
 $env:NUGET_PACKAGES = Join-Path $workspace '.nuget-packages'
 $dotnet = Join-Path $workspace 'tools/dotnet/dotnet.exe'
-$app = Join-Path $workspace 'src/VideoQualityAnalyzer.App/bin/Release/net10.0-windows/VideoQualityAnalyzer.StageA.dll'
-$smoke = Join-Path $workspace 'tests/VideoQualityAnalyzer.Smoke/bin/Release/net10.0/VideoQualityAnalyzer.Smoke.dll'
+$app = Join-Path $workspace "src/VideoQualityAnalyzer.App/bin/$OutputFolder/net10.0-windows/VideoQualityAnalyzer.StageA.dll"
+$smokeTarget = if ($OutputFolder -eq "Release") { "net10.0" } else { "net10.0-windows" }
+$smoke = Join-Path $workspace "tests/VideoQualityAnalyzer.Smoke/bin/$OutputFolder/$smokeTarget/VideoQualityAnalyzer.Smoke.dll"
 
 if (-not $NoBuild) {
-    & $dotnet build (Join-Path $workspace 'VideoQualityAnalyzer.Wpf.sln') -c Release --no-restore -m:1 /nodeReuse:false
+    [string[]]$outputArguments = @()
+    if ($OutputFolder -ne "Release") { $outputArguments = @("-p:OutputPath=bin/$OutputFolder/net10.0-windows/") }
+    & $dotnet build (Join-Path $workspace 'VideoQualityAnalyzer.Wpf.sln') -c Release --no-restore -m:1 /nodeReuse:false @outputArguments
     if ($LASTEXITCODE -ne 0) { throw 'ビルドに失敗しました。' }
 }
 & (Join-Path $workspace 'tests/Run-Tests.ps1') -NoRestore
@@ -33,6 +36,6 @@ if ($LASTEXITCODE -ne 0) { throw 'シークバーの試験に失敗しました�
 if ($LASTEXITCODE -ne 0) { throw '主画面グラフの試験に失敗しました。' }
 & $dotnet $app --verify-main-comparison @videos
 if ($LASTEXITCODE -ne 0) { throw '主画面に統合した比較機能の試験に失敗しました。' }
-& (Join-Path $workspace 'tools/Run-ComparisonOperations.ps1') -MainApp
+& (Join-Path $workspace 'tools/Run-ComparisonOperations.ps1') -MainApp -OutputFolder $OutputFolder
 if ($LASTEXITCODE -ne 0) { throw '比較操作試験に失敗しました。' }
 Write-Output '完成版への組み込み機能の自動確認がすべて完了しました。'

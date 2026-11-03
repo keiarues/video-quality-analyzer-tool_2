@@ -8,6 +8,7 @@ public sealed class GroupWindow : Window
 {
     public GroupWindow(VideoEntry[] selected, bool verify = false)
     {
+        Style = (Style)Application.Current.FindResource(typeof(Window));
         Title = "グループ設定";
         Width = 420;
         Height = 190;

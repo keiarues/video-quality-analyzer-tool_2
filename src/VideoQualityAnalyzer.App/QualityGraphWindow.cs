@@ -12,6 +12,7 @@ public sealed class QualityGraphWindow : Window
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
         VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null)
     {
+        Style = (Style)Application.Current.FindResource(typeof(Window));
         Title = "品質グラフ";
         Width = 1000;
         Height = 650;
