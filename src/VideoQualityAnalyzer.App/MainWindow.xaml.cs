@@ -25,7 +25,6 @@ public partial class MainWindow : Window
     private CancellationTokenSource frameTimesCancellation = new();
     private VideoSortOrder activeSort;
     private bool sortDescending;
-    private bool updatingSort;
     private string? referenceId;
     private readonly Dictionary<(string VideoId, QualityMetric Metric), QualityResult> qualityResults = [];
     private string? previousRightId;
@@ -368,15 +367,6 @@ public partial class MainWindow : Window
         if (new GroupWindow(selected) { Owner = this }.ShowDialog() == true) RefreshVideoOrder();
     }
 
-    private void SortSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (!initialized || updatingSort || SortSelect.SelectedIndex < 0) return;
-        activeSort = (VideoSortOrder)SortSelect.SelectedIndex;
-        sortDescending = false;
-        foreach (var column in VideoList.Columns) column.SortDirection = null;
-        RefreshVideoOrder();
-    }
-
     private void VideoList_Sorting(object sender, DataGridSortingEventArgs e)
     {
         e.Handled = true;
@@ -386,9 +376,6 @@ public partial class MainWindow : Window
         foreach (var column in VideoList.Columns) column.SortDirection = null;
         e.Column.SortDirection = sortDescending ? System.ComponentModel.ListSortDirection.Descending
             : System.ComponentModel.ListSortDirection.Ascending;
-        updatingSort = true;
-        SortSelect.SelectedIndex = order is VideoSortOrder.Name or VideoSortOrder.Group ? (int)order : -1;
-        updatingSort = false;
         RefreshVideoOrder();
     }
 

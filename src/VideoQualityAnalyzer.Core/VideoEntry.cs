@@ -9,7 +9,8 @@ public sealed class VideoEntry(VideoDescriptor descriptor)
     public string Group { get; set; } = "";
     public string DisplayName => (IsReference ? "【元動画】 " : "") + Descriptor.Name;
     public string Resolution => $"{Descriptor.Width}×{Descriptor.Height}";
-    public string FrameRateText => $"{Descriptor.AverageFrameRate:F3} fps" + (Descriptor.IsVariableFrameRate ? "（可変）" : "");
+    public string FrameRateText => $"{Descriptor.AverageFrameRate:F3}" + (Descriptor.IsVariableFrameRate ? "（可変）" : "");
+    public double? AverageBitrateKbps => Descriptor.AverageBitrate / 1_000d;
     public double? AverageBitrateMbps => Descriptor.AverageBitrate / 1_000_000d;
     public double? VmafAverage { get; set; }
     public double? SsimAverage { get; set; }

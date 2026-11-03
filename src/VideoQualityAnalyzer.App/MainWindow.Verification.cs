@@ -16,16 +16,24 @@ public partial class MainWindow
             VideoList.SelectedItems.Add(original[1]);
             VideoList.SelectedItems.Add(original[2]);
             VideoLibrary.SetGroup([original[1], original[2]], "検証グループ");
-            SortSelect.SelectedIndex = 1;
+            VideoList_Sorting(this, new System.Windows.Controls.DataGridSortingEventArgs(
+                VideoList.Columns.Single(column => column.SortMemberPath == "Name")));
             if (!VideoList.SelectedItems.Contains(original[1]) || !VideoList.SelectedItems.Contains(original[2]))
                 throw new InvalidOperationException("並べ替えで選択が失われました。");
-            SortSelect.SelectedIndex = 0;
+            activeSort = VideoSortOrder.Registration;
+            sortDescending = false;
+            RefreshVideoOrder();
             if (!videos.SequenceEqual(original)) throw new InvalidOperationException("登録順に戻りません。");
             if (VideoList.Columns.Count != 9 || original.Any(entry => entry.Descriptor.AverageBitrate is not > 0))
                 throw new InvalidOperationException("動画情報の列または平均ビットレートが不足しています。");
             qualityResults[(original[1].Descriptor.Id, QualityMetric.Ssim)] = new QualityResult(QualityMetric.Ssim, 2, [new QualityFrame(0, 2)]);
             qualityResults[(original[2].Descriptor.Id, QualityMetric.Ssim)] = new QualityResult(QualityMetric.Ssim, 10, [new QualityFrame(0, 10)]);
             RefreshQualityValues();
+            if (FindName("SortSelect") is not null ||
+                !Equals(VideoList.Columns.Single(column => column.SortMemberPath == "Bitrate").Header, "kbps") ||
+                VideoList.Columns.Where(column => column.SortMemberPath is "Resolution" or "FrameRate" or "Codec" or "Bitrate" or "Vmaf" or "Ssim" or "Psnr")
+                    .Any(column => column.MaxWidth > 115))
+                throw new InvalidOperationException("列の省略名・幅またはソート選択欄の削除が不正です。");
             var scoreColumn = VideoList.Columns.Single(column => column.SortMemberPath == "Ssim");
             VideoList_Sorting(this, new System.Windows.Controls.DataGridSortingEventArgs(scoreColumn));
             if (videos[0] != original[1] || videos[1] != original[2])
@@ -34,7 +42,9 @@ public partial class MainWindow
             if (videos[0] != original[2] || videos[1] != original[1] ||
                 !VideoList.SelectedItems.Contains(original[1]) || !VideoList.SelectedItems.Contains(original[2]))
                 throw new InvalidOperationException("評価列の降順または選択維持が不正です。");
-            SortSelect.SelectedIndex = 0;
+            activeSort = VideoSortOrder.Registration;
+            sortDescending = false;
+            RefreshVideoOrder();
             var result = new QualityResult(QualityMetric.Ssim, 1, [new QualityFrame(0, 1)]);
             qualityResults[(original[2].Descriptor.Id, QualityMetric.Ssim)] = result;
             VideoList.SelectedItems.Clear();

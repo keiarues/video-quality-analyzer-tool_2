@@ -32,11 +32,6 @@
                             <Button Content="品質評価" Click="Evaluate_Click" />
                             <Button Content="グループ設定" Click="SetGroup_Click" />
                         </WrapPanel>
-                        <ComboBox Name="SortSelect" SelectedIndex="0" SelectionChanged="SortSelect_SelectionChanged" Margin="3,0,3,8">
-                            <ComboBoxItem Content="登録順" />
-                            <ComboBoxItem Content="動画名順" />
-                            <ComboBoxItem Content="グループ順" />
-                        </ComboBox>
                         <TextBlock Text="複数選択できます。ファイルのドラッグ＆ドロップにも対応。" TextWrapping="Wrap" Foreground="#BFCBDB" Margin="3,0,3,8" />
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Bottom" Name="InfoText" Text="動画を追加してください。" TextWrapping="Wrap" Foreground="#D6E2F2" Margin="3,9,3,2" />
@@ -49,23 +44,23 @@
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Foreground" Value="#17202D" />
-                                <Setter Property="Padding" Value="8,6" />
+                                <Setter Property="Padding" Value="5,6" />
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ファイル名" Binding="{Binding DisplayName}" SortMemberPath="Name" Width="230" />
                             <DataGridTextColumn Header="グループ" Binding="{Binding Group}" SortMemberPath="Group" Width="100" />
-                            <DataGridTextColumn Header="解像度" Binding="{Binding Resolution}" SortMemberPath="Resolution" Width="100" />
-                            <DataGridTextColumn Binding="{Binding FrameRateText}" SortMemberPath="FrameRate" Width="155">
+                            <DataGridTextColumn Header="解像度" Binding="{Binding Resolution}" SortMemberPath="Resolution" Width="SizeToCells" MinWidth="80" MaxWidth="110" />
+                            <DataGridTextColumn Binding="{Binding FrameRateText}" SortMemberPath="FrameRate" Width="SizeToCells" MinWidth="65" MaxWidth="115">
                                 <DataGridTextColumn.Header>
-                                    <TextBlock Text="フレームレート" ToolTip="可変表示は、公称fpsと平均fpsの差による推定です。全フレームの時刻による判定ではありません。" />
+                                    <TextBlock Text="fps" ToolTip="可変表示は、公称fpsと平均fpsの差による推定です。全フレームの時刻による判定ではありません。" />
                                 </DataGridTextColumn.Header>
                             </DataGridTextColumn>
-                            <DataGridTextColumn Header="コーデック" Binding="{Binding Descriptor.Codec}" SortMemberPath="Codec" Width="100" />
-                            <DataGridTextColumn Header="平均ビットレート (Mbps)" Binding="{Binding AverageBitrateMbps, StringFormat=F2}" SortMemberPath="Bitrate" Width="165" />
-                            <DataGridTextColumn Header="VMAF" Binding="{Binding VmafAverage, StringFormat=F4}" SortMemberPath="Vmaf" Width="90" />
-                            <DataGridTextColumn Header="SSIM" Binding="{Binding SsimAverage, StringFormat=F4}" SortMemberPath="Ssim" Width="90" />
-                            <DataGridTextColumn Header="PSNR" Binding="{Binding PsnrAverage, StringFormat=F4}" SortMemberPath="Psnr" Width="90" />
+                            <DataGridTextColumn Header="コーデック" Binding="{Binding Descriptor.Codec}" SortMemberPath="Codec" Width="SizeToCells" MinWidth="70" MaxWidth="100" />
+                            <DataGridTextColumn Header="kbps" Binding="{Binding AverageBitrateKbps, StringFormat=F0}" SortMemberPath="Bitrate" Width="SizeToCells" MinWidth="65" MaxWidth="100" />
+                            <DataGridTextColumn Header="VMAF" Binding="{Binding VmafAverage, StringFormat=F4}" SortMemberPath="Vmaf" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn Header="SSIM" Binding="{Binding SsimAverage, StringFormat=F4}" SortMemberPath="Ssim" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn Header="PSNR" Binding="{Binding PsnrAverage, StringFormat=F4}" SortMemberPath="Psnr" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
                         </DataGrid.Columns>
                     </DataGrid>
                 </DockPanel>

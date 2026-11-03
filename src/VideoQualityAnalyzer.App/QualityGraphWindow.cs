@@ -63,6 +63,10 @@ public sealed class QualityGraphWindow : Window
             maximumTime = available.Max(video => results[(video.Id, selected)].Frames.Max(frame => frame.Number) / video.AverageFrameRate);
             var rates = available.Select(Bitrate).ToArray();
             var maxRate = Math.Max(1, rates.Max());
+            var timeArea = PlotArea(timeline);
+            var fileArea = PlotArea(averages);
+            DrawAxes(timeline, timeArea, maximumTime, min, max, "秒");
+            DrawAxes(averages, fileArea, maxRate, min, max, "Mbps");
             var previousPoints = new Dictionary<string, Point>();
             for (var index = 0; index < available.Length; index++)
             {
@@ -71,15 +75,15 @@ public sealed class QualityGraphWindow : Window
                 var color = colors[index % colors.Length];
                 var line = new Polyline { Stroke = color, StrokeThickness = 1, ToolTip = video.Name };
                 foreach (var frame in result.Frames)
-                    line.Points.Add(new Point(30 + frame.Number / video.AverageFrameRate / Math.Max(0.001, maximumTime) * Math.Max(1, timeline.ActualWidth - 45),
-                        10 + (max - frame.Value) / (max - min) * Math.Max(1, timeline.ActualHeight - 30)));
+                    line.Points.Add(new Point(timeArea.Left + frame.Number / video.AverageFrameRate / Math.Max(0.001, maximumTime) * timeArea.Width,
+                        timeArea.Top + (max - frame.Value) / (max - min) * timeArea.Height));
                 var isSelected = selectedIds.Contains(video.Id);
                 if (isSelected) timeline.Children.Add(line);
                 var point = new Ellipse { Width = 12, Height = 12, Fill = color,
                     Stroke = isSelected ? Brushes.Black : null, StrokeThickness = 2,
                     Tag = video.Id, ToolTip = $"{video.Name}: {result.Average:F4} / {rates[index]:F2} Mbps", Cursor = System.Windows.Input.Cursors.Hand };
-                Canvas.SetLeft(point, 30 + rates[index] / maxRate * Math.Max(1, averages.ActualWidth - 50) - 6);
-                Canvas.SetTop(point, 10 + (max - result.Average) / (max - min) * Math.Max(1, averages.ActualHeight - 30) - 6);
+                Canvas.SetLeft(point, fileArea.Left + rates[index] / maxRate * fileArea.Width - 6);
+                Canvas.SetTop(point, fileArea.Top + (max - result.Average) / (max - min) * fileArea.Height - 6);
                 point.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); status.Text = video.Name; e.Handled = true; };
                 if (groups is not null && groups.TryGetValue(video.Id, out var group))
                 {
@@ -91,8 +95,6 @@ public sealed class QualityGraphWindow : Window
                 }
                 averages.Children.Add(point);
             }
-            AddLabel(timeline, $"{min:F3} ～ {max:F3} / 0 ～ {maximumTime:F2}秒");
-            AddLabel(averages, $"{min:F3} ～ {max:F3} / 0 ～ {maxRate:F2} Mbps");
             status.Text = "左のグラフをクリックするとシーク、右の点をクリックするとその動画のフレーム評価を表示します。点にマウスを合わせると動画名と平均値を表示します。";
         }
         metric.SelectionChanged += (_, e) =>
@@ -102,10 +104,14 @@ public sealed class QualityGraphWindow : Window
             if (metric.SelectedItem is TabItem active) active.Content = grid;
             Draw();
         };
-        SizeChanged += (_, _) => Draw();
+        timeline.SizeChanged += (_, _) => Draw();
+        averages.SizeChanged += (_, _) => Draw();
         timeline.MouseLeftButtonDown += (_, e) =>
         {
-            var fraction = Math.Clamp((e.GetPosition(timeline).X - 30) / Math.Max(1, timeline.ActualWidth - 45), 0, 1);
+            var area = PlotArea(timeline);
+            var position = e.GetPosition(timeline);
+            if (!area.Contains(position)) return;
+            var fraction = Math.Clamp((position.X - area.Left) / area.Width, 0, 1);
             seek?.Invoke(TimeSpan.FromSeconds(maximumTime * fraction));
         };
         Loaded += (_, _) =>
@@ -118,20 +124,33 @@ public sealed class QualityGraphWindow : Window
             {
                 UpdateLayout();
                 if (metric.Items.Count != 3 || grid.ColumnDefinitions.Count != 2 ||
-                    !timeline.Children.OfType<Polyline>().Any() || !averages.Children.OfType<Ellipse>().Any())
+                    !timeline.Children.OfType<Polyline>().Any(line => line.Tag is null) || !averages.Children.OfType<Ellipse>().Any())
                     throw new InvalidOperationException("グラフのタブまたは横並び表示が不正です。");
+                foreach (var canvas in new[] { timeline, averages })
+                    if (canvas.Children.OfType<Line>().Count(line => Equals(line.Tag, "グリッド")) != 12 ||
+                        canvas.Children.OfType<TextBlock>().Count(label => Equals(label.Tag, "目盛り")) != 12)
+                        throw new InvalidOperationException("軸の目盛りまたはグリッドが不足しています。");
                 // 別の動画が表示対象だった状態からファイル点を選択して切り替える。
                 var target = averages.Children.OfType<Ellipse>().First();
                 selectedIds.Clear();
                 selectedIds.Add("別の動画");
                 target.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice,
                     Environment.TickCount, System.Windows.Input.MouseButton.Left) { RoutedEvent = MouseLeftButtonDownEvent });
-                if (timeline.Children.OfType<Polyline>().Count() != 1 || selectedIds.Single() != (string)target.Tag)
+                if (timeline.Children.OfType<Polyline>().Count(line => line.Tag is null) != 1 || selectedIds.Single() != (string)target.Tag)
                     throw new InvalidOperationException("ファイル選択がフレームグラフに反映されません。");
                 metric.SelectedIndex = 2;
                 UpdateLayout();
-                if (!timeline.Children.OfType<Polyline>().Any()) throw new InvalidOperationException("PSNRタブへ切り替わりません。");
-                Console.WriteLine("グラフ: 指標タブ・横並び・ファイル選択連動が合格");
+                if (!timeline.Children.OfType<Polyline>().Any(line => line.Tag is null)) throw new InvalidOperationException("PSNRタブへ切り替わりません。");
+                var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap(
+                    (int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
+                snapshot.Render((Visual)Content);
+                var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(snapshot));
+                var output = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory,
+                    "../../../../../measurement-results/quality-graph-layout.png"));
+                System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(output)!);
+                using (var stream = System.IO.File.Create(output)) encoder.Save(stream);
+                Console.WriteLine("グラフ: 目盛り・グリッド・指標タブ・横並び・ファイル選択連動が合格");
                 Application.Current.Shutdown(0);
             }
             catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }
@@ -151,11 +170,42 @@ public sealed class QualityGraphWindow : Window
     private static double Bitrate(VideoDescriptor video) => video.AverageBitrate is > 0 ? video.AverageBitrate.Value / 1_000_000d : System.IO.File.Exists(video.Path) && video.Duration.TotalSeconds > 0
         ? new System.IO.FileInfo(video.Path).Length * 8d / video.Duration.TotalSeconds / 1_000_000 : 0;
 
-    private static void AddLabel(Canvas canvas, string text)
+    // 軸・目盛りと描画データは同じ領域を基準に配置する。
+    private static Rect PlotArea(Canvas canvas) => new(64, 18,
+        Math.Max(1, canvas.ActualWidth - 90), Math.Max(1, canvas.ActualHeight - 72));
+
+    private static void DrawAxes(Canvas canvas, Rect area, double maximumX, double minimumY, double maximumY, string unit)
     {
-        var label = new TextBlock { Text = text, Foreground = Brushes.Black, Background = Brushes.White };
-        Canvas.SetLeft(label, 5);
-        Canvas.SetTop(label, Math.Max(0, canvas.ActualHeight - 20));
+        const int divisions = 5;
+        for (var index = 0; index <= divisions; index++)
+        {
+            var fraction = index / (double)divisions;
+            var x = area.Left + fraction * area.Width;
+            var y = area.Bottom - fraction * area.Height;
+            canvas.Children.Add(new Line { X1 = x, X2 = x, Y1 = area.Top, Y2 = area.Bottom,
+                Stroke = Brushes.LightGray, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
+            canvas.Children.Add(new Line { X1 = area.Left, X2 = area.Right, Y1 = y, Y2 = y,
+                Stroke = Brushes.LightGray, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
+            AddTick(canvas, (maximumX * fraction).ToString("G4"), x, area.Bottom + 6, true);
+            AddTick(canvas, (minimumY + (maximumY - minimumY) * fraction).ToString("G4"), area.Left - 7, y, false);
+        }
+        canvas.Children.Add(new Polyline { Stroke = Brushes.DimGray, StrokeThickness = 1,
+            IsHitTestVisible = false, Tag = "軸", Points = new PointCollection
+                { new(area.Left, area.Top), new(area.Left, area.Bottom), new(area.Right, area.Bottom) } });
+        var caption = new TextBlock { Text = unit, Foreground = Brushes.Black, IsHitTestVisible = false };
+        caption.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(caption, area.Left + (area.Width - caption.DesiredSize.Width) / 2);
+        Canvas.SetTop(caption, area.Bottom + 28);
+        canvas.Children.Add(caption);
+    }
+
+    private static void AddTick(Canvas canvas, string text, double x, double y, bool horizontal)
+    {
+        var label = new TextBlock { Text = text, Foreground = Brushes.Black, FontSize = 11,
+            Tag = "目盛り", IsHitTestVisible = false };
+        label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(label, horizontal ? x - label.DesiredSize.Width / 2 : x - label.DesiredSize.Width);
+        Canvas.SetTop(label, horizontal ? y : y - label.DesiredSize.Height / 2);
         canvas.Children.Add(label);
     }
 }

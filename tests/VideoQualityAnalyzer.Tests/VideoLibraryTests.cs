@@ -29,6 +29,7 @@ public sealed class VideoLibraryTests
         var large = new VideoEntry(Entry("large").Descriptor with { AverageBitrate = 10_000_000 });
         CollectionAssert.AreEqual(new[] { small, large }, VideoLibrary.Sort([large, small], VideoSortOrder.Bitrate));
         Assert.AreEqual(2d, small.AverageBitrateMbps);
+        Assert.AreEqual(2000d, small.AverageBitrateKbps);
     }
 
     [TestMethod]
