@@ -25,6 +25,8 @@ if ($LASTEXITCODE -ne 0) { throw '評価結果の再利用・グラフ画面の�
 $videos = Get-ChildItem -LiteralPath (Join-Path $workspace 'test-data') -File | Select-Object -ExpandProperty FullName
 & $dotnet $app --verify-main-features @videos
 if ($LASTEXITCODE -ne 0) { throw '主画面の選択・結果破棄の試験に失敗しました。' }
+& $dotnet $app --verify-main-seek @videos
+if ($LASTEXITCODE -ne 0) { throw 'シークバーの試験に失敗しました。' }
 & $dotnet $app --verify-main-graphs @videos
 if ($LASTEXITCODE -ne 0) { throw '主画面グラフの試験に失敗しました。' }
 & $dotnet $app --verify-main-comparison @videos

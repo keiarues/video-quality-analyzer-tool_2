@@ -118,7 +118,8 @@
                 <DockPanel>
                     <TextBlock Name="TimeText" DockPanel.Dock="Right" Text="00:00:00 / 00:00:00" MinWidth="190"
                                TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,2,0" />
-                    <Slider Name="SeekSlider" Minimum="0" Maximum="1" ValueChanged="SeekSlider_ValueChanged"
+                    <Slider Name="SeekSlider" Minimum="0" Maximum="1" IsMoveToPointEnabled="True" ValueChanged="SeekSlider_ValueChanged"
+                            PreviewMouseLeftButtonDown="SeekSlider_MouseDown"
                             PreviewMouseLeftButtonUp="SeekSlider_MouseUp" />
                 </DockPanel>
                 <TextBlock Name="FrameText" Text="フレーム位置: 左 — / 右 —" Foreground="#D6E2F2" Margin="4,5,0,0" TextWrapping="Wrap" />

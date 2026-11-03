@@ -78,7 +78,15 @@ public partial class MainWindow : Window
 
         displayTimer.Tick += DisplayTimer_Tick;
         displayTimer.Start();
-        seekTimer.Tick += (_, _) => { seekTimer.Stop(); ApplySeek(TimeSpan.FromSeconds(SeekSlider.Value)); };
+        seekTimer.Tick += (_, _) =>
+        {
+            seekTimer.Stop();
+            if (!seekSliderPointerActive && !seekSliderDragging) CommitSeekSlider();
+        };
+        SeekSlider.AddHandler(System.Windows.Controls.Primitives.Thumb.DragStartedEvent,
+            new System.Windows.Controls.Primitives.DragStartedEventHandler(SeekSlider_DragStarted), true);
+        SeekSlider.AddHandler(System.Windows.Controls.Primitives.Thumb.DragCompletedEvent,
+            new System.Windows.Controls.Primitives.DragCompletedEventHandler(SeekSlider_DragCompleted), true);
         LeftMedia.Volume = VolumeSlider.Value;
         RightMedia.IsMuted = true;
         initialized = true;
@@ -92,6 +100,7 @@ public partial class MainWindow : Window
             if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-comparison")) await VerifyEmbeddedComparisonAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-graphs")) await VerifyEmbeddedGraphsAsync();
+            else if (Environment.GetCommandLineArgs().Contains("--verify-main-seek")) await VerifySeekSliderAsync();
         };
     }
 
@@ -465,20 +474,6 @@ public partial class MainWindow : Window
     private void ForwardOne_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(1));
     private void ForwardFive_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(5));
 
-    private void SeekSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-    {
-        if (!initialized || programmaticSlider)
-            return;
-        seekTimer.Stop();
-        seekTimer.Start();
-    }
-
-    private void SeekSlider_MouseUp(object sender, MouseButtonEventArgs e)
-    {
-        seekTimer.Stop();
-        ApplySeek(TimeSpan.FromSeconds(SeekSlider.Value));
-    }
-
     private void ApplySeek(TimeSpan position)
     {
         if (left.Video is null)
@@ -705,7 +700,7 @@ public partial class MainWindow : Window
         if (!initialized)
             return;
         UpdatePlayPauseButton();
-        var position = CurrentPosition();
+        var position = pendingSeekPosition ?? CurrentPosition();
         var duration = CommonDuration();
         TimeText.Text = $"{position:hh\\:mm\\:ss} / {duration:hh\\:mm\\:ss}";
         FrameText.Text = (comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（再生時刻から推定）: ") +
@@ -714,7 +709,8 @@ public partial class MainWindow : Window
             $"実提示fps・左右PTS差: 未測定　｜　CPU {(cpuPercent.HasValue ? $"{cpuPercent.Value:F1}%" : "計測中")} / メモリ {memoryMb:F0} MiB / GPU 不明";
         programmaticSlider = true;
         SeekSlider.Maximum = Math.Max(1, duration.TotalSeconds);
-        SeekSlider.Value = Math.Min(SeekSlider.Maximum, position.TotalSeconds);
+        if (!seekSliderPointerActive && !seekSliderDragging && pendingSeekPosition is null)
+            SeekSlider.Value = Math.Min(SeekSlider.Maximum, position.TotalSeconds);
         programmaticSlider = false;
     }
 

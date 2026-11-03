@@ -6,6 +6,56 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
+    private async Task VerifySeekSliderAsync()
+    {
+        try
+        {
+            var candidate = videos.First(entry => !entry.IsReference && entry.Descriptor.Codec == "hevc");
+            VideoList.SelectedItem = candidate;
+            await comparisonChangeTask;
+            if (!comparisonActive || comparisonPanel is null) throw new InvalidOperationException("シーク検証用の比較映像がありません。");
+            foreach (var playing in new[] { false, true })
+            {
+                PausePlayback();
+                ApplySeek(TimeSpan.FromSeconds(1));
+                await comparisonChangeTask;
+                if (playing) Play_Click(this, new RoutedEventArgs());
+                SeekSlider.RaiseEvent(new System.Windows.Controls.Primitives.DragStartedEventArgs(0, 0)
+                    { RoutedEvent = System.Windows.Controls.Primitives.Thumb.DragStartedEvent });
+                SeekSlider.Value = 5;
+                await Task.Delay(250);
+                if (Math.Abs(SeekSlider.Value - 5) > 0.001)
+                    throw new InvalidOperationException("表示更新でドラッグ位置が戻りました。");
+                SeekSlider.Value = 12;
+                await Task.Delay(250);
+                if (Math.Abs(SeekSlider.Value - 12) > 0.001)
+                    throw new InvalidOperationException("ドラッグ中の最新位置が失われました。");
+                SeekSlider.RaiseEvent(new System.Windows.Controls.Primitives.DragCompletedEventArgs(0, 0, false)
+                    { RoutedEvent = System.Windows.Controls.Primitives.Thumb.DragCompletedEvent });
+                await comparisonChangeTask;
+                if (Math.Abs(comparisonPanel.Position.TotalSeconds - 12) > 0.2 || comparisonPanel.IsPlaying != playing)
+                    throw new InvalidOperationException("ドラッグ終了位置または再生状態が反映されません。");
+                PausePlayback();
+            }
+            // 確定処理の途中で次の位置を要求しても、最後の指定だけを反映する。
+            SeekSlider.Value = 6;
+            CommitSeekSlider();
+            SeekSlider.Value = 18;
+            CommitSeekSlider();
+            await comparisonChangeTask;
+            if (Math.Abs(comparisonPanel.Position.TotalSeconds - 18) > 0.03 || Math.Abs(SeekSlider.Value - 18) > 0.03)
+                throw new InvalidOperationException("連続したシークが最後の位置に到達しません。");
+            SeekSlider.Value = 9;
+            await Task.Delay(500);
+            await comparisonChangeTask;
+            if (Math.Abs(comparisonPanel.Position.TotalSeconds - 9) > 0.03)
+                throw new InvalidOperationException("キー操作の位置が確定されません。");
+            Console.WriteLine("シークバー: 再生中・一時停止中のドラッグ位置保持、終了位置への移動、再生状態維持、連続要求、キー操作が合格");
+            Application.Current.Shutdown(0);
+        }
+        catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }
+    }
+
     private async Task VerifyEmbeddedGraphsAsync()
     {
         try
