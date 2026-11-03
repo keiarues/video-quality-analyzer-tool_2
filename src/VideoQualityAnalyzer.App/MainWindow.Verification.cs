@@ -41,6 +41,9 @@ public partial class MainWindow
                 throw new InvalidOperationException("評価中止後の結果またはボタン状態が不正です。");
             UpdateLayout();
             var checks = new[] { VmafCheck, SsimCheck, PsnrCheck };
+            var expectedText = ((System.Windows.Media.SolidColorBrush)FindResource("TextBrush")).Color;
+            if (checks.Append(MuteCheck).Any(check => check.Foreground is not System.Windows.Media.SolidColorBrush brush || brush.Color != expectedText))
+                throw new InvalidOperationException("評価チェックまたはミュートの文字色が共通の明るい文字色になっていません。");
             if (checks[0].TranslatePoint(new Point(), this).Y >= checks[1].TranslatePoint(new Point(), this).Y ||
                 checks[1].TranslatePoint(new Point(), this).Y >= checks[2].TranslatePoint(new Point(), this).Y ||
                 checks.Any(check => Math.Abs(check.TranslatePoint(new Point(), this).X - checks[0].TranslatePoint(new Point(), this).X) > 1))
