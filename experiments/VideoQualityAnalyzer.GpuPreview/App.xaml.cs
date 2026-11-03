@@ -8,6 +8,11 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Contains("--wipe-drag-test"))
+        {
+            new WipeDragTestWindow().Show();
+            return;
+        }
         var selectionTestOption = e.Args.FirstOrDefault(argument =>
             argument.StartsWith("--selection-switch-test=", StringComparison.Ordinal));
         if (selectionTestOption is not null)

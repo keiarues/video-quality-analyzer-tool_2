@@ -19,6 +19,7 @@ public partial class ComparisonWindow : Window
     private readonly bool captureBenchmark;
     private readonly bool verifyComparison;
     private readonly bool verifySelection;
+    private readonly WipeBoundaryController wipeBoundaryController;
     private WriteableBitmap? markerBitmap;
     private readonly byte[] markerPixels = new byte[48 * 48 * 4];
     private readonly string leftPath;
@@ -49,6 +50,9 @@ public partial class ComparisonWindow : Window
         bool verifyComparison = false, bool verifySelection = false)
     {
         InitializeComponent();
+        wipeBoundaryController = new WipeBoundaryController(WipeViewport, WipeRightLayer,
+            WipeBoundary, WipePositionText,
+            () => currentLeft is null ? 4d / 3 : (double)currentLeft.Width / currentLeft.Height);
         this.leftPath = leftPath;
         this.rightPath = rightPath;
         this.benchmarkMode = benchmarkMode;
@@ -451,11 +455,16 @@ public partial class ComparisonWindow : Window
 
             operation = "ワイプ境界";
             ViewSelect.SelectedIndex = 1;
-            foreach (var percent in new[] { 25d, 75d })
+            UpdateLayout();
+            foreach (var percent in new[] { 0d, 25d, 50d, 75d, 100d })
             {
-                WipeSlider.Value = percent;
+                wipeBoundaryController.SetFromViewportX(wipeBoundaryController.ImageLeft +
+                    wipeBoundaryController.ImageWidth * percent / 100);
                 if (WipeRightLayer.Clip is not RectangleGeometry clip ||
-                    Math.Abs(clip.Rect.Left - WipeBoundary.Margin.Left - WipeBoundary.Width / 2) > 0.5)
+                    wipeBoundaryController.ImageWidth <= 0 ||
+                    Math.Abs(wipeBoundaryController.Fraction * 100 - percent) > 0.001 ||
+                    Math.Abs(clip.Rect.Left - WipeBoundary.Margin.Left - WipeBoundary.Width / 2) > 0.5 ||
+                    WipeBoundary.Visibility != Visibility.Visible)
                     throw new InvalidOperationException("ワイプ境界と切り替え位置が一致しません。");
             }
             ViewSelect.SelectedIndex = 0;
@@ -653,28 +662,7 @@ public partial class ComparisonWindow : Window
         else if (currentLeft is not null && currentRight is not null) RefreshHeatmap();
     }
 
-    private void WipeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e) =>
-        UpdateWipeBoundary();
-
-    private void WipeViewport_SizeChanged(object sender, SizeChangedEventArgs e) => UpdateWipeBoundary();
-
-    private void UpdateWipeBoundary()
-    {
-        if (WipeViewport is null || WipeSlider is null || WipeRightLayer is null ||
-            WipeBoundary is null || WipePositionText is null) return;
-        var width = WipeViewport.ActualWidth;
-        var height = WipeViewport.ActualHeight;
-        var fraction = WipeSlider.Value / 100;
-        var aspect = currentLeft is null ? 4d / 3 : (double)currentLeft.Width / currentLeft.Height;
-        var imageWidth = Math.Min(width, height * aspect);
-        var imageLeft = (width - imageWidth) / 2;
-        var boundary = imageLeft + imageWidth * fraction;
-        WipeRightLayer.Clip = new RectangleGeometry(new Rect(boundary, 0,
-            Math.Max(0, width - boundary), height));
-        WipeBoundary.Margin = new Thickness(boundary - WipeBoundary.Width / 2, 0, 0, 0);
-        WipeBoundary.Visibility = fraction > 0 && fraction < 1 ? Visibility.Visible : Visibility.Collapsed;
-        WipePositionText.Text = $"境界 {WipeSlider.Value:F0}%（左側: 左動画 / 右側: 右動画）";
-    }
+    private void UpdateWipeBoundary() => wipeBoundaryController.Update();
 
     private async Task LoadComparisonAsync()
     {
