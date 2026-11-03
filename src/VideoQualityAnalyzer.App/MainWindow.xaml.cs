@@ -710,6 +710,7 @@ public partial class MainWindow : Window
             return;
         UpdatePlayPauseButton();
         var position = pendingSeekPosition ?? CurrentPosition();
+        qualityGraphPanel?.SetPlaybackPosition(position);
         var duration = CommonDuration();
         TimeText.Text = $"{position:hh\\:mm\\:ss} / {duration:hh\\:mm\\:ss}";
         FrameText.Text = (comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（再生時刻から推定）: ") +

@@ -8,13 +8,25 @@ public partial class MainWindow
 
     private void InitializeEmbeddedGraphs()
     {
-        qualityGraphPanel = new QualityGraphPanel([], qualityResults, seek: ApplySeek, select: id =>
+        qualityGraphPanel = new QualityGraphPanel([], qualityResults, seek: CommitGraphSeek, select: id =>
         {
             var entry = videos.FirstOrDefault(item => item.Descriptor.Id == id);
             if (entry is null) return;
             VideoList.SelectedItems.Clear();
             VideoList.SelectedItem = entry;
         });
+        qualityGraphPanel.SeekPreviewed += position =>
+        {
+            seekSliderDragging = true;
+            seekTimer.Stop();
+            pendingSeekPosition = position;
+            ++sliderSeekGeneration;
+            // グラフ操作中も共通シークバーには指定位置を表示する。
+            programmaticSlider = true;
+            SeekSlider.Value = Math.Clamp(position.TotalSeconds, SeekSlider.Minimum, SeekSlider.Maximum);
+            programmaticSlider = false;
+            UpdateTimeDisplay();
+        };
         QualityGraphHost.Content = qualityGraphPanel;
     }
 

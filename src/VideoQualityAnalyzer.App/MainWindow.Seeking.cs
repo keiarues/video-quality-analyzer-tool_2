@@ -45,6 +45,12 @@ public partial class MainWindow
         if (seekSliderDragging || seekSliderPointerActive) CommitSeekSlider();
     }
 
+    private void CommitGraphSeek(TimeSpan position)
+    {
+        pendingSeekPosition = position;
+        CommitSeekSlider();
+    }
+
     private async void CommitSeekSlider()
     {
         seekTimer.Stop();

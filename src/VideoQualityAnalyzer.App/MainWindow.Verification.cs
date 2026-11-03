@@ -170,6 +170,39 @@ public partial class MainWindow
             var expected = 10 / candidates[1].Descriptor.AverageFrameRate;
             if (Math.Abs(CurrentPosition().TotalSeconds - expected) > 0.001)
                 throw new InvalidOperationException("グラフから主画面へシークできません。");
+            UpdateTimeDisplay();
+            if (Math.Abs(qualityGraphPanel.PlayheadPosition.TotalSeconds - CurrentPosition().TotalSeconds) > 0.001)
+                throw new InvalidOperationException("縦線が再生位置を示していません。");
+            var originalX = qualityGraphPanel.PlayheadX;
+            ApplySeek(TimeSpan.FromSeconds(0.1));
+            await comparisonChangeTask;
+            UpdateTimeDisplay();
+            if (qualityGraphPanel.PlayheadX >= originalX) throw new InvalidOperationException("シークバー操作に縦線が追従しません。");
+            var beforePlay = qualityGraphPanel.PlayheadPosition;
+            Play_Click(this, new RoutedEventArgs());
+            await Task.Delay(250);
+            PausePlayback();
+            if (qualityGraphPanel.PlayheadPosition <= beforePlay) throw new InvalidOperationException("再生中に縦線が進みません。");
+            foreach (var playing in new[] { false, true })
+            {
+                if (playing) Play_Click(this, new RoutedEventArgs());
+                qualityGraphPanel.BeginPlayheadDrag(0.25);
+                var requested = qualityGraphPanel.PlayheadPosition;
+                qualityGraphPanel.SetPlaybackPosition(TimeSpan.Zero);
+                await Task.Delay(250);
+                UpdateTimeDisplay();
+                if (qualityGraphPanel.PlayheadPosition != requested || Math.Abs(SeekSlider.Value - requested.TotalSeconds) > 0.001)
+                    throw new InvalidOperationException("ドラッグ中に縦線が戻るか、シークバーが連動しません。");
+                qualityGraphPanel.MovePlayheadDrag(0.75);
+                requested = qualityGraphPanel.PlayheadPosition;
+                qualityGraphPanel.EndPlayheadDrag();
+                await comparisonChangeTask;
+                if (Math.Abs(CurrentPosition().TotalSeconds - requested.TotalSeconds) > 0.05 ||
+                    comparisonPanel?.IsPlaying != playing)
+                    throw new InvalidOperationException("縦線の指定位置または再生状態が反映されません。");
+                PausePlayback();
+            }
+            Console.WriteLine("再生位置の縦線: 再生・シーク追従、ドラッグ中の位置保持、バー連動、確定シーク、再生状態維持が合格");
             UpdateLayout();
             var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)ActualWidth, (int)ActualHeight,
                 96, 96, System.Windows.Media.PixelFormats.Pbgra32);

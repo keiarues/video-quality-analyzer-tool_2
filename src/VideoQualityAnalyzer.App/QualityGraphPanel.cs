@@ -14,6 +14,12 @@ public sealed class QualityGraphPanel : UserControl
     private readonly TabControl metric = new();
     private readonly TextBlock status = new() { FontSize = UiTheme.Small, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8) };
     private double maximumTime;
+    private TimeSpan playbackPosition;
+    private bool playheadDragging;
+    private readonly Line playhead = new() { Stroke = UiTheme.OnLight, StrokeThickness = 2,
+        Tag = "再生位置", IsHitTestVisible = false };
+    private readonly Action<TimeSpan>? seekRequested;
+    public event Action<TimeSpan>? SeekPreviewed;
     private readonly Brush[] colors = [Brushes.RoyalBlue, Brushes.OrangeRed, Brushes.SeaGreen, Brushes.DarkViolet, Brushes.DarkGoldenrod];
 
     public QualityGraphPanel(VideoDescriptor[] videos,
@@ -21,6 +27,7 @@ public sealed class QualityGraphPanel : UserControl
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
         VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null)
     {
+        seekRequested = seek;
         Style = (Style)Application.Current.FindResource(typeof(UserControl));
         Background = Brushes.White;
         Foreground = UiTheme.OnLight;
@@ -96,7 +103,9 @@ public sealed class QualityGraphPanel : UserControl
                 }
                 averages.Children.Add(point);
             }
-            status.Text = "左のグラフをクリックするとシーク、右の点をクリックするとその動画のフレーム評価を表示します。点にマウスを合わせると動画名と平均値を表示します。";
+            timeline.Children.Add(playhead);
+            UpdatePlayhead();
+            status.Text = "左の縦線をドラッグするとシーク、右の点をクリックするとその動画のフレーム評価を表示します。点にマウスを合わせると動画名と平均値を表示します。";
         }
         updateData = (selectedVideos, registeredVideos, groupNames) =>
         {
@@ -107,7 +116,12 @@ public sealed class QualityGraphPanel : UserControl
             selectedIds.UnionWith(videos.Select(video => video.Id));
             Draw();
         };
-        seekToFraction = fraction => seek?.Invoke(TimeSpan.FromSeconds(maximumTime * Math.Clamp(fraction, 0, 1)));
+        seekToFraction = fraction =>
+        {
+            var position = TimeSpan.FromSeconds(maximumTime * Math.Clamp(fraction, 0, 1));
+            SetPlaybackPosition(position);
+            seek?.Invoke(position);
+        };
         metric.SelectionChanged += (_, e) =>
         {
             if (e.Source != metric) return;
@@ -117,14 +131,32 @@ public sealed class QualityGraphPanel : UserControl
         };
         timeline.SizeChanged += (_, _) => Draw();
         averages.SizeChanged += (_, _) => Draw();
+        timeline.Cursor = System.Windows.Input.Cursors.SizeWE;
         timeline.MouseLeftButtonDown += (_, e) =>
         {
             var area = PlotArea(timeline);
             var position = e.GetPosition(timeline);
-            if (!area.Contains(position)) return;
-            var fraction = Math.Clamp((position.X - area.Left) / area.Width, 0, 1);
-            seekToFraction(fraction);
+            if (maximumTime <= 0 || !area.Contains(position) || !timeline.CaptureMouse()) return;
+            BeginPlayheadDrag((position.X - area.Left) / area.Width);
+            e.Handled = true;
         };
+        timeline.MouseMove += (_, e) =>
+        {
+            if (!playheadDragging) return;
+            var area = PlotArea(timeline);
+            MovePlayheadDrag((e.GetPosition(timeline).X - area.Left) / area.Width);
+            e.Handled = true;
+        };
+        timeline.MouseLeftButtonUp += (_, e) =>
+        {
+            if (!playheadDragging) return;
+            var area = PlotArea(timeline);
+            MovePlayheadDrag((e.GetPosition(timeline).X - area.Left) / area.Width);
+            EndPlayheadDrag();
+            timeline.ReleaseMouseCapture();
+            e.Handled = true;
+        };
+        timeline.LostMouseCapture += (_, _) => { if (playheadDragging) EndPlayheadDrag(); };
         Loaded += (_, _) =>
         {
             Draw();
@@ -181,6 +213,46 @@ public sealed class QualityGraphPanel : UserControl
         var point = averages.Children.OfType<Ellipse>().Single(item => Equals(item.Tag, id));
         point.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice,
             Environment.TickCount, System.Windows.Input.MouseButton.Left) { RoutedEvent = MouseLeftButtonDownEvent });
+    }
+
+    public TimeSpan PlayheadPosition => playbackPosition;
+    public double PlayheadX => playhead.X1;
+    public void SetPlaybackPosition(TimeSpan position)
+    {
+        if (playheadDragging) return;
+        playbackPosition = position;
+        UpdatePlayhead();
+    }
+
+    public void BeginPlayheadDrag(double fraction)
+    {
+        if (maximumTime <= 0) return;
+        playheadDragging = true;
+        MovePlayheadDrag(fraction);
+    }
+
+    public void MovePlayheadDrag(double fraction)
+    {
+        if (!playheadDragging) return;
+        playbackPosition = TimeSpan.FromSeconds(maximumTime * Math.Clamp(fraction, 0, 1));
+        UpdatePlayhead();
+        SeekPreviewed?.Invoke(playbackPosition);
+    }
+
+    public void EndPlayheadDrag()
+    {
+        if (!playheadDragging) return;
+        playheadDragging = false;
+        seekRequested?.Invoke(playbackPosition);
+    }
+
+    private void UpdatePlayhead()
+    {
+        var area = PlotArea(timeline);
+        playhead.Visibility = maximumTime > 0 ? Visibility.Visible : Visibility.Collapsed;
+        playhead.X1 = playhead.X2 = area.Left + Math.Clamp(playbackPosition.TotalSeconds / Math.Max(0.001, maximumTime), 0, 1) * area.Width;
+        playhead.Y1 = area.Top;
+        playhead.Y2 = area.Bottom;
     }
 
     private static DockPanel MakeGraph(string title, Canvas canvas)
