@@ -19,6 +19,8 @@ if (-not $NoBuild) {
 if ($LASTEXITCODE -ne 0) { throw 'MSTestに失敗しました。' }
 & $dotnet $smoke $workspace --quality-test
 if ($LASTEXITCODE -ne 0) { throw '品質評価の実計算試験に失敗しました。' }
+& $dotnet $app --verify-initial-preview
+if ($LASTEXITCODE -ne 0) { throw '初期プレビューのタブ表示試験に失敗しました。' }
 & $dotnet $app --verify-groups
 if ($LASTEXITCODE -ne 0) { throw 'グループ設定画面の試験に失敗しました。' }
 $red = Join-Path $workspace 'measurement-results/quality-smoke/red.mkv'

@@ -20,11 +20,14 @@ public partial class MainWindow
 
     private void UpdateEmbeddedComparison(VideoDescriptor? leftVideo, VideoDescriptor? rightVideo, TimeSpan position, bool resume)
     {
+        var wasComparisonVisible = ComparisonHost.Visibility == Visibility.Visible;
+        InitialPreviewTabs.Visibility = comparisonActive ? Visibility.Collapsed : Visibility.Visible;
         ComparisonHost.Visibility = comparisonActive ? Visibility.Visible : Visibility.Collapsed;
         LegacyPreviewGrid.Visibility = comparisonActive ? Visibility.Collapsed : Visibility.Visible;
         if (!comparisonActive)
         {
             ++comparisonGeneration;
+            if (comparisonPanel is not null && wasComparisonVisible) InitialPreviewTabs.SelectedIndex = comparisonPanel.SelectedModeIndex;
             comparisonPanel?.Clear(position);
             comparisonLeftId = comparisonRightId = null;
             basePosition = position;
@@ -50,6 +53,7 @@ public partial class MainWindow
                 UpdateTimeDisplay();
             };
         }
+        if (!wasComparisonVisible) comparisonPanel.SelectMode(InitialPreviewTabs.SelectedIndex);
         if (comparisonLeftId == leftVideo!.Id && comparisonRightId == rightVideo!.Id) return;
         comparisonLeftId = leftVideo.Id;
         comparisonRightId = rightVideo!.Id;

@@ -95,6 +95,25 @@ public partial class MainWindow : Window
         log.Record("session_start", "none", null, "ready", detail: "presented_fps=unmeasured;decode_mode=unknown");
         Loaded += async (_, _) =>
         {
+            if (Environment.GetCommandLineArgs().Contains("--verify-initial-preview"))
+            {
+                try
+                {
+                    UpdateLayout();
+                    if (videos.Count != 0 || !InitialPreviewTabs.IsVisible || InitialPreviewTabs.Items.Count != 3 || InitialPreviewTabs.SelectedIndex != 0)
+                        throw new InvalidOperationException("動画未登録時にプレビュータブが表示されません。");
+                    foreach (var index in new[] { 1, 2, 0 })
+                    {
+                        InitialPreviewTabs.SelectedIndex = index;
+                        UpdateLayout();
+                        if (!InitialPreviewTabs.IsVisible) throw new InvalidOperationException("初期タブを切り替えられません。");
+                    }
+                    Console.WriteLine("初期プレビュー: 未登録時の3タブ表示と切り替えが合格");
+                    Application.Current.Shutdown(0);
+                }
+                catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }
+                return;
+            }
             var startupFiles = Environment.GetCommandLineArgs().Skip(1).Where(File.Exists).ToArray();
             if (startupFiles.Length > 0)
                 await AddFilesAsync(startupFiles);

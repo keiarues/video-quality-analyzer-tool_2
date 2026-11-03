@@ -127,6 +127,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
     public long? CurrentFrameNumber => currentLeft?.FrameNumber;
     public void Play() { resumeRequested = true; if (IsReady && !IsPlaying) PlayPause_Click(this, new RoutedEventArgs()); }
     public void Pause() { resumeRequested = false; if (IsPlaying) PlayPause_Click(this, new RoutedEventArgs()); }
+    public int SelectedModeIndex => ViewSelect.SelectedIndex;
     public void SelectMode(int index) => ViewSelect.SelectedIndex = index;
 
     public void Clear(TimeSpan position)

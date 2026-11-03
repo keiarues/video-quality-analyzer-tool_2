@@ -86,7 +86,10 @@
                     <RowDefinition Height="8" />
                     <RowDefinition Name="QualityGraphRow" Height="260" MinHeight="200" />
                 </Grid.RowDefinitions>
-                <Grid Grid.Row="0" Name="LegacyPreviewGrid">
+                <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0" Background="{StaticResource BackgroundBrush}">
+                    <TabItem>
+                        <TabItem.Header><TextBlock Text="2画面" Foreground="{StaticResource UiOnLightBrush}" /></TabItem.Header>
+                <Grid Name="LegacyPreviewGrid">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="8" />
@@ -121,6 +124,16 @@
                         </Grid>
                     </Border>
                 </Grid>
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header><TextBlock Text="ワイプ" Foreground="{StaticResource UiOnLightBrush}" /></TabItem.Header>
+                        <TextBlock Text="比較する動画を2本選択してください。" Foreground="{StaticResource TextBrush}" Margin="12" />
+                    </TabItem>
+                    <TabItem>
+                        <TabItem.Header><TextBlock Text="差分ヒートマップ" Foreground="{StaticResource UiOnLightBrush}" /></TabItem.Header>
+                        <TextBlock Text="比較する動画を2本選択してください。" Foreground="{StaticResource TextBrush}" Margin="12" />
+                    </TabItem>
+                </TabControl>
                 <ContentControl Grid.Row="0" Name="ComparisonHost" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 <TextBlock Grid.Row="1" Name="MeasurementText" FontSize="{StaticResource UiFontSmall}" Text="再生位置からの換算fps: 左 — / 右 —　｜　実提示fps: 未測定"
                            Foreground="{StaticResource UiWarningBrush}" Margin="4,10,4,4" TextWrapping="Wrap" />
