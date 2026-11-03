@@ -27,6 +27,22 @@ public partial class MainWindow
             if (QualityGraphHost.TranslatePoint(new Point(0, 0), this).Y <
                 PlaybackControls.TranslatePoint(new Point(0, PlaybackControls.ActualHeight), this).Y)
                 throw new InvalidOperationException("品質グラフが再生制御の下にありません。");
+            var originalGraphHeight = QualityGraphHost.ActualHeight;
+            var originalControlHeight = PlaybackControls.ActualHeight;
+            var originalPreviewHeight = ComparisonHost.ActualHeight;
+            QualityGraphResizeBar.RaiseEvent(new System.Windows.Controls.Primitives.DragDeltaEventArgs(0, -30)
+                { RoutedEvent = System.Windows.Controls.Primitives.Thumb.DragDeltaEvent });
+            UpdateLayout();
+            if (Math.Abs(QualityGraphHost.ActualHeight - originalGraphHeight - 30) > 1 ||
+                Math.Abs(PlaybackControls.ActualHeight - originalControlHeight) > 1 ||
+                Math.Abs(ComparisonHost.ActualHeight - originalPreviewHeight + 30) > 1)
+                throw new InvalidOperationException("高さ変更がグラフと映像に反映されず、再生制御の高さが変化しています。");
+            QualityGraphResizeBar.RaiseEvent(new System.Windows.Controls.Primitives.DragDeltaEventArgs(0, 30)
+                { RoutedEvent = System.Windows.Controls.Primitives.Thumb.DragDeltaEvent });
+            UpdateLayout();
+            if (Math.Abs(QualityGraphHost.ActualHeight - originalGraphHeight) > 1 ||
+                Math.Abs(PlaybackControls.ActualHeight - originalControlHeight) > 1)
+                throw new InvalidOperationException("グラフ縮小時に再生制御の高さが変化しています。");
             qualityGraphPanel.SelectFile(candidates[1].Descriptor.Id);
             await comparisonChangeTask;
             if (VideoList.SelectedItem != candidates[1] ||
