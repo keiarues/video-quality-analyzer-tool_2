@@ -8,6 +8,9 @@
     <AssemblyName>VideoQualityAnalyzer.StageA</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Page Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonWindow.xaml" Link="ComparisonWindow.xaml" />
+    <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonWindow.xaml.cs" Link="ComparisonWindow.xaml.cs" />
+    <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\WipeBoundaryController.cs" Link="WipeBoundaryController.cs" />
     <ProjectReference Include="..\VideoQualityAnalyzer.Core\VideoQualityAnalyzer.Core.csproj" />
     <ProjectReference Include="..\VideoQualityAnalyzer.Media\VideoQualityAnalyzer.Media.csproj" />
     <ProjectReference Include="..\VideoQualityAnalyzer.Diagnostics\VideoQualityAnalyzer.Diagnostics.csproj" />

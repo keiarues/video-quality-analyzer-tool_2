@@ -1,9 +1,15 @@
+param([switch]$MainApp)
+
 $ErrorActionPreference = 'Stop'
 $workspace = Split-Path $PSScriptRoot -Parent
 $videoDirectory = Join-Path $workspace 'test-data'
 $outputDirectory = Join-Path $workspace 'measurement-results'
 $dotnet = Join-Path $workspace 'tools/dotnet/dotnet.exe'
-$app = Join-Path $workspace 'experiments/VideoQualityAnalyzer.GpuPreview/bin/Release/net10.0-windows/VideoQualityAnalyzer.GpuPreview.dll'
+$app = if ($MainApp) {
+    Join-Path $workspace 'src/VideoQualityAnalyzer.App/bin/Release/net10.0-windows/VideoQualityAnalyzer.StageA.dll'
+} else {
+    Join-Path $workspace 'experiments/VideoQualityAnalyzer.GpuPreview/bin/Release/net10.0-windows/VideoQualityAnalyzer.GpuPreview.dll'
+}
 
 function Video([string]$name) {
     return (Get-Item -LiteralPath (Join-Path $videoDirectory $name)).FullName

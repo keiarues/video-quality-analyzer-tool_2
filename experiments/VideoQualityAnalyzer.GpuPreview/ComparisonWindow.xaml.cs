@@ -48,9 +48,12 @@ public partial class ComparisonWindow : Window
 
     public ComparisonWindow(string leftPath, string rightPath, long frameNumber,
         bool showWipe = false, bool benchmarkMode = false, bool captureBenchmark = false,
-        bool verifyComparison = false, bool verifySelection = false)
+        bool verifyComparison = false, bool verifySelection = false,
+        IEnumerable<string>? videoPaths = null, bool showBlur = true)
     {
         InitializeComponent();
+        if (!showBlur)
+            BlurLabel.Visibility = BlurSelect.Visibility = BlurHint.Visibility = Visibility.Collapsed;
         wipeBoundaryController = new WipeBoundaryController(WipeViewport, WipeRightLayer,
             WipeBoundary, WipePositionText,
             () => currentLeft is null ? 4d / 3 : (double)currentLeft.Width / currentLeft.Height);
@@ -72,7 +75,8 @@ public partial class ComparisonWindow : Window
             throw new FileNotFoundException("FFprobeが見つかりません。");
         comparison = new FrameComparisonService(ffmpegPath, ffprobePath);
         var workspace = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
-        var paths = Directory.EnumerateFiles(Path.Combine(workspace, "test-data"))
+        var paths = (videoPaths ?? (Directory.Exists(Path.Combine(workspace, "test-data"))
+            ? Directory.EnumerateFiles(Path.Combine(workspace, "test-data")) : []))
             .Where(path => Path.GetExtension(path).ToLowerInvariant() is ".mkv" or ".mp4")
             .Append(leftPath).Append(rightPath).Distinct(StringComparer.OrdinalIgnoreCase)
             .OrderBy(Path.GetFileName, StringComparer.OrdinalIgnoreCase).ToArray();

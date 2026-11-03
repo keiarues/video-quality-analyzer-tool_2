@@ -100,6 +100,7 @@
                     <Button Content="-1秒" Click="BackOne_Click" />
                     <Button Content="+1秒" Click="ForwardOne_Click" />
                     <Button Content="+5秒" Click="ForwardFive_Click" />
+                    <Button Content="ワイプ・差分比較" Click="OpenComparison_Click" MinWidth="120" />
                     <Button Content="1コマ送り" Click="FrameStep_Click" MinWidth="100" />
                     <TextBlock Text="音量" VerticalAlignment="Center" Margin="15,0,5,0" />
                     <Slider Name="VolumeSlider" Width="105" Minimum="0" Maximum="1" Value="0.7"

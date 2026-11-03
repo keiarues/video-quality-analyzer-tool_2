@@ -29,14 +29,14 @@
           </StackPanel>
           <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
             <Button Content="指定番号へ移動して再生" Padding="9,4" Click="SeekPlay_Click" />
-            <TextBlock Text="ヒートマップのぼかし" VerticalAlignment="Center" Margin="16,0,6,0" />
+            <TextBlock Name="BlurLabel" Text="ヒートマップのぼかし" VerticalAlignment="Center" Margin="16,0,6,0" />
             <ComboBox Name="BlurSelect" Width="105" SelectionChanged="BlurSelect_SelectionChanged">
                 <ComboBoxItem Content="ぼかしなし" Tag="0" />
                 <ComboBoxItem Content="弱" Tag="1" />
                 <ComboBoxItem Content="中" Tag="2" />
                 <ComboBoxItem Content="強" Tag="4" />
             </ComboBox>
-            <TextBlock Text="左右を同じ範囲でぼかしてから差を表示（元画像はそのまま）"
+            <TextBlock Name="BlurHint" Text="左右を同じ範囲でぼかしてから差を表示（元画像はそのまま）"
                        VerticalAlignment="Center" Margin="10,0,0,0" Foreground="#FFCBD5E1" />
           </StackPanel>
         </StackPanel>

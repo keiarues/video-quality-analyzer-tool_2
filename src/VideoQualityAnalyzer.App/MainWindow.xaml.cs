@@ -347,6 +347,29 @@ public partial class MainWindow : Window
 
     private void BackFive_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() - TimeSpan.FromSeconds(5));
     private void BackOne_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() - TimeSpan.FromSeconds(1));
+    private void OpenComparison_Click(object sender, RoutedEventArgs e)
+    {
+        if (left.Video is not { } leftVideo || right.Video is not { } rightVideo)
+        {
+            StatusText.Text = "比較する動画を2本選んでください。";
+            return;
+        }
+        var frameNumber = Math.Max(0, (long)Math.Round(
+            CurrentPosition().TotalSeconds * leftVideo.AverageFrameRate));
+        Pause_Click(sender, e);
+        try
+        {
+            var window = new VideoQualityAnalyzer.GpuPreview.ComparisonWindow(
+                leftVideo.Path, rightVideo.Path, frameNumber,
+                videoPaths: videos.Select(entry => entry.Descriptor.Path), showBlur: false) { Owner = this };
+            window.ShowDialog();
+        }
+        catch (Exception exception)
+        {
+            StatusText.Text = $"比較画面を開けません: {exception.Message}";
+        }
+    }
+
     private void ForwardOne_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(1));
     private void ForwardFive_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(5));
 
