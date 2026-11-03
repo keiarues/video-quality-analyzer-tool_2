@@ -72,7 +72,7 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Grid Grid.Row="0">
+                <Grid Grid.Row="0" Name="LegacyPreviewGrid">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="8" />
@@ -107,6 +107,7 @@
                         </Grid>
                     </Border>
                 </Grid>
+                <ContentControl Grid.Row="0" Name="ComparisonHost" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 <TextBlock Grid.Row="1" Name="MeasurementText" Text="再生位置からの換算fps: 左 — / 右 —　｜　実提示fps: 未測定"
                            Foreground="#F6D37A" Margin="4,10,4,4" TextWrapping="Wrap" />
             </Grid>
@@ -129,7 +130,6 @@
                     <Button Content="-1秒" Click="BackOne_Click" />
                     <Button Content="+1秒" Click="ForwardOne_Click" />
                     <Button Content="+5秒" Click="ForwardFive_Click" />
-                    <Button Content="ワイプ・差分比較" Click="OpenComparison_Click" MinWidth="120" />
                     <Button Content="1コマ送り" Click="FrameStep_Click" MinWidth="100" />
                     <TextBlock Text="音量" VerticalAlignment="Center" Margin="15,0,5,0" />
                     <Slider Name="VolumeSlider" Width="105" Minimum="0" Maximum="1" Value="0.7"

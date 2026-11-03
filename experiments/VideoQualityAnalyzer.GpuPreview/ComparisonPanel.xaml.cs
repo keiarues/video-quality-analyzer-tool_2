@@ -10,7 +10,7 @@ using VideoQualityAnalyzer.Media;
 
 namespace VideoQualityAnalyzer.GpuPreview;
 
-public partial class ComparisonWindow : Window
+public partial class ComparisonPanel : UserControl, IDisposable
 {
     private readonly FrameComparisonService comparison;
     private readonly string ffmpegPath;
@@ -47,12 +47,14 @@ public partial class ComparisonWindow : Window
     private WriteableBitmap? playingRight;
     private WriteableBitmap? playingHeatmap;
 
-    public ComparisonWindow(string leftPath, string rightPath, long frameNumber,
+    public ComparisonPanel(string leftPath, string rightPath, long frameNumber,
         bool showWipe = false, bool benchmarkMode = false, bool captureBenchmark = false,
         bool verifyComparison = false, bool verifySelection = false,
-        IEnumerable<string>? videoPaths = null, bool showBlur = true)
+        IEnumerable<string>? videoPaths = null, bool showBlur = true, bool embedded = false)
     {
         InitializeComponent();
+        this.embedded = embedded;
+        if (embedded) CommonControls.Visibility = Visibility.Collapsed;
         if (!showBlur)
             BlurLabel.Visibility = BlurSelect.Visibility = BlurHint.Visibility = Visibility.Collapsed;
         wipeBoundaryController = new WipeBoundaryController(WipeViewport, WipeRightLayer,
@@ -64,12 +66,6 @@ public partial class ComparisonWindow : Window
         this.captureBenchmark = captureBenchmark;
         this.verifyComparison = verifyComparison;
         this.verifySelection = verifySelection;
-        if (captureBenchmark)
-        {
-            Left = 0;
-            Top = 0;
-            Topmost = true;
-        }
         ffmpegPath = FfmpegRgbReader.FindExecutable() ??
             throw new FileNotFoundException("FFmpegが見つかりません。");
         ffprobePath = FfprobeService.FindExecutable() ??
@@ -100,6 +96,13 @@ public partial class ComparisonWindow : Window
         RightSelect.SelectionChanged += VideoSelectionChanged;
         Loaded += (_, _) =>
         {
+            if (captureBenchmark && Window.GetWindow(this) is { } host)
+            {
+                host.Left = 0;
+                host.Top = 0;
+                host.Topmost = true;
+            }
+            if (embedded) return;
             if (benchmarkMode)
             {
                 if (captureBenchmark) PrepareCaptureMarker();
@@ -112,9 +115,91 @@ public partial class ComparisonWindow : Window
         };
     }
 
+    private readonly bool embedded;
+    private bool configuring;
+    private bool resumeRequested;
+    private double sourceFrameRate = 30;
+    private TimeSpan requestedPosition;
+    public event Action? PlaybackEnded;
+    public bool IsPlaying => playbackCancellation is not null && !playbackPaused;
+    public bool IsReady => currentLeft is not null && currentRight is not null;
+    public TimeSpan Position => currentLeft is null ? requestedPosition : TimeSpan.FromSeconds(currentLeft.FrameNumber / sourceFrameRate);
+    public long? CurrentFrameNumber => currentLeft?.FrameNumber;
+    public void Play() { resumeRequested = true; if (IsReady && !IsPlaying) PlayPause_Click(this, new RoutedEventArgs()); }
+    public void Pause() { resumeRequested = false; if (IsPlaying) PlayPause_Click(this, new RoutedEventArgs()); }
+    public void SelectMode(int index) => ViewSelect.SelectedIndex = index;
+
+    public void Clear(TimeSpan position)
+    {
+        ++selectionGeneration;
+        resumeRequested = false;
+        StopPlayback();
+        loadCancellation?.Cancel();
+        currentLeft = currentRight = null;
+        requestedPosition = position;
+        var reader = preparedReader;
+        preparedReader = null;
+        if (reader is not null) _ = reader.DisposeAsync();
+        LeftImage.Source = RightImage.Source = HeatmapImage.Source = null;
+        WipeLeftImage.Source = WipeRightImage.Source = null;
+    }
+
+    public async Task SetSourcesAsync(VideoDescriptor left, VideoDescriptor right, TimeSpan position, bool resume)
+    {
+        configuring = true;
+        try
+        {
+            foreach (var path in new[] { left.Path, right.Path })
+            {
+                if (!LeftSelect.Items.Cast<VideoChoice>().Any(choice => string.Equals(choice.Path, path, StringComparison.OrdinalIgnoreCase)))
+                {
+                    LeftSelect.Items.Add(new VideoChoice(Path.GetFileName(path), path));
+                    RightSelect.Items.Add(new VideoChoice(Path.GetFileName(path), path));
+                }
+            }
+            LeftSelect.SelectedItem = LeftSelect.Items.Cast<VideoChoice>().First(choice => string.Equals(choice.Path, left.Path, StringComparison.OrdinalIgnoreCase));
+            RightSelect.SelectedItem = RightSelect.Items.Cast<VideoChoice>().First(choice => string.Equals(choice.Path, right.Path, StringComparison.OrdinalIgnoreCase));
+            sourceFrameRate = left.AverageFrameRate;
+            LeftFrameLabel.Text = "左: " + left.Name;
+            RightFrameLabel.Text = "右: " + right.Name;
+            LeftFrameLabel.ToolTip = left.Name;
+            RightFrameLabel.ToolTip = right.Name;
+        }
+        finally { configuring = false; }
+        await SeekAsync(position, resume);
+    }
+
+    public async Task SeekAsync(TimeSpan position, bool resume)
+    {
+        var generation = ++selectionGeneration;
+        StopPlayback(keepRequestedFrame: true);
+        requestedPosition = position;
+        resumeRequested = resume;
+        currentLeft = currentRight = null;
+        LeftImage.Source = RightImage.Source = HeatmapImage.Source = null;
+        WipeLeftImage.Source = WipeRightImage.Source = null;
+        FrameNumberBox.Text = Math.Max(0, (long)Math.Round(position.TotalSeconds * sourceFrameRate))
+            .ToString(System.Globalization.CultureInfo.InvariantCulture);
+        await LoadComparisonAsync();
+        if (generation == selectionGeneration && IsReady && resumeRequested) Play();
+    }
+
+    public async Task VerifyCurrentPixelsAsync()
+    {
+        var number = CheckAlignedPair();
+        var left = (VideoChoice)LeftSelect.SelectedItem;
+        var right = (VideoChoice)RightSelect.SelectedItem;
+        var expected = await Task.WhenAll(comparison.ReadFrameAsync(left.Path, number, CancellationToken.None),
+            comparison.ReadFrameAsync(right.Path, number, CancellationToken.None));
+        if (currentLeft is null || currentRight is null ||
+            !currentLeft.Pixels.AsSpan().SequenceEqual(expected[0].Pixels) ||
+            !currentRight.Pixels.AsSpan().SequenceEqual(expected[1].Pixels))
+            throw new InvalidOperationException("主画面の左右フレームが静止復号と一致しません。");
+    }
+
     private void VideoSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (!IsLoaded || LeftSelect.SelectedItem is null || RightSelect.SelectedItem is null) return;
+        if (configuring || !IsLoaded || LeftSelect.SelectedItem is null || RightSelect.SelectedItem is null) return;
         selectionChangeTask = SwitchSelectedVideosAsync();
     }
 
@@ -257,12 +342,14 @@ public partial class ComparisonWindow : Window
                 var blurRadius = heatmapBlurRadius;
                 var difference = wipeMode || twoScreenMode ? null : FrameComparisonService.CreateHeatmap(left, right,
                     heatmapGain, blurRadius);
+                var presented = false;
                 await Dispatcher.InvokeAsync(() =>
                 {
-                    if (token.IsCancellationRequested) return;
+                    if (token.IsCancellationRequested || playbackPaused) return;
                     currentLeft = left;
                     currentRight = right;
                     UpdatePlayingBitmaps(left, right, difference);
+                    presented = true;
                     if (captureBenchmark) UpdateCaptureMarker(left.FrameNumber);
                     displayed++;
                     if (benchmarkMode && left.FrameNumber >= firstMeasured)
@@ -277,6 +364,7 @@ public partial class ComparisonWindow : Window
                             "。実画面提示fpsは未測定。";
                     }
                 });
+                if (!presented && !token.IsCancellationRequested) pendingPair = pair;
             }
             if (benchmarkMode && !token.IsCancellationRequested)
             {
@@ -311,6 +399,7 @@ public partial class ComparisonWindow : Window
             {
                 playbackCancellation = null;
                 PlayPauseButton.Content = "再生";
+                PlaybackEnded?.Invoke();
             }
             cancellation.Dispose();
         }
@@ -388,7 +477,7 @@ public partial class ComparisonWindow : Window
     private void ObserveComposition(object? sender, EventArgs e)
     {
         if (!benchmarkMode || benchmarkFrameRate <= 0) return;
-        if (!IsVisible || WindowState == WindowState.Minimized)
+        if (!IsVisible || Window.GetWindow(this)?.WindowState == WindowState.Minimized)
             benchmarkVisible = false;
         if (currentLeft is null) return;
         var number = currentLeft.FrameNumber;
@@ -439,7 +528,7 @@ public partial class ComparisonWindow : Window
         Directory.CreateDirectory(directory);
         var file = Path.Combine(directory, $"comparison-{report.Mode}-{Guid.NewGuid():N}.json");
         File.WriteAllText(file, JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
-        Close();
+        Window.GetWindow(this)?.Close();
     }
 
     private async Task VerifyComparisonAsync(long firstFrame)
@@ -561,7 +650,7 @@ public partial class ComparisonWindow : Window
             });
             Application.Current.Shutdown(1);
         }
-        finally { Close(); }
+        finally { Window.GetWindow(this)?.Close(); }
     }
 
     private async Task VerifySelectionAsync(long firstFrame)
@@ -655,7 +744,7 @@ public partial class ComparisonWindow : Window
             });
             Application.Current.Shutdown(1);
         }
-        finally { Close(); }
+        finally { Window.GetWindow(this)?.Close(); }
     }
 
     private async Task WaitForFrameAsync(long target)
@@ -754,11 +843,9 @@ public partial class ComparisonWindow : Window
         }
         loadCancellation?.Cancel();
         loadCancellation?.Dispose();
-        if (preparedReader is not null)
-        {
-            await preparedReader.DisposeAsync();
-            preparedReader = null;
-        }
+        var previousReader = preparedReader;
+        preparedReader = null;
+        if (previousReader is not null) _ = previousReader.DisposeAsync();
         loadCancellation = new CancellationTokenSource();
         var token = loadCancellation.Token;
         ResultText.Text = $"フレーム #{frameNumber} を復号中…";
@@ -841,8 +928,10 @@ public partial class ComparisonWindow : Window
         return bitmap;
     }
 
-    private void Window_Closed(object? sender, EventArgs e)
+    public void Dispose()
     {
+        ++selectionGeneration;
+        resumeRequested = false;
         CompositionTarget.Rendering -= ObserveComposition;
         StopPlayback();
         loadCancellation?.Cancel();

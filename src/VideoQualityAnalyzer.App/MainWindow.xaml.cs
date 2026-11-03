@@ -89,6 +89,7 @@ public partial class MainWindow : Window
             if (startupFiles.Length > 0)
                 await AddFilesAsync(startupFiles);
             if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
+            else if (Environment.GetCommandLineArgs().Contains("--verify-main-comparison")) await VerifyEmbeddedComparisonAsync();
         };
     }
 
@@ -191,6 +192,8 @@ public partial class MainWindow : Window
 
     private void UpdateSelection()
     {
+        var position = CurrentPosition();
+        var resume = isPlaying;
         var ordered = videos.Select(item => item.Descriptor).ToArray();
         foreach (var item in videos)
             item.IsReference = item.Descriptor.Id == referenceId;
@@ -204,8 +207,10 @@ public partial class MainWindow : Window
         frameTimesCancellation = new CancellationTokenSource();
         var leftVideo = ordered.FirstOrDefault(video => video.Id == choice.LeftVideoId);
         var rightVideo = ordered.FirstOrDefault(video => video.Id == choice.RightVideoId);
+        comparisonActive = CanCompare(leftVideo, rightVideo);
         SetSlot(left, leftVideo, choice.Generation);
         SetSlot(right, rightVideo, choice.Generation);
+        UpdateEmbeddedComparison(leftVideo, rightVideo, position, resume);
         RightMedia.IsMuted = true;
         UpdateInfo();
         UpdateTimeDisplay();
@@ -239,7 +244,7 @@ public partial class MainWindow : Window
 
         log.Record("open_requested", slot.Side, video.Id, "started");
         slot.Status.Text = "動画を読み込み中（FFmpeg共通表示）";
-        slot.Av1.Open(video, CurrentPosition(), isPlaying);
+        if (!comparisonActive) slot.Av1.Open(video, CurrentPosition(), isPlaying);
         // 左音声は既存のMediaElementで再生する。映像は画像側だけを表示する。
         if (slot.Side == "left" && video.HasAudio && video.Codec != "av1")
         {
@@ -298,6 +303,13 @@ public partial class MainWindow : Window
             return;
         if (isPlaying)
             return;
+        if (comparisonActive && comparisonPanel is not null)
+        {
+            isPlaying = true;
+            comparisonPanel.Play();
+            if (left.Media.Source is not null) { left.Media.Position = CurrentPosition(); left.Media.Play(); }
+            return;
+        }
         basePosition = ClampToCommon(basePosition);
         if (right.Video is not null)
         {
@@ -326,6 +338,7 @@ public partial class MainWindow : Window
         if (!isPlaying)
             return;
         basePosition = ClampToCommon(CurrentPosition());
+        comparisonPanel?.Pause();
         playbackClock.Stop();
         isPlaying = false;
         ResetFpsSamples();
@@ -346,6 +359,7 @@ public partial class MainWindow : Window
         isPlaying = false;
         ResetFpsSamples();
         basePosition = TimeSpan.Zero;
+        if (comparisonActive && comparisonPanel is not null) comparisonChangeTask = comparisonPanel.SeekAsync(TimeSpan.Zero, false);
         if (left.Av1.IsOpen) left.Av1.Seek(TimeSpan.Zero);
         if (left.Media.Source is not null) left.Media.Position = TimeSpan.Zero;
         if (right.Av1.IsOpen) right.Av1.Seek(TimeSpan.Zero);
@@ -425,29 +439,6 @@ public partial class MainWindow : Window
         RefreshVideoOrder();
     }
 
-    private void OpenComparison_Click(object sender, RoutedEventArgs e)
-    {
-        if (left.Video is not { } leftVideo || right.Video is not { } rightVideo)
-        {
-            StatusText.Text = "比較する動画を2本選んでください。";
-            return;
-        }
-        var frameNumber = Math.Max(0, (long)Math.Round(
-            CurrentPosition().TotalSeconds * leftVideo.AverageFrameRate));
-        Pause_Click(sender, e);
-        try
-        {
-            var window = new VideoQualityAnalyzer.GpuPreview.ComparisonWindow(
-                leftVideo.Path, rightVideo.Path, frameNumber,
-                videoPaths: videos.Select(entry => entry.Descriptor.Path), showBlur: false) { Owner = this };
-            window.ShowDialog();
-        }
-        catch (Exception exception)
-        {
-            StatusText.Text = $"比較画面を開けません: {exception.Message}";
-        }
-    }
-
     private void ForwardOne_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(1));
     private void ForwardFive_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(5));
 
@@ -470,6 +461,7 @@ public partial class MainWindow : Window
         if (left.Video is null)
             return;
         basePosition = ClampToCommon(position);
+        if (comparisonActive && comparisonPanel is not null) comparisonChangeTask = comparisonPanel.SeekAsync(basePosition, isPlaying);
         ResetFpsSamples();
         if (isPlaying)
             playbackClock.Restart();
@@ -487,6 +479,11 @@ public partial class MainWindow : Window
         PausePlayback();
         if (left.Video is not { } video)
             return;
+        if (comparisonActive)
+        {
+            ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(1 / video.AverageFrameRate));
+            return;
+        }
         var token = frameTimesCancellation.Token;
         IReadOnlyList<TimeSpan>? times = null;
         if (probe is not null)
@@ -541,6 +538,12 @@ public partial class MainWindow : Window
 
     private void DisplayTimer_Tick(object? sender, EventArgs e)
     {
+        if (comparisonActive)
+        {
+            UpdateResourceSample();
+            UpdateTimeDisplay();
+            return;
+        }
         SamplePlaybackFps(left);
         SamplePlaybackFps(right);
         UpdateResourceSample();
@@ -636,6 +639,7 @@ public partial class MainWindow : Window
 
     private TimeSpan CurrentPosition()
     {
+        if (comparisonActive && comparisonPanel is not null) return comparisonPanel.Position;
         if (!isPlaying)
             return basePosition;
         if (left.Ready && left.Video?.HasAudio == true)
@@ -643,7 +647,8 @@ public partial class MainWindow : Window
         return ClampToCommon(basePosition + playbackClock.Elapsed);
     }
 
-    private static TimeSpan SlotPosition(SlotState slot) =>
+    private TimeSpan SlotPosition(SlotState slot) =>
+        comparisonActive && comparisonPanel is not null ? comparisonPanel.Position :
         slot.Av1.IsOpen ? slot.Av1.Position : slot.Media.Position;
 
     private TimeSpan CommonDuration()
@@ -675,7 +680,8 @@ public partial class MainWindow : Window
         var position = CurrentPosition();
         var duration = CommonDuration();
         TimeText.Text = $"{position:hh\\:mm\\:ss} / {duration:hh\\:mm\\:ss}";
-        FrameText.Text = $"フレーム位置（再生時刻から推定）: 左 {FormatFramePosition(left)}　｜　右 {FormatFramePosition(right)}";
+        FrameText.Text = (comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（再生時刻から推定）: ") +
+            $"左 {FormatFramePosition(left)}　｜　右 {FormatFramePosition(right)}";
         MeasurementText.Text = $"再生位置からの換算fps: 左 {FormatPlaybackFps(left)} / 右 {FormatPlaybackFps(right)}　｜　" +
             $"実提示fps・左右PTS差: 未測定　｜　CPU {(cpuPercent.HasValue ? $"{cpuPercent.Value:F1}%" : "計測中")} / メモリ {memoryMb:F0} MiB / GPU 不明";
         programmaticSlider = true;
@@ -687,13 +693,14 @@ public partial class MainWindow : Window
     private string FormatPlaybackFps(SlotState slot) =>
         isPlaying && slot.PlaybackFps is { } fps ? $"{fps:F1}" : "—";
 
-    private static string FormatFramePosition(SlotState slot)
+    private string FormatFramePosition(SlotState slot)
     {
         if (!slot.Ready || slot.Video is not { AverageFrameRate: > 0 } video)
             return "—";
         var total = video.TotalFrames ?? (video.Duration > TimeSpan.Zero
             ? (long)Math.Round(video.Duration.TotalSeconds * video.AverageFrameRate) : 0);
-        var position = Math.Max(1, (long)Math.Floor(SlotPosition(slot).TotalSeconds * video.AverageFrameRate) + 1);
+        var position = comparisonActive && comparisonPanel?.CurrentFrameNumber is { } number ? number :
+            Math.Max(1, (long)Math.Floor(SlotPosition(slot).TotalSeconds * video.AverageFrameRate) + 1);
         if (total > 0)
             position = Math.Min(position, total);
         return total > 0
@@ -735,6 +742,7 @@ public partial class MainWindow : Window
     {
         if (closing) return;
         closing = true;
+        comparisonPanel?.Dispose();
         displayTimer.Stop();
         seekTimer.Stop();
         frameTimesCancellation.Cancel();
