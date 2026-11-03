@@ -37,7 +37,7 @@ public sealed class QualityGraphWindow : Window
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         var leftGraph = MakeGraph("フレームグラフ：時刻（秒）と品質", timeline);
-        var rightGraph = MakeGraph("ファイルグラフ：平均ビットレート（Mbps）と平均品質", averages);
+        var rightGraph = MakeGraph("ファイルグラフ：平均ビットレート（kbps）と平均品質", averages);
         Grid.SetColumn(rightGraph, 1);
         grid.Children.Add(leftGraph);
         grid.Children.Add(rightGraph);
@@ -66,7 +66,7 @@ public sealed class QualityGraphWindow : Window
             var timeArea = PlotArea(timeline);
             var fileArea = PlotArea(averages);
             DrawAxes(timeline, timeArea, maximumTime, min, max, "秒");
-            DrawAxes(averages, fileArea, maxRate, min, max, "Mbps");
+            DrawAxes(averages, fileArea, maxRate, min, max, "kbps");
             var previousPoints = new Dictionary<string, Point>();
             for (var index = 0; index < available.Length; index++)
             {
@@ -81,7 +81,7 @@ public sealed class QualityGraphWindow : Window
                 if (isSelected) timeline.Children.Add(line);
                 var point = new Ellipse { Width = 12, Height = 12, Fill = color,
                     Stroke = isSelected ? Brushes.Black : null, StrokeThickness = 2,
-                    Tag = video.Id, ToolTip = $"{video.Name}: {result.Average:F4} / {rates[index]:F2} Mbps", Cursor = System.Windows.Input.Cursors.Hand };
+                    Tag = video.Id, ToolTip = $"{video.Name}: {result.Average:F4} / {rates[index]:N0} kbps", Cursor = System.Windows.Input.Cursors.Hand };
                 Canvas.SetLeft(point, fileArea.Left + rates[index] / maxRate * fileArea.Width - 6);
                 Canvas.SetTop(point, fileArea.Top + (max - result.Average) / (max - min) * fileArea.Height - 6);
                 point.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); status.Text = video.Name; e.Handled = true; };
@@ -167,7 +167,7 @@ public sealed class QualityGraphWindow : Window
         return panel;
     }
 
-    private static double Bitrate(VideoDescriptor video) => video.AverageBitrate is > 0 ? video.AverageBitrate.Value / 1_000_000d : System.IO.File.Exists(video.Path) && video.Duration.TotalSeconds > 0
+    private static double Bitrate(VideoDescriptor video) => video.AverageBitrate is > 0 ? video.AverageBitrate.Value / 1_000d : System.IO.File.Exists(video.Path) && video.Duration.TotalSeconds > 0
         ? new System.IO.FileInfo(video.Path).Length * 8d / video.Duration.TotalSeconds / 1_000_000 : 0;
 
     // 軸・目盛りと描画データは同じ領域を基準に配置する。
@@ -186,7 +186,7 @@ public sealed class QualityGraphWindow : Window
                 Stroke = Brushes.LightGray, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
             canvas.Children.Add(new Line { X1 = area.Left, X2 = area.Right, Y1 = y, Y2 = y,
                 Stroke = Brushes.LightGray, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
-            AddTick(canvas, (maximumX * fraction).ToString("G4"), x, area.Bottom + 6, true);
+            AddTick(canvas, (maximumX * fraction).ToString(unit == "kbps" ? "N0" : "G4"), x, area.Bottom + 6, true);
             AddTick(canvas, (minimumY + (maximumY - minimumY) * fraction).ToString("G4"), area.Left - 7, y, false);
         }
         canvas.Children.Add(new Polyline { Stroke = Brushes.DimGray, StrokeThickness = 1,

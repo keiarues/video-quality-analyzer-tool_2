@@ -15,23 +15,23 @@
             <TextBox Name="FrameNumberBox" Width="80" VerticalContentAlignment="Center" />
             <Button Name="PlayPauseButton" Content="再生" Margin="8,0,0,0" Padding="12,4" Click="PlayPause_Click" />
             <Button Content="停止" Margin="6,0,0,0" Padding="12,4" Click="Stop_Click" />
+          </StackPanel>
+          <Button Content="指定番号へ移動して再生" HorizontalAlignment="Left" Margin="0,6,0,0" Padding="9,4" Click="SeekPlay_Click" />
+        </StackPanel>
+        <Grid>
+            <TabControl Name="ViewSelect" SelectionChanged="ViewSelect_SelectionChanged" Background="#141B26">
+                <TabItem Name="HeatmapTab">
+                    <TabItem.Header><TextBlock Text="差分ヒートマップ" Foreground="Black" /></TabItem.Header>
+                    <DockPanel>
+                        <WrapPanel Name="HeatmapOptions" TextElement.Foreground="White" DockPanel.Dock="Top" Margin="0,8,0,8">
             <TextBlock Text="差分強調" VerticalAlignment="Center" Margin="12,0,6,0" />
-            <ComboBox Name="GainSelect" Width="68" SelectionChanged="GainSelect_SelectionChanged">
+            <ComboBox Name="GainSelect" Foreground="Black" Width="68" SelectionChanged="GainSelect_SelectionChanged">
                 <ComboBoxItem Content="4倍" Tag="4" />
                 <ComboBoxItem Content="16倍" Tag="16" />
                 <ComboBoxItem Content="64倍" Tag="64" />
             </ComboBox>
-            <TextBlock Text="表示" VerticalAlignment="Center" Margin="12,0,6,0" />
-            <ComboBox Name="ViewSelect" Width="130" SelectionChanged="ViewSelect_SelectionChanged">
-                <ComboBoxItem Content="左右＋差分" />
-                <ComboBoxItem Content="境界比較（ワイプ）" />
-                <ComboBoxItem Content="2画面" />
-            </ComboBox>
-          </StackPanel>
-          <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-            <Button Content="指定番号へ移動して再生" Padding="9,4" Click="SeekPlay_Click" />
             <TextBlock Name="BlurLabel" Text="ヒートマップのぼかし" VerticalAlignment="Center" Margin="16,0,6,0" />
-            <ComboBox Name="BlurSelect" Width="105" SelectionChanged="BlurSelect_SelectionChanged">
+            <ComboBox Name="BlurSelect" Foreground="Black" Width="105" SelectionChanged="BlurSelect_SelectionChanged">
                 <ComboBoxItem Content="ぼかしなし" Tag="0" />
                 <ComboBoxItem Content="弱" Tag="1" />
                 <ComboBoxItem Content="中" Tag="2" />
@@ -39,10 +39,9 @@
             </ComboBox>
             <TextBlock Name="BlurHint" Text="左右を同じ範囲でぼかしてから差を表示（元画像はそのまま）"
                        VerticalAlignment="Center" Margin="10,0,0,0" Foreground="#FFCBD5E1" />
-          </StackPanel>
-        </StackPanel>
-        <Grid>
-            <Grid Name="ThreeViewGrid">
+                        </WrapPanel>
+                        <ContentControl Name="HeatmapContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+            <Grid Name="ThreeViewGrid" TextElement.Foreground="White">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
@@ -61,6 +60,11 @@
                     <Border Background="Black"><Image Name="HeatmapImage" Stretch="Uniform" /></Border>
                 </DockPanel>
             </Grid>
+                        </ContentControl>
+                    </DockPanel>
+                </TabItem>
+                <TabItem Name="WipeTab">
+                    <TabItem.Header><TextBlock Text="ワイプ" Foreground="Black" /></TabItem.Header>
             <DockPanel Name="WipeViewGrid" Visibility="Collapsed">
                 <Grid Name="WipeViewport" Background="Black" ClipToBounds="True">
                     <Image Name="WipeLeftImage" Stretch="Uniform" />
@@ -69,7 +73,7 @@
                     </Grid>
                     <Border Background="#AA141B26" HorizontalAlignment="Right" VerticalAlignment="Top"
                             Margin="8" Padding="8,4" IsHitTestVisible="False">
-                        <TextBlock Name="WipePositionText" />
+                        <TextBlock Name="WipePositionText" Foreground="White" />
                     </Border>
                     <Grid Name="WipeBoundary" Width="24" Background="Transparent"
                           HorizontalAlignment="Left" Cursor="SizeWE">
@@ -78,6 +82,12 @@
                     </Grid>
                 </Grid>
             </DockPanel>
+                </TabItem>
+                <TabItem Name="TwoScreenTab">
+                    <TabItem.Header><TextBlock Text="2画面" Foreground="Black" /></TabItem.Header>
+                    <ContentControl Name="TwoScreenContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                </TabItem>
+            </TabControl>
             <Image Name="BenchmarkMarker" Width="48" Height="48" Visibility="Collapsed"
                    HorizontalAlignment="Left" VerticalAlignment="Top" SnapsToDevicePixels="True"
                    RenderOptions.BitmapScalingMode="NearestNeighbor" />

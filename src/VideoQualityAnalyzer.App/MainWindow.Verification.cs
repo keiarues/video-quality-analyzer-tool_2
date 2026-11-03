@@ -34,6 +34,12 @@ public partial class MainWindow
                 VideoList.Columns.Where(column => column.SortMemberPath is "Resolution" or "FrameRate" or "Codec" or "Bitrate" or "Vmaf" or "Ssim" or "Psnr")
                     .Any(column => column.MaxWidth > 115))
                 throw new InvalidOperationException("列の省略名・幅またはソート選択欄の削除が不正です。");
+            UpdateLayout();
+            if (VideoList.Columns.Sum(column => column.ActualWidth) > VideoList.ActualWidth - SystemParameters.VerticalScrollBarWidth)
+                throw new InvalidOperationException("初期幅で全列が収まりません。");
+            var bitrateColumn = (System.Windows.Controls.DataGridTextColumn)VideoList.Columns.Single(column => column.SortMemberPath == "Bitrate");
+            if (bitrateColumn.Binding is not System.Windows.Data.Binding { StringFormat: "N0" })
+                throw new InvalidOperationException("ビットレートの3桁区切りが設定されていません。");
             var scoreColumn = VideoList.Columns.Single(column => column.SortMemberPath == "Ssim");
             VideoList_Sorting(this, new System.Windows.Controls.DataGridSortingEventArgs(scoreColumn));
             if (videos[0] != original[1] || videos[1] != original[2])

@@ -465,6 +465,7 @@ public partial class ComparisonWindow : Window
 
             operation = "ワイプ境界";
             ViewSelect.SelectedIndex = 1;
+            await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Loaded);
             UpdateLayout();
             foreach (var percent in new[] { 0d, 25d, 50d, 75d, 100d })
             {
@@ -478,10 +479,25 @@ public partial class ComparisonWindow : Window
                     throw new InvalidOperationException("ワイプ境界と切り替え位置が一致しません。");
             }
             ViewSelect.SelectedIndex = 2;
+            UpdateLayout();
+            if (ViewSelect.Items.Count != 3 || ViewSelect.SelectedItem != TwoScreenTab || HeatmapOptions.IsVisible)
+                throw new InvalidOperationException("2画面タブに専用外のオプションが表示されています。");
             if (HeatmapPanel.Visibility != Visibility.Collapsed || HeatmapColumn.Width.Value != 0)
                 throw new InvalidOperationException("2画面表示に切り替わりません。");
             CheckAlignedPair();
             ViewSelect.SelectedIndex = 0;
+            UpdateLayout();
+            if (!HeatmapOptions.IsVisible || !HeatmapOptions.IsAncestorOf(GainSelect) ||
+                HeatmapTab.Content is not DockPanel optionsPanel || !optionsPanel.Children.Contains(HeatmapOptions))
+                throw new InvalidOperationException("ヒートマップ専用オプションがタブ内にありません。");
+            var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
+            snapshot.Render((Visual)Content);
+            var encoder = new PngBitmapEncoder();
+            encoder.Frames.Add(BitmapFrame.Create(snapshot));
+            var layoutPath = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+                "../../../../../measurement-results/comparison-tabs-layout.png"));
+            Directory.CreateDirectory(Path.GetDirectoryName(layoutPath)!);
+            using (var stream = File.Create(layoutPath)) encoder.Save(stream);
 
             operation = "一時停止中のぼかし切り替え";
             for (var index = 0; index < BlurSelect.Items.Count; index++)
@@ -536,6 +552,7 @@ public partial class ComparisonWindow : Window
         }
         catch (Exception exception)
         {
+            Console.Error.WriteLine($"比較操作: {operation} / タブ {ViewSelect.SelectedIndex} / ワイプ領域 {WipeViewport.ActualWidth}×{WipeViewport.ActualHeight} / 元画像幅 {wipeBoundaryController.ImageWidth}");
             WriteVerificationResult("comparison-operations-failed", new
             {
                 LeftVideo = Path.GetFileName(leftPath), RightVideo = Path.GetFileName(rightPath),
@@ -700,10 +717,21 @@ public partial class ComparisonWindow : Window
 
     private void ViewSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (ThreeViewGrid is null || WipeViewGrid is null) return;
+        if (e.Source != ViewSelect || ThreeViewGrid is null || WipeViewGrid is null ||
+            HeatmapContent is null || TwoScreenContent is null) return;
         var wipe = ViewSelect.SelectedIndex == 1;
         wipeMode = wipe;
         twoScreenMode = ViewSelect.SelectedIndex == 2;
+        if (twoScreenMode && !ReferenceEquals(TwoScreenContent.Content, ThreeViewGrid))
+        {
+            HeatmapContent.Content = null;
+            TwoScreenContent.Content = ThreeViewGrid;
+        }
+        else if (!twoScreenMode && !ReferenceEquals(HeatmapContent.Content, ThreeViewGrid))
+        {
+            TwoScreenContent.Content = null;
+            HeatmapContent.Content = ThreeViewGrid;
+        }
         HeatmapPanel.Visibility = twoScreenMode ? Visibility.Collapsed : Visibility.Visible;
         HeatmapColumn.Width = twoScreenMode ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         if (BlurSelect is not null) BlurSelect.IsEnabled = !wipe;
