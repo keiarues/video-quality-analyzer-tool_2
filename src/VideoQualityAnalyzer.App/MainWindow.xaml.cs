@@ -82,6 +82,7 @@ public partial class MainWindow : Window
         LeftMedia.Volume = VolumeSlider.Value;
         RightMedia.IsMuted = true;
         initialized = true;
+        InitializeEmbeddedGraphs();
         log.Record("session_start", "none", null, "ready", detail: "presented_fps=unmeasured;decode_mode=unknown");
         Loaded += async (_, _) =>
         {
@@ -90,6 +91,7 @@ public partial class MainWindow : Window
                 await AddFilesAsync(startupFiles);
             if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-comparison")) await VerifyEmbeddedComparisonAsync();
+            else if (Environment.GetCommandLineArgs().Contains("--verify-main-graphs")) await VerifyEmbeddedGraphsAsync();
         };
     }
 
@@ -213,6 +215,7 @@ public partial class MainWindow : Window
         UpdateEmbeddedComparison(leftVideo, rightVideo, position, resume);
         RightMedia.IsMuted = true;
         UpdateInfo();
+        RefreshEmbeddedGraphs();
         UpdateTimeDisplay();
     }
 
@@ -419,6 +422,7 @@ public partial class MainWindow : Window
             entry.SsimAverage = qualityResults.TryGetValue((entry.Descriptor.Id, QualityMetric.Ssim), out var ssim) ? ssim.Average : null;
             entry.PsnrAverage = qualityResults.TryGetValue((entry.Descriptor.Id, QualityMetric.Psnr), out var psnr) ? psnr.Average : null;
         }
+        RefreshEmbeddedGraphs();
     }
 
     private void RefreshVideoOrder()
@@ -451,7 +455,8 @@ public partial class MainWindow : Window
                 var entry = videos.FirstOrDefault(item => item.Descriptor.Id == id);
                 if (entry is not null) VideoList.SelectedItem = entry;
             }, allVideos: videos.Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray(),
-            groups: videos.ToDictionary(entry => entry.Descriptor.Id, entry => entry.Group)) { Owner = this };
+            groups: videos.ToDictionary(entry => entry.Descriptor.Id, entry => entry.Group),
+            resultsChanged: RefreshQualityValues) { Owner = this };
         evaluationWindow.ShowDialog();
         RefreshQualityValues();
         RefreshVideoOrder();

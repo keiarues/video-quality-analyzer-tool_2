@@ -6,6 +6,56 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
+    private async Task VerifyEmbeddedGraphsAsync()
+    {
+        try
+        {
+            var candidates = videos.Where(entry => !entry.IsReference).Take(2).ToArray();
+            if (candidates.Length != 2 || qualityGraphPanel is null) throw new InvalidOperationException("グラフ検証には比較動画2本が必要です。");
+            foreach (var entry in candidates)
+                qualityResults[(entry.Descriptor.Id, QualityMetric.Ssim)] = new QualityResult(QualityMetric.Ssim, 0.85,
+                    [new QualityFrame(0, 0.8), new QualityFrame(10, 0.9), new QualityFrame(20, 0.85)]);
+            RefreshQualityValues();
+            VideoList.SelectedItems.Clear();
+            VideoList.SelectedItem = candidates[0];
+            await comparisonChangeTask;
+            qualityGraphPanel.SelectMetric(QualityMetric.Ssim);
+            UpdateLayout();
+            if (QualityGraphHost.Content != qualityGraphPanel || Application.Current.Windows.Count != 1 ||
+                qualityGraphPanel.FilePointCount != 2 || !qualityGraphPanel.DisplayedVideoIds.SequenceEqual(new[] { candidates[0].Descriptor.Id }))
+                throw new InvalidOperationException("主画面の評価結果または選択がグラフに反映されません。");
+            if (QualityGraphHost.TranslatePoint(new Point(0, 0), this).Y <
+                PlaybackControls.TranslatePoint(new Point(0, PlaybackControls.ActualHeight), this).Y)
+                throw new InvalidOperationException("品質グラフが再生制御の下にありません。");
+            qualityGraphPanel.SelectFile(candidates[1].Descriptor.Id);
+            await comparisonChangeTask;
+            if (VideoList.SelectedItem != candidates[1] ||
+                !qualityGraphPanel.DisplayedVideoIds.SequenceEqual(new[] { candidates[1].Descriptor.Id }))
+                throw new InvalidOperationException("グラフのファイル選択が主画面に反映されません。");
+            qualityGraphPanel.SeekToFraction(0.5);
+            await comparisonChangeTask;
+            var expected = 10 / candidates[1].Descriptor.AverageFrameRate;
+            if (Math.Abs(CurrentPosition().TotalSeconds - expected) > 0.001)
+                throw new InvalidOperationException("グラフから主画面へシークできません。");
+            UpdateLayout();
+            var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)ActualWidth, (int)ActualHeight,
+                96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            snapshot.Render((System.Windows.Media.Visual)Content);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(snapshot));
+            var layoutPath = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory,
+                "../../../../../measurement-results/main-quality-graphs-layout.png"));
+            using (var stream = System.IO.File.Create(layoutPath)) encoder.Save(stream);
+            qualityResults.Clear();
+            RefreshQualityValues();
+            if (qualityGraphPanel.FilePointCount != 0 || qualityGraphPanel.DisplayedVideoIds.Count != 0)
+                throw new InvalidOperationException("リセット後のグラフが残っています。");
+            Console.WriteLine("主画面グラフ: 配置・評価結果反映・一覧と点の選択連動・シーク・リセットが合格");
+            Application.Current.Shutdown(0);
+        }
+        catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }
+    }
+
     private async Task VerifyEmbeddedComparisonAsync()
     {
         try

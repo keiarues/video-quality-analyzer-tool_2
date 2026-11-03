@@ -20,13 +20,15 @@ public sealed class EvaluationWindow : Window
     private CancellationTokenSource? cancellation;
     private bool running;
     private readonly bool verify;
+    private readonly Action? resultsChanged;
 
     public EvaluationWindow(VideoDescriptor reference, VideoDescriptor[] candidates,
         IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results, bool verify = false,
         Action<TimeSpan>? seek = null, Action<string>? select = null,
-        VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null)
+        VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null, Action? resultsChanged = null)
     {
         this.verify = verify;
+        this.resultsChanged = resultsChanged;
         this.reference = reference;
         this.candidates = candidates;
         this.results = results;
@@ -181,6 +183,7 @@ public sealed class EvaluationWindow : Window
 
     private void RefreshRows()
     {
+        resultsChanged?.Invoke();
         rows.Clear();
         foreach (var candidate in candidates)
         foreach (var metric in Enum.GetValues<QualityMetric>())

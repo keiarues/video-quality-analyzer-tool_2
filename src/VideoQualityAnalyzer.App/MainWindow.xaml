@@ -72,6 +72,8 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="8" />
+                    <RowDefinition Height="260" MinHeight="200" />
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="0" Name="LegacyPreviewGrid">
                     <Grid.ColumnDefinitions>
@@ -146,6 +148,9 @@
                 <TextBlock Name="StatusText" Text="動画を追加してください。" Foreground="#BFCBDB" Margin="4,8,0,0" />
             </StackPanel>
         </Border>
+                <GridSplitter Grid.Row="3" Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="#405066" />
+                <ContentControl Name="QualityGraphHost" Grid.Row="4" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+
             </Grid>
         </Grid>
 
