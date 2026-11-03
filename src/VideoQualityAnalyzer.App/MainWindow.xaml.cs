@@ -86,6 +86,7 @@ public partial class MainWindow : Window
             var startupFiles = Environment.GetCommandLineArgs().Skip(1).Where(File.Exists).ToArray();
             if (startupFiles.Length > 0)
                 await AddFilesAsync(startupFiles);
+            if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
         };
     }
 

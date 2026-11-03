@@ -89,7 +89,7 @@ public sealed class MeasurementLog : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         events.Writer.TryComplete();
-        await writer;
+        await writer.ConfigureAwait(false);
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
