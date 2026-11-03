@@ -297,6 +297,20 @@ public partial class MainWindow : Window
         StopPlayback();
     }
 
+    private void PlayPause_Click(object sender, RoutedEventArgs e)
+    {
+        if (isPlaying) PausePlayback();
+        else Play_Click(sender, e);
+    }
+
+    private void UpdatePlayPauseButton()
+    {
+        if (!initialized) return;
+        PlayPauseButton.Content = isPlaying ? "⏸" : "▶";
+        PlayPauseButton.ToolTip = isPlaying ? "一時停止" : "再生";
+        System.Windows.Automation.AutomationProperties.SetName(PlayPauseButton, isPlaying ? "一時停止" : "再生");
+    }
+
     private void Play_Click(object sender, RoutedEventArgs e)
     {
         if (left.Video is null)
@@ -306,6 +320,7 @@ public partial class MainWindow : Window
         if (comparisonActive && comparisonPanel is not null)
         {
             isPlaying = true;
+            UpdatePlayPauseButton();
             comparisonPanel.Play();
             if (left.Media.Source is not null) { left.Media.Position = CurrentPosition(); left.Media.Play(); }
             return;
@@ -326,6 +341,7 @@ public partial class MainWindow : Window
         }
         playbackClock.Restart();
         isPlaying = true;
+        UpdatePlayPauseButton();
         ResetFpsSamples();
         UpdateSlotStatus();
         log.Record("play", "both", left.Video?.Id, "requested", detail: "presented_fps=unmeasured");
@@ -341,6 +357,7 @@ public partial class MainWindow : Window
         comparisonPanel?.Pause();
         playbackClock.Stop();
         isPlaying = false;
+        UpdatePlayPauseButton();
         ResetFpsSamples();
         left.Media.Pause();
         right.Media.Pause();
@@ -357,6 +374,7 @@ public partial class MainWindow : Window
     {
         playbackClock.Reset();
         isPlaying = false;
+        UpdatePlayPauseButton();
         ResetFpsSamples();
         basePosition = TimeSpan.Zero;
         if (comparisonActive && comparisonPanel is not null) comparisonChangeTask = comparisonPanel.SeekAsync(TimeSpan.Zero, false);
@@ -474,14 +492,17 @@ public partial class MainWindow : Window
         UpdateTimeDisplay();
     }
 
-    private async void FrameStep_Click(object sender, RoutedEventArgs e)
+    private async void FrameStep_Click(object sender, RoutedEventArgs e) => await MoveFrameAsync(1);
+    private async void FrameBack_Click(object sender, RoutedEventArgs e) => await MoveFrameAsync(-1);
+
+    private async Task MoveFrameAsync(int direction)
     {
         PausePlayback();
         if (left.Video is not { } video)
             return;
         if (comparisonActive)
         {
-            ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(1 / video.AverageFrameRate));
+            ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(direction / video.AverageFrameRate));
             return;
         }
         var token = frameTimesCancellation.Token;
@@ -510,15 +531,16 @@ public partial class MainWindow : Window
         }
 
         var current = CurrentPosition();
-        var next = times?.FirstOrDefault(time => time > current + TimeSpan.FromMilliseconds(1));
-        if (next is not null && next.Value > current)
+        var next = direction > 0 ? times?.FirstOrDefault(time => time > current + TimeSpan.FromMilliseconds(1))
+            : times?.Where(time => time < current - TimeSpan.FromMilliseconds(1)).Select(time => (TimeSpan?)time).LastOrDefault();
+        if (next is not null && (direction > 0 ? next.Value > current : next.Value < current))
         {
             ApplySeek(next.Value);
-            StatusText.Text = "次のソースPTSへ移動しました。実際の提示精度は未測定です。";
+            StatusText.Text = direction > 0 ? "次のソースPTSへ移動しました。" : "前のソースPTSへ移動しました。";
         }
         else if (video.AverageFrameRate > 0)
         {
-            ApplySeek(current + TimeSpan.FromSeconds(1 / video.AverageFrameRate));
+            ApplySeek(current + TimeSpan.FromSeconds(direction / video.AverageFrameRate));
             StatusText.Text = "平均fpsから1コマ分を近似しました。";
         }
     }
@@ -677,6 +699,7 @@ public partial class MainWindow : Window
     {
         if (!initialized)
             return;
+        UpdatePlayPauseButton();
         var position = CurrentPosition();
         var duration = CommonDuration();
         TimeText.Text = $"{position:hh\\:mm\\:ss} / {duration:hh\\:mm\\:ss}";

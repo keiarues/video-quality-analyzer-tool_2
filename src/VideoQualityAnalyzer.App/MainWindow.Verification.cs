@@ -30,25 +30,33 @@ public partial class MainWindow
                 await comparisonChangeTask;
                 var firstFrame = comparisonPanel.CurrentFrameNumber;
                 foreach (var mode in new[] { 2, 1, 0 }) { comparisonPanel.SelectMode(mode); UpdateLayout(); }
-                Play_Click(this, new RoutedEventArgs());
+                PlayPauseButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                if (!Equals(PlayPauseButton.Content, "⏸")) throw new InvalidOperationException("再生中のボタン表示が不正です。");
                 var timeout = System.Diagnostics.Stopwatch.StartNew();
                 while (comparisonPanel.CurrentFrameNumber < firstFrame + 5)
                 {
                     if (timeout.Elapsed.TotalSeconds > 10) throw new InvalidOperationException("主画面で再生が進みません。");
                     await Task.Delay(20);
                 }
-                PausePlayback();
+                PlayPauseButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                if (!Equals(PlayPauseButton.Content, "▶")) throw new InvalidOperationException("一時停止中のボタン表示が不正です。");
                 var paused = comparisonPanel.CurrentFrameNumber;
                 await Task.Delay(200);
                 if (comparisonPanel.CurrentFrameNumber != paused) throw new InvalidOperationException("一時停止中にフレームが進みました。");
                 FrameStep_Click(this, new RoutedEventArgs());
                 await comparisonChangeTask;
                 if (comparisonPanel.CurrentFrameNumber != paused + 1) throw new InvalidOperationException("1コマ送りが不正です。");
+                FrameBackButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                await comparisonChangeTask;
+                if (comparisonPanel.CurrentFrameNumber != paused) throw new InvalidOperationException("1コマ戻しが不正です。");
                 await comparisonPanel.VerifyCurrentPixelsAsync();
                 StopPlayback();
                 await comparisonChangeTask;
                 if (comparisonPanel.CurrentFrameNumber != 0 || comparisonPanel.IsPlaying)
                     throw new InvalidOperationException("停止時に先頭で静止しません。");
+                FrameBackButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+                await comparisonChangeTask;
+                if (comparisonPanel.CurrentFrameNumber != 0) throw new InvalidOperationException("先頭からのコマ戻しが不正です。");
                 Console.WriteLine("主画面比較: 再生・タブ・一時停止・コマ送り・静止画素・停止が合格");
             }
             ApplySeek(TimeSpan.FromSeconds(5));
@@ -61,6 +69,14 @@ public partial class MainWindow
             await comparisonPanel.VerifyCurrentPixelsAsync();
             Console.WriteLine("主画面比較: 連続選択の最終結果と静止画素が合格");
             UpdateLayout();
+            if (PlaybackControls.Parent != ComparisonHost.Parent ||
+                PlaybackControls.TranslatePoint(new Point(0, 0), this).Y <
+                ComparisonHost.TranslatePoint(new Point(0, ComparisonHost.ActualHeight), this).Y)
+                throw new InvalidOperationException("再生制御がプレビュー直下にありません。");
+            var buttonLabels = PlaybackButtons.Children.OfType<System.Windows.Controls.Button>()
+                .Select(button => (string)button.Content).ToArray();
+            if (!buttonLabels.SequenceEqual(new[] { "■", "▶", "−5秒", "−1秒", "|◀", "▶|", "+1秒", "+5秒" }))
+                throw new InvalidOperationException("再生ボタンの順番が不正です。");
             var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)ActualWidth, (int)ActualHeight,
                 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
             snapshot.Render((System.Windows.Media.Visual)Content);

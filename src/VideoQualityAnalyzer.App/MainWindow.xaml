@@ -71,6 +71,7 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <Grid Grid.Row="0" Name="LegacyPreviewGrid">
                     <Grid.ColumnDefinitions>
@@ -110,10 +111,7 @@
                 <ContentControl Grid.Row="0" Name="ComparisonHost" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 <TextBlock Grid.Row="1" Name="MeasurementText" Text="再生位置からの換算fps: 左 — / 右 —　｜　実提示fps: 未測定"
                            Foreground="#F6D37A" Margin="4,10,4,4" TextWrapping="Wrap" />
-            </Grid>
-        </Grid>
-
-        <Border Grid.Row="2" Background="{StaticResource PanelBrush}" CornerRadius="8" Padding="12" Margin="0,12,0,0">
+        <Border Name="PlaybackControls" Grid.Row="2" Background="{StaticResource PanelBrush}" CornerRadius="8" Padding="8" Margin="0,8,0,0">
             <StackPanel>
                 <DockPanel>
                     <TextBlock Name="TimeText" DockPanel.Dock="Right" Text="00:00:00 / 00:00:00" MinWidth="190"
@@ -122,17 +120,25 @@
                             PreviewMouseLeftButtonUp="SeekSlider_MouseUp" />
                 </DockPanel>
                 <TextBlock Name="FrameText" Text="フレーム位置: 左 — / 右 —" Foreground="#D6E2F2" Margin="4,5,0,0" TextWrapping="Wrap" />
-                <WrapPanel Margin="0,8,0,0">
-                    <Button Content="再生" Click="Play_Click" />
-                    <Button Content="一時停止" Click="Pause_Click" />
-                    <Button Content="停止" Click="Stop_Click" />
-                    <Button Content="-5秒" Click="BackFive_Click" />
-                    <Button Content="-1秒" Click="BackOne_Click" />
-                    <Button Content="+1秒" Click="ForwardOne_Click" />
-                    <Button Content="+5秒" Click="ForwardFive_Click" />
-                    <Button Content="1コマ送り" Click="FrameStep_Click" MinWidth="100" />
-                    <TextBlock Text="音量" VerticalAlignment="Center" Margin="15,0,5,0" />
-                    <Slider Name="VolumeSlider" Width="105" Minimum="0" Maximum="1" Value="0.7"
+                <WrapPanel Name="PlaybackButtons" Margin="0,8,0,0">
+                    <WrapPanel.Resources>
+                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                            <Setter Property="MinWidth" Value="32" />
+                            <Setter Property="Padding" Value="7,5" />
+                        </Style>
+                    </WrapPanel.Resources>
+                    <Button Name="StopButton" Content="■" ToolTip="停止（先頭に戻る）" AutomationProperties.Name="停止" Click="Stop_Click" />
+                    <Button Name="PlayPauseButton" Content="▶" ToolTip="再生" AutomationProperties.Name="再生" Click="PlayPause_Click" />
+                    <Border Width="12" />
+                    <Button Content="−5秒" ToolTip="5秒戻る" Click="BackFive_Click" />
+                    <Button Content="−1秒" ToolTip="1秒戻る" Click="BackOne_Click" />
+                    <Button Name="FrameBackButton" Content="|◀" ToolTip="1コマ戻る" AutomationProperties.Name="1コマ戻る" Click="FrameBack_Click" />
+                    <Button Name="FrameForwardButton" Content="▶|" ToolTip="1コマ進む" AutomationProperties.Name="1コマ進む" Click="FrameStep_Click" />
+                    <Button Content="+1秒" ToolTip="1秒進む" Click="ForwardOne_Click" />
+                    <Button Content="+5秒" ToolTip="5秒進む" Click="ForwardFive_Click" />
+                    <Border Width="12" />
+                    <TextBlock Text="音量" VerticalAlignment="Center" Margin="0,0,5,0" />
+                    <Slider Name="VolumeSlider" Width="90" Minimum="0" Maximum="1" Value="0.7"
                             VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" />
                     <CheckBox Name="MuteCheck" Content="ミュート" VerticalAlignment="Center" Margin="10,0,0,0"
                               Checked="MuteCheck_Changed" Unchecked="MuteCheck_Changed" />
@@ -140,5 +146,9 @@
                 <TextBlock Name="StatusText" Text="動画を追加してください。" Foreground="#BFCBDB" Margin="4,8,0,0" />
             </StackPanel>
         </Border>
+            </Grid>
+        </Grid>
+
+
     </Grid>
 </Window>
