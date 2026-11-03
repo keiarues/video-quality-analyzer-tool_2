@@ -26,13 +26,21 @@
                     <StackPanel DockPanel.Dock="Top">
                         <TextBlock Text="動画一覧" FontSize="16" FontWeight="SemiBold" Margin="3,2,0,8" />
                         <WrapPanel Margin="0,0,0,8">
-                            <Button Content="追加" Click="Add_Click" />
-                            <Button Content="元動画に設定" Click="SetReference_Click" MinWidth="100" />
-                            <Button Content="削除" Click="Remove_Click" />
-                            <Button Content="品質評価" Click="Evaluate_Click" />
-                            <Button Content="グループ設定" Click="SetGroup_Click" />
+                            <Button Name="AddVideoButton" Content="追加" Click="Add_Click" />
+                            <Button Name="SetReferenceButton" Content="元動画に設定" Click="SetReference_Click" MinWidth="100" />
+                            <Button Name="RemoveVideoButton" Content="削除" Click="Remove_Click" />
+                                                        <Button Content="グループ設定" Click="SetGroup_Click" />
                         </WrapPanel>
                         <TextBlock Text="複数選択できます。ファイルのドラッグ＆ドロップにも対応。" TextWrapping="Wrap" Foreground="#BFCBDB" Margin="3,0,3,8" />
+                    </StackPanel>
+                    <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
+                        <WrapPanel>
+                            <CheckBox Name="VmafCheck" Content="VMAF" Margin="0,0,16,0" VerticalAlignment="Center" />
+                            <CheckBox Name="SsimCheck" Content="SSIM" IsChecked="True" Margin="0,0,16,0" VerticalAlignment="Center" />
+                            <CheckBox Name="PsnrCheck" Content="PSNR" Margin="0,0,16,0" VerticalAlignment="Center" />
+                            <Button Name="EvaluationStartButton" Content="評価を開始" Click="Evaluate_Click" MinWidth="110" />
+                        </WrapPanel>
+                        <TextBlock Name="EvaluationStatus" Text="評価する比較動画を一覧で選択してください。" TextWrapping="Wrap" Margin="0,5,0,0" Foreground="#D6E2F2" />
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Bottom" Name="InfoText" Text="動画を追加してください。" TextWrapping="Wrap" Foreground="#D6E2F2" Margin="3,9,3,2" />
                     <DataGrid Name="VideoList" SelectionMode="Extended" SelectionUnit="FullRow"

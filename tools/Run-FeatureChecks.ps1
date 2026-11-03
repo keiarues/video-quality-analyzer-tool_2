@@ -20,6 +20,8 @@ if ($LASTEXITCODE -ne 0) { throw '品質評価の実計算試験に失敗しま�
 if ($LASTEXITCODE -ne 0) { throw 'グループ設定画面の試験に失敗しました。' }
 $red = Join-Path $workspace 'measurement-results/quality-smoke/red.mkv'
 $blue = Join-Path $workspace 'measurement-results/quality-smoke/blue.mkv'
+& $dotnet $app --verify-main-evaluation $red $blue
+if ($LASTEXITCODE -ne 0) { throw '主画面の評価開始・中止の試験に失敗しました。' }
 & $dotnet $app --verify-evaluation $red $blue
 if ($LASTEXITCODE -ne 0) { throw '評価結果の再利用・グラフ画面の試験に失敗しました。' }
 $videos = Get-ChildItem -LiteralPath (Join-Path $workspace 'test-data') -File | Select-Object -ExpandProperty FullName

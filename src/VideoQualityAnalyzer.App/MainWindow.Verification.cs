@@ -6,6 +6,61 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
+    private async Task VerifyMainEvaluationAsync()
+    {
+        try
+        {
+            var candidate = videos.First(entry => !entry.IsReference);
+            VideoList.SelectedItem = candidate;
+            await comparisonChangeTask;
+            if (VmafCheck.IsChecked == true || SsimCheck.IsChecked != true || PsnrCheck.IsChecked == true ||
+                new[] { VmafCheck, SsimCheck, PsnrCheck }.Any(check => check.ToolTip is not System.Windows.Controls.TextBlock))
+                throw new InvalidOperationException("主画面の初期指標または説明が不正です。");
+            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            if (evaluationCancellation is null || !Equals(EvaluationStartButton.Content, "評価を中止") ||
+                AddVideoButton.IsEnabled || SetReferenceButton.IsEnabled || RemoveVideoButton.IsEnabled || Application.Current.Windows.Count != 1)
+                throw new InvalidOperationException("主画面での評価開始状態が不正です。");
+            await evaluationTask;
+            var key = (candidate.Descriptor.Id, QualityMetric.Ssim);
+            if (!qualityResults.TryGetValue(key, out var completed) || completed.Frames.Count != 30 ||
+                !Equals(EvaluationStartButton.Content, "評価を開始") || !EvaluationStartButton.IsEnabled)
+                throw new InvalidOperationException("主画面で評価結果が確定されません。");
+            qualityGraphPanel!.SelectMetric(QualityMetric.Ssim);
+            if (qualityGraphPanel.FilePointCount != 1) throw new InvalidOperationException("評価結果が主画面グラフに反映されません。");
+            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            await evaluationTask;
+            if (!ReferenceEquals(completed, qualityResults[key])) throw new InvalidOperationException("完了済み結果が再計算されました。");
+            PsnrCheck.IsChecked = true;
+            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            if (evaluationCancellation is null) throw new InvalidOperationException("中止試験の評価が始まりません。");
+            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            await evaluationTask;
+            if (qualityResults.ContainsKey((candidate.Descriptor.Id, QualityMetric.Psnr)) ||
+                !ReferenceEquals(completed, qualityResults[key]) || !EvaluationStartButton.IsEnabled ||
+                !Equals(EvaluationStartButton.Content, "評価を開始"))
+                throw new InvalidOperationException("評価中止後の結果またはボタン状態が不正です。");
+            UpdateLayout();
+            if (EvaluationControls.TranslatePoint(new Point(0, 0), this).Y <
+                VideoList.TranslatePoint(new Point(0, VideoList.ActualHeight), this).Y)
+                throw new InvalidOperationException("評価操作がファイル一覧の下にありません。");
+            var directory = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory,
+                "../../../../../measurement-results"));
+            await ExportQualityCsvAsync(System.IO.Path.Combine(directory, "main-evaluation-summary.csv"), false);
+            await ExportQualityCsvAsync(System.IO.Path.Combine(directory, "main-evaluation-frames.csv"), true);
+            var bytes = await System.IO.File.ReadAllBytesAsync(System.IO.Path.Combine(directory, "main-evaluation-summary.csv"));
+            if (!bytes.AsSpan(0, 3).SequenceEqual(new byte[] { 0xEF, 0xBB, 0xBF })) throw new InvalidOperationException("CSVのBOMがありません。");
+            var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)ActualWidth, (int)ActualHeight,
+                96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            snapshot.Render((System.Windows.Media.Visual)Content);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(snapshot));
+            using (var stream = System.IO.File.Create(System.IO.Path.Combine(directory, "main-evaluation-layout.png"))) encoder.Save(stream);
+            Console.WriteLine("主画面評価: 一覧下の配置・開始／中止切り替え・完了結果・再利用・中止・グラフ連動・CSV機能保持が合格");
+            Application.Current.Shutdown(0);
+        }
+        catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }
+    }
+
     private async Task VerifySeekSliderAsync()
     {
         try

@@ -91,6 +91,7 @@ public partial class MainWindow : Window
         RightMedia.IsMuted = true;
         initialized = true;
         InitializeEmbeddedGraphs();
+        InitializeEvaluationControls();
         log.Record("session_start", "none", null, "ready", detail: "presented_fps=unmeasured;decode_mode=unknown");
         Loaded += async (_, _) =>
         {
@@ -101,6 +102,7 @@ public partial class MainWindow : Window
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-comparison")) await VerifyEmbeddedComparisonAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-graphs")) await VerifyEmbeddedGraphsAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-seek")) await VerifySeekSliderAsync();
+            else if (Environment.GetCommandLineArgs().Contains("--verify-main-evaluation")) await VerifyMainEvaluationAsync();
         };
     }
 
@@ -120,7 +122,15 @@ public partial class MainWindow : Window
     {
         if (probe is null)
             return;
+        if (evaluationCancellation is not null)
+        {
+            EvaluationStatus.Text = "評価中は動画を追加できません。";
+            return;
+        }
 
+        pendingVideoLoads++;
+        try
+        {
         foreach (var input in paths)
         {
             var path = System.IO.Path.GetFullPath(input);
@@ -154,10 +164,13 @@ public partial class MainWindow : Window
         UpdateSelection();
         if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
         StatusText.Text = $"{videos.Count}本を登録しました。";
+        }
+        finally { pendingVideoLoads--; }
     }
 
     private void SetReference_Click(object sender, RoutedEventArgs e)
     {
+        if (evaluationCancellation is not null) return;
         if (VideoList.SelectedItem is not VideoEntry entry)
             return;
         if (referenceId != entry.Descriptor.Id) qualityResults.Clear();
@@ -173,6 +186,7 @@ public partial class MainWindow : Window
 
     private void Remove_Click(object sender, RoutedEventArgs e)
     {
+        if (evaluationCancellation is not null) return;
         var removed = VideoList.SelectedItems.Cast<VideoEntry>().ToArray();
         suppressSelection = true;
         foreach (var item in removed)
@@ -445,30 +459,6 @@ public partial class MainWindow : Window
         foreach (var entry in selected) VideoList.SelectedItems.Add(entry);
         suppressSelection = false;
         UpdateSelection();
-    }
-
-    private void Evaluate_Click(object sender, RoutedEventArgs e)
-    {
-        var reference = videos.FirstOrDefault(entry => entry.Descriptor.Id == referenceId)?.Descriptor;
-        var candidates = VideoList.SelectedItems.Cast<VideoEntry>().Select(entry => entry.Descriptor)
-            .Where(video => video.Id != referenceId).ToArray();
-        if (reference is null || candidates.Length == 0)
-        {
-            StatusText.Text = "元動画と、評価する比較動画を選択してください。";
-            return;
-        }
-        Pause_Click(sender, e);
-        var evaluationWindow = new EvaluationWindow(reference, candidates, qualityResults, seek: ApplySeek,
-            select: id =>
-            {
-                var entry = videos.FirstOrDefault(item => item.Descriptor.Id == id);
-                if (entry is not null) VideoList.SelectedItem = entry;
-            }, allVideos: videos.Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray(),
-            groups: videos.ToDictionary(entry => entry.Descriptor.Id, entry => entry.Group),
-            resultsChanged: RefreshQualityValues) { Owner = this };
-        evaluationWindow.ShowDialog();
-        RefreshQualityValues();
-        RefreshVideoOrder();
     }
 
     private void ForwardOne_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(1));
@@ -765,6 +755,13 @@ public partial class MainWindow : Window
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
     {
         if (closing) return;
+        if (evaluationCancellation is not null)
+        {
+            e.Cancel = true;
+            evaluationCloseRequested = true;
+            evaluationCancellation.Cancel();
+            return;
+        }
         closing = true;
         comparisonPanel?.Dispose();
         displayTimer.Stop();
