@@ -41,6 +41,7 @@ public partial class ComparisonWindow : Window
     private volatile bool playbackPaused;
     private volatile bool wipeMode;
     private volatile int heatmapGain = 16;
+    private volatile int heatmapBlurRadius;
     private WriteableBitmap? playingLeft;
     private WriteableBitmap? playingRight;
     private WriteableBitmap? playingHeatmap;
@@ -86,6 +87,7 @@ public partial class ComparisonWindow : Window
             .First(choice => string.Equals(choice.Path, rightPath, StringComparison.OrdinalIgnoreCase));
         FrameNumberBox.Text = frameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
         GainSelect.SelectedIndex = 1;
+        BlurSelect.SelectedIndex = 0;
         ViewSelect.SelectedIndex = showWipe ? 1 : 0;
         UpdateWipeBoundary();
         ResultText.Text = "左右に同じ元フレーム番号を指定して比較します。再生中も表示を切り替えられます。";
@@ -247,7 +249,9 @@ public partial class ComparisonWindow : Window
                         measuredLateDropped.Add(left.FrameNumber);
                     continue;
                 }
-                var difference = wipeMode ? null : FrameComparisonService.CreateHeatmap(left, right, heatmapGain);
+                var blurRadius = heatmapBlurRadius;
+                var difference = wipeMode ? null : FrameComparisonService.CreateHeatmap(left, right,
+                    heatmapGain, blurRadius);
                 await Dispatcher.InvokeAsync(() =>
                 {
                     if (token.IsCancellationRequested) return;
@@ -263,7 +267,8 @@ public partial class ComparisonWindow : Window
                         FrameNumberBox.Text = left.FrameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
                         ResultText.Text = $"再生比較 #{left.FrameNumber} / 描画要求 {displayed / Math.Max(0.001, clock.Elapsed.TotalSeconds):F1} fps" +
                             $" / 遅延破棄 {skipped}枚" +
-                            (difference is null ? "" : $" / 平均RGB差 {difference.MeanAbsoluteRgbDifference:F2}") +
+                            (difference is null ? "" :
+                                $" / {(blurRadius == 0 ? "平均RGB差" : "ぼかし後平均RGB差")} {difference.MeanAbsoluteRgbDifference:F2}") +
                             "。実画面提示fpsは未測定。";
                     }
                 });
@@ -469,10 +474,20 @@ public partial class ComparisonWindow : Window
             }
             ViewSelect.SelectedIndex = 0;
 
+            operation = "一時停止中のぼかし切り替え";
+            for (var index = 0; index < BlurSelect.Items.Count; index++)
+            {
+                BlurSelect.SelectedIndex = index;
+                CheckDisplayedHeatmap(SelectedBlurRadius());
+            }
+
             operation = "再開";
             PlayPause_Click(this, new RoutedEventArgs());
             await WaitForFrameAsync(pausedFrame + 10);
             var resumedFrame = CheckAlignedPair();
+            operation = "再生中の強いぼかし";
+            CheckDisplayedHeatmap(4);
+            BlurSelect.SelectedIndex = 0;
 
             operation = "再生中シーク";
             FrameNumberBox.Text = "450";
@@ -505,7 +520,8 @@ public partial class ComparisonWindow : Window
                 FirstFrame = firstFrame, PausedFrame = pausedFrame,
                 ResumedFrame = resumedFrame, SeekedFrame = seekedFrame,
                 InitialPlaybackReusedDecoder = initialPlaybackReusedDecoder,
-                WipeBoundaryAligned = true, SeekedPixelsMatchStaticDecode = true,
+                WipeBoundaryAligned = true, HeatmapBlurLevelsMatched = true,
+                SeekedPixelsMatchStaticDecode = true,
                 PausedAndStoppedFrameStable = true, Result = "合格"
             });
         }
@@ -635,6 +651,18 @@ public partial class ComparisonWindow : Window
         return currentLeft.FrameNumber;
     }
 
+    private void CheckDisplayedHeatmap(int blurRadius)
+    {
+        if (currentLeft is null || currentRight is null || HeatmapImage.Source is not BitmapSource bitmap)
+            throw new InvalidOperationException("ヒートマップが表示されていません。");
+        var expected = FrameComparisonService.CreateHeatmap(currentLeft, currentRight,
+            SelectedGain(), blurRadius);
+        var actual = new byte[expected.Heatmap.Length];
+        bitmap.CopyPixels(actual, expected.Width * 4, 0);
+        if (!actual.AsSpan().SequenceEqual(expected.Heatmap))
+            throw new InvalidOperationException($"ぼかし半径{blurRadius}の表示画素が一致しません。");
+    }
+
     private static void WriteVerificationResult(string prefix, object report)
     {
         var workspace = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../"));
@@ -647,15 +675,26 @@ public partial class ComparisonWindow : Window
     private void GainSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         heatmapGain = SelectedGain();
-        if (playbackCancellation is null && currentLeft is not null && currentRight is not null)
+        if ((playbackCancellation is null || playbackPaused) && currentLeft is not null && currentRight is not null)
             RefreshHeatmap();
     }
+
+    private void BlurSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        heatmapBlurRadius = SelectedBlurRadius();
+        if ((playbackCancellation is null || playbackPaused) && currentLeft is not null && currentRight is not null)
+            RefreshHeatmap();
+    }
+
+    private int SelectedBlurRadius() => BlurSelect.SelectedItem is ComboBoxItem { Tag: string text } &&
+        int.TryParse(text, out var value) ? value : 0;
 
     private void ViewSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (ThreeViewGrid is null || WipeViewGrid is null) return;
         var wipe = ViewSelect.SelectedIndex == 1;
         wipeMode = wipe;
+        if (BlurSelect is not null) BlurSelect.IsEnabled = !wipe;
         ThreeViewGrid.Visibility = wipe ? Visibility.Collapsed : Visibility.Visible;
         WipeViewGrid.Visibility = wipe ? Visibility.Visible : Visibility.Collapsed;
         if (wipe) UpdateWipeBoundary();
@@ -744,10 +783,14 @@ public partial class ComparisonWindow : Window
     {
         if (currentLeft is null || currentRight is null) return;
         var gain = SelectedGain();
-        var difference = FrameComparisonService.CreateHeatmap(currentLeft, currentRight, gain);
+        var blurRadius = SelectedBlurRadius();
+        var difference = FrameComparisonService.CreateHeatmap(currentLeft, currentRight, gain, blurRadius);
         HeatmapImage.Source = CreateBitmap(difference.Width, difference.Height, difference.Heatmap);
-        ResultText.Text = $"元フレーム #{currentLeft.FrameNumber} / 平均RGB差 {difference.MeanAbsoluteRgbDifference:F2}（0～255）" +
-            $" / 差分{gain}倍表示。色範囲や圧縮方式の差も含み、品質の優劣を示す値ではありません。";
+        ResultText.Text = $"元フレーム #{currentLeft.FrameNumber} / " +
+            $"{(blurRadius == 0 ? "平均RGB差" : "ぼかし後平均RGB差")} " +
+            $"{difference.MeanAbsoluteRgbDifference:F2}（0～255） / 差分{gain}倍表示" +
+            $" / ぼかし: {((ComboBoxItem)BlurSelect.SelectedItem).Content}。" +
+            "色範囲や圧縮方式の差も含み、品質の優劣を示す値ではありません。";
     }
 
     private static BitmapSource CreateBitmap(int width, int height, byte[] pixels)

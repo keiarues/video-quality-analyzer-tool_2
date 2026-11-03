@@ -8,6 +8,11 @@ public partial class App : Application
     protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
+        if (e.Args.Contains("--heatmap-blur-test"))
+        {
+            new HeatmapBlurTestWindow().Show();
+            return;
+        }
         if (e.Args.Contains("--wipe-drag-test"))
         {
             new WipeDragTestWindow().Show();

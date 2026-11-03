@@ -72,6 +72,24 @@ Check(!lines.Any(line => line.Contains(reference.Path, StringComparison.OrdinalI
 
 Console.WriteLine("素材確認・選択規則・診断ログ: 合格");
 
+if (args.Contains("--blur-benchmark"))
+{
+    var target = videos.Single(video => video.Name == "攻殻機動隊_icq50.mp4");
+    var targetFrame = await comparison.ReadFrameAsync(target.Path, 150, CancellationToken.None);
+    foreach (var radius in new[] { 0, 1, 2, 4 })
+    {
+        FrameComparisonService.CreateHeatmap(referenceFrame, targetFrame, 16, radius);
+        var timer = Stopwatch.StartNew();
+        for (var index = 0; index < 10; index++)
+        {
+            var result = FrameComparisonService.CreateHeatmap(referenceFrame, targetFrame, 16, radius);
+            Check(result.MeanAbsoluteRgbDifference > 0, $"ぼかし半径{radius}の差分");
+        }
+        Console.WriteLine($"ぼかし半径{radius}: 1440×1080画像の平均処理時間 " +
+            $"{timer.Elapsed.TotalMilliseconds / 10:F1} ms/フレーム");
+    }
+}
+
 if (args.Contains("--stream-test"))
 {
     var target = videos.Single(video => video.Name == "攻殻機動隊_icq50.mp4");
