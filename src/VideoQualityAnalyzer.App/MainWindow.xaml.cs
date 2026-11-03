@@ -24,6 +24,7 @@ public partial class MainWindow : Window
     private readonly SlotState right;
     private CancellationTokenSource frameTimesCancellation = new();
     private string? referenceId;
+    private readonly Dictionary<(string VideoId, QualityMetric Metric), QualityResult> qualityResults = [];
     private string? previousRightId;
     private long selectionGeneration;
     private TimeSpan basePosition;
@@ -136,13 +137,15 @@ public partial class MainWindow : Window
         }
 
         UpdateSelection();
-        StatusText.Text = $"{videos.Count}本を登録しました。実提示fpsは外部計測が必要です。";
+        if (SortSelect.SelectedIndex > 0) RefreshVideoOrder();
+        StatusText.Text = $"{videos.Count}本を登録しました。";
     }
 
     private void SetReference_Click(object sender, RoutedEventArgs e)
     {
         if (VideoList.SelectedItem is not VideoEntry entry)
             return;
+        if (referenceId != entry.Descriptor.Id) qualityResults.Clear();
         referenceId = entry.Descriptor.Id;
         foreach (var item in videos)
             item.IsReference = item.Descriptor.Id == referenceId;
@@ -162,7 +165,12 @@ public partial class MainWindow : Window
             log.Record("file_removed", "none", item.Descriptor.Id, "ok");
         }
         if (!videos.Any(item => item.Descriptor.Id == referenceId))
+        {
+            qualityResults.Clear();
             referenceId = videos.FirstOrDefault()?.Descriptor.Id;
+        }
+        foreach (var key in qualityResults.Keys.Where(key => removed.Any(item => item.Descriptor.Id == key.VideoId)).ToArray())
+            qualityResults.Remove(key);
         foreach (var item in videos)
             item.IsReference = item.Descriptor.Id == referenceId;
         VideoList.Items.Refresh();
@@ -347,6 +355,51 @@ public partial class MainWindow : Window
 
     private void BackFive_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() - TimeSpan.FromSeconds(5));
     private void BackOne_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() - TimeSpan.FromSeconds(1));
+    private void SetGroup_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = VideoList.SelectedItems.Cast<VideoEntry>().Where(entry => !entry.IsReference).ToArray();
+        if (selected.Length == 0) { StatusText.Text = "グループを設定する比較動画を選択してください。"; return; }
+        if (new GroupWindow(selected) { Owner = this }.ShowDialog() == true) RefreshVideoOrder();
+    }
+
+    private void SortSelect_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (initialized) RefreshVideoOrder();
+    }
+
+    private void RefreshVideoOrder()
+    {
+        var selected = VideoList.SelectedItems.Cast<VideoEntry>().ToArray();
+        var ordered = VideoLibrary.Sort(videos, (VideoSortOrder)Math.Max(0, SortSelect.SelectedIndex));
+        suppressSelection = true;
+        for (var index = 0; index < ordered.Length; index++) videos.Move(videos.IndexOf(ordered[index]), index);
+        VideoList.Items.Refresh();
+        VideoList.SelectedItems.Clear();
+        foreach (var entry in selected) VideoList.SelectedItems.Add(entry);
+        suppressSelection = false;
+        UpdateSelection();
+    }
+
+    private void Evaluate_Click(object sender, RoutedEventArgs e)
+    {
+        var reference = videos.FirstOrDefault(entry => entry.Descriptor.Id == referenceId)?.Descriptor;
+        var candidates = VideoList.SelectedItems.Cast<VideoEntry>().Select(entry => entry.Descriptor)
+            .Where(video => video.Id != referenceId).ToArray();
+        if (reference is null || candidates.Length == 0)
+        {
+            StatusText.Text = "元動画と、評価する比較動画を選択してください。";
+            return;
+        }
+        Pause_Click(sender, e);
+        new EvaluationWindow(reference, candidates, qualityResults, seek: ApplySeek,
+            select: id =>
+            {
+                var entry = videos.FirstOrDefault(item => item.Descriptor.Id == id);
+                if (entry is not null) VideoList.SelectedItem = entry;
+            }, allVideos: videos.Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray(),
+            groups: videos.ToDictionary(entry => entry.Descriptor.Id, entry => entry.Group)) { Owner = this }.ShowDialog();
+    }
+
     private void OpenComparison_Click(object sender, RoutedEventArgs e)
     {
         if (left.Video is not { } leftVideo || right.Video is not { } rightVideo)
@@ -667,13 +720,6 @@ public partial class MainWindow : Window
         right.Av1.Dispose();
         log.Record("session_end", "none", null, "closed");
         log.DisposeAsync().AsTask().GetAwaiter().GetResult();
-    }
-
-    private sealed class VideoEntry(VideoDescriptor descriptor)
-    {
-        public VideoDescriptor Descriptor { get; } = descriptor;
-        public bool IsReference { get; set; }
-        public override string ToString() => (IsReference ? "【元動画】 " : "") + Descriptor.Name;
     }
 
     private sealed class SlotState(string side, MediaElement media, Image av1Image, TextBlock name, TextBlock status)

@@ -40,6 +40,7 @@ public partial class ComparisonWindow : Window
     private ComparisonFrame? currentRight;
     private volatile bool playbackPaused;
     private volatile bool wipeMode;
+    private volatile bool twoScreenMode;
     private volatile int heatmapGain = 16;
     private volatile int heatmapBlurRadius;
     private WriteableBitmap? playingLeft;
@@ -92,7 +93,7 @@ public partial class ComparisonWindow : Window
         FrameNumberBox.Text = frameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
         GainSelect.SelectedIndex = 1;
         BlurSelect.SelectedIndex = 0;
-        ViewSelect.SelectedIndex = showWipe ? 1 : 0;
+        ViewSelect.SelectedIndex = showWipe ? 1 : (showBlur ? 0 : 2);
         UpdateWipeBoundary();
         ResultText.Text = "左右に同じ元フレーム番号を指定して比較します。再生中も表示を切り替えられます。";
         LeftSelect.SelectionChanged += VideoSelectionChanged;
@@ -254,7 +255,7 @@ public partial class ComparisonWindow : Window
                     continue;
                 }
                 var blurRadius = heatmapBlurRadius;
-                var difference = wipeMode ? null : FrameComparisonService.CreateHeatmap(left, right,
+                var difference = wipeMode || twoScreenMode ? null : FrameComparisonService.CreateHeatmap(left, right,
                     heatmapGain, blurRadius);
                 await Dispatcher.InvokeAsync(() =>
                 {
@@ -476,6 +477,10 @@ public partial class ComparisonWindow : Window
                     WipeBoundary.Visibility != Visibility.Visible)
                     throw new InvalidOperationException("ワイプ境界と切り替え位置が一致しません。");
             }
+            ViewSelect.SelectedIndex = 2;
+            if (HeatmapPanel.Visibility != Visibility.Collapsed || HeatmapColumn.Width.Value != 0)
+                throw new InvalidOperationException("2画面表示に切り替わりません。");
+            CheckAlignedPair();
             ViewSelect.SelectedIndex = 0;
 
             operation = "一時停止中のぼかし切り替え";
@@ -698,6 +703,9 @@ public partial class ComparisonWindow : Window
         if (ThreeViewGrid is null || WipeViewGrid is null) return;
         var wipe = ViewSelect.SelectedIndex == 1;
         wipeMode = wipe;
+        twoScreenMode = ViewSelect.SelectedIndex == 2;
+        HeatmapPanel.Visibility = twoScreenMode ? Visibility.Collapsed : Visibility.Visible;
+        HeatmapColumn.Width = twoScreenMode ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
         if (BlurSelect is not null) BlurSelect.IsEnabled = !wipe;
         ThreeViewGrid.Visibility = wipe ? Visibility.Collapsed : Visibility.Visible;
         WipeViewGrid.Visibility = wipe ? Visibility.Visible : Visibility.Collapsed;

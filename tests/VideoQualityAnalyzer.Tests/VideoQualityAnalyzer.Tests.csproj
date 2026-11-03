@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="../../src/VideoQualityAnalyzer.Core/VideoQualityAnalyzer.Core.csproj" />
     <ProjectReference Include="../../src/VideoQualityAnalyzer.Diagnostics/VideoQualityAnalyzer.Diagnostics.csproj" />
+    <ProjectReference Include="../../src/VideoQualityAnalyzer.Media/VideoQualityAnalyzer.Media.csproj" />
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
   </ItemGroup>
 

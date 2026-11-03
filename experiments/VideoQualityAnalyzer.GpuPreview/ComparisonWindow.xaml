@@ -25,6 +25,7 @@
             <ComboBox Name="ViewSelect" Width="130" SelectionChanged="ViewSelect_SelectionChanged">
                 <ComboBoxItem Content="左右＋差分" />
                 <ComboBoxItem Content="境界比較（ワイプ）" />
+                <ComboBoxItem Content="2画面" />
             </ComboBox>
           </StackPanel>
           <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
@@ -45,7 +46,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Name="HeatmapColumn" Width="*" />
                 </Grid.ColumnDefinitions>
                 <DockPanel Grid.Column="0" Margin="0,0,8,0">
                     <TextBlock Text="左フレーム" DockPanel.Dock="Top" Margin="0,0,0,5" />
@@ -55,7 +56,7 @@
                     <TextBlock Text="右フレーム" DockPanel.Dock="Top" Margin="0,0,0,5" />
                     <Border Background="Black"><Image Name="RightImage" Stretch="Uniform" /></Border>
                 </DockPanel>
-                <DockPanel Grid.Column="2">
+                <DockPanel Name="HeatmapPanel" Grid.Column="2">
                     <TextBlock Text="差分ヒートマップ" DockPanel.Dock="Top" Margin="0,0,0,5" />
                     <Border Background="Black"><Image Name="HeatmapImage" Stretch="Uniform" /></Border>
                 </DockPanel>

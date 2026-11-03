@@ -8,6 +8,51 @@ var root = args.Length > 0 ? Path.GetFullPath(args[0]) :
 var probePath = FfprobeService.FindExecutable() ??
     throw new FileNotFoundException("FFprobeが見つかりません。");
 var service = new FfprobeService(probePath);
+if (args.Contains("--quality-test"))
+{
+    var executable = FfmpegRgbReader.FindExecutable()!;
+    var directory = Path.Combine(root, "measurement-results", "quality-smoke");
+    Directory.CreateDirectory(directory);
+    var samples = new List<VideoDescriptor>();
+    foreach (var color in new[] { "red", "blue" })
+    {
+        var path = Path.Combine(directory, color + ".mkv");
+        var info = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true };
+        foreach (var argument in new[] { "-y", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i",
+            $"color=c={color}:s=64x64:r=30:d=1", "-c:v", "ffv1", path }) info.ArgumentList.Add(argument);
+        using var process = Process.Start(info)!;
+        await process.WaitForExitAsync();
+        Check(process.ExitCode == 0, "評価素材の生成");
+        samples.Add(await service.ProbeAsync(path, CancellationToken.None));
+    }
+    var evaluator = new QualityEvaluationService(executable);
+    var identical = await evaluator.EvaluateAsync(samples[0], samples[0], QualityMetric.Ssim, null, CancellationToken.None);
+    Check(identical.Frames.Count == 30 && Math.Abs(identical.Average - 1) < 0.000001, "同一動画SSIM");
+    foreach (var metric in new[] { QualityMetric.Ssim, QualityMetric.Psnr, QualityMetric.Vmaf })
+    {
+        var result = await evaluator.EvaluateAsync(samples[0], samples[1], metric, null, CancellationToken.None);
+        Check(result.Frames.Count == 30 && double.IsFinite(result.Average), "異なる動画の全フレーム評価");
+        Console.WriteLine($"{metric}: {result.Frames.Count}フレーム / 平均 {result.Average:F4}");
+    }
+    using var canceled = new CancellationTokenSource();
+    canceled.Cancel();
+    try
+    {
+        await evaluator.EvaluateAsync(samples[0], samples[1], QualityMetric.Ssim, null, canceled.Token);
+        throw new InvalidOperationException("中断が反映されません。");
+    }
+    catch (OperationCanceledException) { Console.WriteLine("中断: 合格"); }
+    using var midCancel = new CancellationTokenSource();
+    try
+    {
+        await evaluator.EvaluateAsync(samples[0], samples[1], QualityMetric.Ssim,
+            new CancelQualityProgress(midCancel), midCancel.Token);
+        throw new InvalidOperationException("実行中の中断が反映されません。");
+    }
+    catch (OperationCanceledException) { Console.WriteLine("実行中の中断: 合格"); }
+    return;
+}
+
 var files = Directory.GetFiles(Path.Combine(root, "test-data"));
 Check(files.Length == 5, "動画は5本必要です。");
 
@@ -161,4 +206,9 @@ static void Check(bool condition, string label)
 {
     if (!condition)
         throw new InvalidOperationException($"確認失敗: {label}");
+}
+
+sealed class CancelQualityProgress(CancellationTokenSource source) : IProgress<TimeSpan>
+{
+    public void Report(TimeSpan value) => source.Cancel();
 }
