@@ -228,10 +228,22 @@ public partial class MainWindow : Window
         UpdateSelection();
     }
 
-    private void ClearSelection_Click(object sender, RoutedEventArgs e)
+    private void VideoList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
-        VideoList.UnselectAll();
+        // 行・列見出し・スクロール操作は通常どおり扱い、一覧の空白だけで解除する。
+        var element = e.OriginalSource as DependencyObject;
+        while (element is not null && element != VideoList)
+        {
+            if (element is DataGridRow or System.Windows.Controls.Primitives.DataGridColumnHeader
+                or System.Windows.Controls.Primitives.ScrollBar)
+                return;
+            element = System.Windows.Media.VisualTreeHelper.GetParent(element);
+        }
+        if (element == VideoList) VideoList.UnselectAll();
     }
+
+    private IEnumerable<VideoEntry> SelectedOrAllVideoEntries() =>
+        VideoList.SelectedItems.Count == 0 ? videos : VideoList.SelectedItems.Cast<VideoEntry>();
 
     private void VideoList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

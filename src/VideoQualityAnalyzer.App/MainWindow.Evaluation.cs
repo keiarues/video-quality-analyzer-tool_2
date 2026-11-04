@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using VideoQualityAnalyzer.Core;
 using VideoQualityAnalyzer.Media;
@@ -34,7 +34,7 @@ public partial class MainWindow
     {
         if (pendingVideoLoads > 0) { EvaluationStatus.Text = "動画情報の取得が終わるまでお待ちください。"; return; }
         var reference = videos.FirstOrDefault(entry => entry.Descriptor.Id == referenceId)?.Descriptor;
-        var candidates = VideoList.SelectedItems.Cast<VideoEntry>().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray();
+        var candidates = SelectedOrAllVideoEntries().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray();
         var selected = new[] { (VmafCheck, QualityMetric.Vmaf), (SsimCheck, QualityMetric.Ssim), (PsnrCheck, QualityMetric.Psnr) }
             .Where(pair => pair.Item1.IsChecked == true).Select(pair => pair.Item2).ToArray();
         if (reference is null || candidates.Length == 0 || selected.Length == 0)
