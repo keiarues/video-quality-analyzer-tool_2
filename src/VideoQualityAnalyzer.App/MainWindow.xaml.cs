@@ -147,6 +147,12 @@ public partial class MainWindow : Window
         };
     }
 
+    private void EvaluationHelpBorder_Loaded(object sender, RoutedEventArgs e)
+    {
+        if (double.IsNaN(EvaluationHelpBorder.Height))
+            EvaluationHelpBorder.Height = EvaluationHelpBorder.ActualHeight * 2;
+    }
+
     private double expandedSidebarWidth = 650;
     private bool sidebarCollapsed;
 
@@ -158,17 +164,19 @@ public partial class MainWindow : Window
             SidebarPanel.Visibility = SidebarSplitter.Visibility = Visibility.Collapsed;
             SidebarColumn.MinWidth = 0;
             SidebarColumn.Width = new GridLength(0);
-            SidebarSplitterColumn.Width = new GridLength(0);
+            SidebarSplitterColumn.Width = new GridLength(32);
         }
         else
         {
             SidebarColumn.MinWidth = 300;
             SidebarColumn.Width = new GridLength(Math.Max(300, expandedSidebarWidth));
-            SidebarSplitterColumn.Width = new GridLength(12);
+            SidebarSplitterColumn.Width = new GridLength(32);
             SidebarPanel.Visibility = SidebarSplitter.Visibility = Visibility.Visible;
         }
         sidebarCollapsed = !sidebarCollapsed;
-        SidebarToggleButton.Content = sidebarCollapsed ? "▶ 一覧を復元" : "◀ 一覧を最小化";
+        SidebarToggleButton.Content = sidebarCollapsed ? "▶" : "◀";
+        SidebarToggleButton.ToolTip = sidebarCollapsed ? "一覧を復元" : "一覧を最小化";
+        System.Windows.Automation.AutomationProperties.SetName(SidebarToggleButton, (string)SidebarToggleButton.ToolTip);
     }
 
     private async void Add_Click(object sender, RoutedEventArgs e)
