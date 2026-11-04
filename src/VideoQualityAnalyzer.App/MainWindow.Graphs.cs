@@ -30,6 +30,14 @@ public partial class MainWindow
         QualityGraphHost.Content = qualityGraphPanel;
     }
 
+    private void QualityGraphResize_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
+    {
+        if (e.Key is not (System.Windows.Input.Key.Up or System.Windows.Input.Key.Down)) return;
+        QualityGraphResize_DragDelta(sender, new System.Windows.Controls.Primitives.DragDeltaEventArgs(0,
+            e.Key == System.Windows.Input.Key.Up ? -10 : 10));
+        e.Handled = true;
+    }
+
     private void QualityGraphResize_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
     {
         // グラフ行だけを指定し、残りの高さは映像行に吸収させる。
