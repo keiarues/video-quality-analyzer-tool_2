@@ -38,9 +38,9 @@
                         <TextBlock Text="評価設定" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,8" />
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Name="EvaluationMetricChecks" Orientation="Vertical">
-                            <CheckBox Name="VmafCheck" Content="VMAF" Margin="0,3,16,3" VerticalAlignment="Center" />
-                            <CheckBox Name="SsimCheck" Content="SSIM" IsChecked="True" Margin="0,3,16,3" VerticalAlignment="Center" />
-                            <CheckBox Name="PsnrCheck" Content="PSNR" Margin="0,3,16,3" VerticalAlignment="Center" />
+                            <CheckBox Name="VmafCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="VMAF" Margin="0,3,16,3" VerticalAlignment="Center" />
+                            <CheckBox Name="SsimCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="SSIM" IsChecked="True" Margin="0,3,16,3" VerticalAlignment="Center" />
+                            <CheckBox Name="PsnrCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="PSNR" Margin="0,3,16,3" VerticalAlignment="Center" />
                             </StackPanel>
                             <Button VerticalAlignment="Center" Name="EvaluationStartButton" Content="評価を開始" Click="Evaluate_Click" MinWidth="110" />
                         </StackPanel>
