@@ -51,6 +51,7 @@ public partial class MainWindow
 
     private void RefreshEmbeddedGraphs()
     {
+        qualityGraphPanel?.SetPlaybackSources(left.Video, right.Video, referenceId);
         qualityGraphPanel?.UpdateData(SelectedOrAllVideoEntries()
             .Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray(),
             videos.Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray(),

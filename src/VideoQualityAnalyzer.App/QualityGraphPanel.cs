@@ -13,6 +13,13 @@ public sealed class QualityGraphPanel : UserControl
     private readonly Canvas averages = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
     private readonly TabControl metric = new();
     private readonly TextBlock status = new() { FontSize = UiTheme.Small, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8) };
+    private readonly TextBlock leftPlaybackStatus = MakePlaybackLabel(TextAlignment.Right);
+    private readonly TextBlock rightPlaybackStatus = MakePlaybackLabel(TextAlignment.Left);
+    private readonly TextBlock playbackTimeLabel = MakePlaybackLabel(TextAlignment.Left);
+    private readonly IDictionary<(string VideoId, QualityMetric Metric), QualityResult> playbackResults;
+    private VideoDescriptor? playbackLeft;
+    private VideoDescriptor? playbackRight;
+    private string? playbackReferenceId;
     private double maximumTime;
     private TimeSpan playbackPosition;
     private bool playheadDragging;
@@ -27,6 +34,7 @@ public sealed class QualityGraphPanel : UserControl
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
         VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null)
     {
+        playbackResults = results;
         seekRequested = seek;
         Style = (Style)Application.Current.FindResource(typeof(UserControl));
         Background = Brushes.White;
@@ -217,6 +225,9 @@ public sealed class QualityGraphPanel : UserControl
             }
             PlaceLegend();
             timeline.Children.Add(playhead);
+            timeline.Children.Add(leftPlaybackStatus);
+            timeline.Children.Add(rightPlaybackStatus);
+            timeline.Children.Add(playbackTimeLabel);
             UpdatePlayhead();
             status.Text = "左の縦線をドラッグするとシーク、右の点をクリックするとその動画のフレーム評価を表示します。点にマウスを合わせると動画名と平均値を表示します。";
         }
@@ -322,6 +333,13 @@ public sealed class QualityGraphPanel : UserControl
                 metric.SelectedIndex = 2;
                 UpdateLayout();
                 if (!timeline.Children.OfType<Polyline>().Any(line => line.Tag is null)) throw new InvalidOperationException("PSNRタブへ切り替わりません。");
+                var playbackVideo = (allVideos ?? videos).First(video => results.ContainsKey((video.Id, QualityMetric.Psnr)));
+                SetPlaybackSources(playbackVideo with { Id = "検証用元動画", Path = "元動画.mkv" }, playbackVideo, "検証用元動画");
+                SetPlaybackPosition(TimeSpan.FromSeconds(results[(playbackVideo.Id, QualityMetric.Psnr)].Frames[0].Number / playbackVideo.AverageFrameRate));
+                if (!leftPlaybackStatus.Text.StartsWith("--\n") || rightPlaybackStatus.Text.StartsWith("--\n") ||
+                    !rightPlaybackStatus.Text.Contains(playbackVideo.Name) || !playbackTimeLabel.Text.EndsWith("秒"))
+                    throw new InvalidOperationException("左右の再生ステータスまたは元動画の評価値表示が不正です。");
+                UpdateLayout();
                 var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap(
                     (int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
                 snapshot.Render((Visual)Content);
@@ -384,6 +402,39 @@ public sealed class QualityGraphPanel : UserControl
         seekRequested?.Invoke(playbackPosition);
     }
 
+    public void SetPlaybackSources(VideoDescriptor? left, VideoDescriptor? right, string? referenceId)
+    {
+        playbackLeft = left;
+        playbackRight = right;
+        playbackReferenceId = referenceId;
+        UpdatePlayhead();
+    }
+
+    private static TextBlock MakePlaybackLabel(TextAlignment alignment) => new()
+    {
+        FontSize = UiTheme.Small, Foreground = UiTheme.OnLight, Background = Brushes.WhiteSmoke,
+        TextAlignment = alignment, TextTrimming = TextTrimming.CharacterEllipsis, IsHitTestVisible = false
+    };
+
+    private string PlaybackValue(VideoDescriptor? video)
+    {
+        if (video is null || video.Id == playbackReferenceId ||
+            metric.SelectedItem is not TabItem { Tag: QualityMetric selected } ||
+            !playbackResults.TryGetValue((video.Id, selected), out var result)) return "--";
+        var number = (long)Math.Floor(playbackPosition.TotalSeconds * video.AverageFrameRate + 0.000001);
+        // 長時間動画でも毎回全フレームを走査しない。
+        var lower = 0;
+        var upper = result.Frames.Count - 1;
+        while (lower <= upper)
+        {
+            var middle = lower + (upper - lower) / 2;
+            var frame = result.Frames[middle];
+            if (frame.Number == number) return frame.Value.ToString("F4");
+            if (frame.Number < number) lower = middle + 1; else upper = middle - 1;
+        }
+        return "--";
+    }
+
     private void UpdatePlayhead()
     {
         var area = PlotArea(timeline);
@@ -391,6 +442,22 @@ public sealed class QualityGraphPanel : UserControl
         playhead.X1 = playhead.X2 = area.Left + Math.Clamp(playbackPosition.TotalSeconds / Math.Max(0.001, maximumTime), 0, 1) * area.Width;
         playhead.Y1 = area.Top;
         playhead.Y2 = area.Bottom;
+        leftPlaybackStatus.Text = $"{PlaybackValue(playbackLeft)}\n{playbackLeft?.Name ?? "--"}";
+        rightPlaybackStatus.Text = $"{PlaybackValue(playbackRight)}\n{playbackRight?.Name ?? "--"}";
+        playbackTimeLabel.Text = $"{playbackPosition.TotalSeconds:0.##}秒";
+        var x = playhead.X1;
+        void Place(TextBlock label, double start, double width, double bottom)
+        {
+            label.Visibility = playhead.Visibility;
+            label.Width = Math.Max(0, width);
+            label.Measure(new Size(label.Width, double.PositiveInfinity));
+            Canvas.SetLeft(label, start);
+            Canvas.SetTop(label, Math.Max(area.Top, bottom - label.DesiredSize.Height));
+        }
+        Place(leftPlaybackStatus, Math.Max(0, x - 226), Math.Min(220, Math.Max(0, x - 6)), area.Bottom - 4);
+        Place(rightPlaybackStatus, x + 6, Math.Min(220, Math.Max(0, timeline.ActualWidth - x - 6)), area.Bottom - 4);
+        Place(playbackTimeLabel, x + 6, Math.Min(220, Math.Max(0, timeline.ActualWidth - x - 6)),
+            area.Bottom - rightPlaybackStatus.DesiredSize.Height - 8);
     }
 
     private static FrameworkElementFactory MakeLegendHeader()
