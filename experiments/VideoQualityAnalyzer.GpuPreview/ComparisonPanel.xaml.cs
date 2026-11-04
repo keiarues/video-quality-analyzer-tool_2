@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -46,6 +46,10 @@ public partial class ComparisonPanel : UserControl, IDisposable
     private WriteableBitmap? playingLeft;
     private WriteableBitmap? playingRight;
     private WriteableBitmap? playingHeatmap;
+
+    private static string FormatVideoDetails(VideoDescriptor video) =>
+        $"{video.Codec} / {video.Width}×{video.Height} / 長さ {video.Duration:hh\\:mm\\:ss} / 音声 {(video.HasAudio ? "あり" : "なし")}\n" +
+        $"平均 {video.AverageFrameRate:F3} fps / 公称 {video.NominalFrameRate:F3} fps";
 
     public ComparisonPanel(string leftPath, string rightPath, long frameNumber,
         bool showWipe = false, bool benchmarkMode = false, bool captureBenchmark = false,
@@ -161,6 +165,8 @@ public partial class ComparisonPanel : UserControl, IDisposable
             LeftSelect.SelectedItem = LeftSelect.Items.Cast<VideoChoice>().First(choice => string.Equals(choice.Path, left.Path, StringComparison.OrdinalIgnoreCase));
             RightSelect.SelectedItem = RightSelect.Items.Cast<VideoChoice>().First(choice => string.Equals(choice.Path, right.Path, StringComparison.OrdinalIgnoreCase));
             sourceFrameRate = left.AverageFrameRate;
+            LeftDetails.Text = FormatVideoDetails(left);
+            RightDetails.Text = FormatVideoDetails(right);
             LeftFrameLabel.Text = "左: " + left.Name;
             RightFrameLabel.Text = "右: " + right.Name;
             LeftFrameLabel.ToolTip = left.Name;

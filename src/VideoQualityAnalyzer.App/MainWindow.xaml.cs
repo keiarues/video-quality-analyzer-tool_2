@@ -770,12 +770,13 @@ public partial class MainWindow : Window
 
     private void UpdateInfo()
     {
-        var video = VideoList.SelectedItem is VideoEntry selected ? selected.Descriptor : left.Video;
-        InfoText.Text = video is null ? "動画を追加してください。" :
-            $"{video.Name}\n{video.Codec} / {video.Width}×{video.Height}\n" +
-            $"平均 {video.AverageFrameRate:F3} fps / 公称 {video.NominalFrameRate:F3} fps\n" +
-            $"長さ {video.Duration:hh\\:mm\\:ss} / 音声 {(video.HasAudio ? "あり" : "なし")}";
+        LeftDetails.Text = FormatVideoDetails(left.Video);
+        RightDetails.Text = FormatVideoDetails(right.Video);
     }
+
+    private static string FormatVideoDetails(VideoDescriptor? video) => video is null ? "" :
+        $"{video.Codec} / {video.Width}×{video.Height} / 長さ {video.Duration:hh\\:mm\\:ss} / 音声 {(video.HasAudio ? "あり" : "なし")}\n" +
+        $"平均 {video.AverageFrameRate:F3} fps / 公称 {video.NominalFrameRate:F3} fps";
 
     private void Window_DragOver(object sender, DragEventArgs e)
     {

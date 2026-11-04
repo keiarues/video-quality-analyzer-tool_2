@@ -17,7 +17,7 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="500" MinWidth="300" />
+                <ColumnDefinition Width="600" MinWidth="300" />
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -45,7 +45,6 @@
                         </StackPanel>
                         <TextBlock Name="EvaluationStatus" FontSize="{StaticResource UiFontSmall}" Text="未選択の場合はすべての比較動画を評価します。" TextWrapping="Wrap" Margin="0,5,0,0" Foreground="{StaticResource UiMutedBrush}" />
                     </StackPanel>
-                    <TextBlock DockPanel.Dock="Bottom" Name="InfoText" FontSize="{StaticResource UiFontSmall}" Text="動画を追加してください。" TextWrapping="Wrap" Foreground="{StaticResource UiMutedBrush}" Margin="3,9,3,2" />
                     <DataGrid Name="VideoList" SelectionMode="Extended" SelectionUnit="FullRow"
                               PreviewMouseLeftButtonDown="VideoList_PreviewMouseLeftButtonDown" SelectionChanged="VideoList_SelectionChanged" Sorting="VideoList_Sorting"
                               AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
@@ -104,6 +103,7 @@
                             <Border VerticalAlignment="Top" Background="#CC17202D" Padding="10,7">
                                 <StackPanel>
                                     <TextBlock Name="LeftName" Text="左: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
                                     <TextBlock Name="LeftStatus" Text="待機中" Foreground="{StaticResource UiMutedBrush}" FontSize="{StaticResource UiFontSmall}" />
                                 </StackPanel>
                             </Border>
@@ -118,6 +118,7 @@
                             <Border VerticalAlignment="Top" Background="#CC17202D" Padding="10,7">
                                 <StackPanel>
                                     <TextBlock Name="RightName" Text="右: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
                                     <TextBlock Name="RightStatus" Text="待機中" Foreground="{StaticResource UiMutedBrush}" FontSize="{StaticResource UiFontSmall}" />
                                 </StackPanel>
                             </Border>
@@ -140,8 +141,8 @@
         <Border Name="PlaybackControls" Grid.Row="2" Background="{StaticResource PanelBrush}" CornerRadius="8" Padding="8" Margin="0,8,0,0">
             <StackPanel>
                 <DockPanel>
-                    <TextBlock Name="TimeText" DockPanel.Dock="Right" Text="00:00:00 / 00:00:00" MinWidth="190"
-                               TextAlignment="Right" VerticalAlignment="Center" Margin="8,0,2,0" />
+                    <TextBlock Name="TimeText" DockPanel.Dock="Left" Text="00:00:00 / 00:00:00" MinWidth="190"
+                               TextAlignment="Left" VerticalAlignment="Center" Margin="2,0,8,0" />
                     <Slider Name="SeekSlider" Minimum="0" Maximum="1" IsMoveToPointEnabled="True" ValueChanged="SeekSlider_ValueChanged"
                             PreviewMouseLeftButtonDown="SeekSlider_MouseDown"
                             PreviewMouseLeftButtonUp="SeekSlider_MouseUp" />
