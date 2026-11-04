@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using VideoQualityAnalyzer.Media;
 using VideoQualityAnalyzer.Core;
 
@@ -129,6 +129,13 @@ public partial class MainWindow
         {
             var candidates = videos.Where(entry => !entry.IsReference).Take(2).ToArray();
             if (candidates.Length != 2 || qualityGraphPanel is null) throw new InvalidOperationException("グラフ検証には比較動画2本が必要です。");
+            if (qualityResults.Count != 0) throw new InvalidOperationException("未評価の検証は空の評価結果で開始してください。");
+            RefreshEmbeddedGraphs();
+            qualityGraphPanel.BeginPlayheadDrag(0.25);
+            qualityGraphPanel.EndPlayheadDrag();
+            await comparisonChangeTask;
+            if (Math.Abs(CurrentPosition().TotalSeconds - CommonDuration().TotalSeconds * 0.25) > 0.05)
+                throw new InvalidOperationException("未評価のフレームグラフからシークできません。");
             foreach (var entry in candidates)
                 qualityResults[(entry.Descriptor.Id, QualityMetric.Ssim)] = new QualityResult(QualityMetric.Ssim, 0.85,
                     [new QualityFrame(0, 0.8), new QualityFrame(10, 0.9), new QualityFrame(20, 0.85)]);
@@ -179,9 +186,12 @@ public partial class MainWindow
             UpdateTimeDisplay();
             if (qualityGraphPanel.PlayheadX >= originalX) throw new InvalidOperationException("シークバー操作に縦線が追従しません。");
             var beforePlay = qualityGraphPanel.PlayheadPosition;
+            // 定期タイマーを止めても映像フレームの通知で表示が進むことを確認する。
+            displayTimer.Stop();
             Play_Click(this, new RoutedEventArgs());
             await Task.Delay(250);
             PausePlayback();
+            displayTimer.Start();
             if (qualityGraphPanel.PlayheadPosition <= beforePlay) throw new InvalidOperationException("再生中に縦線が進みません。");
             foreach (var playing in new[] { false, true })
             {

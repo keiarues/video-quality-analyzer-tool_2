@@ -20,6 +20,7 @@ public sealed class QualityGraphPanel : UserControl
     private VideoDescriptor? playbackLeft;
     private VideoDescriptor? playbackRight;
     private string? playbackReferenceId;
+    private Action redrawPlaybackGraph = () => { };
     private double maximumTime;
     private TimeSpan playbackPosition;
     private bool playheadDragging;
@@ -166,7 +167,21 @@ public sealed class QualityGraphPanel : UserControl
             legend.Children.Clear();
             if (metric.SelectedItem is not TabItem { Tag: QualityMetric selected }) return;
             var available = (allVideos ?? videos).Where(video => results.ContainsKey((video.Id, selected))).ToArray();
-            if (available.Length == 0) { PlaceLegend(); maximumTime = 0; status.Text = "この指標の完了結果はありません。"; return; }
+            if (available.Length == 0)
+            {
+                var durations = new[] { playbackLeft, playbackRight }.OfType<VideoDescriptor>()
+                    .Where(video => video.Duration > TimeSpan.Zero).Select(video => video.Duration.TotalSeconds).ToArray();
+                maximumTime = durations.Length > 0 ? durations.Min() : 0;
+                if (maximumTime > 0) DrawAxes(timeline, PlotArea(timeline), maximumTime, 0, 1, "秒");
+                timeline.Children.Add(playhead);
+                timeline.Children.Add(leftPlaybackStatus);
+                timeline.Children.Add(rightPlaybackStatus);
+                timeline.Children.Add(playbackTimeLabel);
+                UpdatePlayhead();
+                PlaceLegend();
+                status.Text = "この指標の完了結果はありません。動画の長さを基準にシークできます。";
+                return;
+            }
             var values = available.SelectMany(video => results[(video.Id, selected)].Frames.Select(frame => frame.Value)).ToArray();
             var min = values.Min();
             var max = values.Max();
@@ -231,6 +246,7 @@ public sealed class QualityGraphPanel : UserControl
             UpdatePlayhead();
             status.Text = "左の縦線をドラッグするとシーク、右の点をクリックするとその動画のフレーム評価を表示します。点にマウスを合わせると動画名と平均値を表示します。";
         }
+        redrawPlaybackGraph = Draw;
         updateData = (selectedVideos, registeredVideos, groupNames) =>
         {
             videos = selectedVideos;
@@ -407,7 +423,7 @@ public sealed class QualityGraphPanel : UserControl
         playbackLeft = left;
         playbackRight = right;
         playbackReferenceId = referenceId;
-        UpdatePlayhead();
+        redrawPlaybackGraph();
     }
 
     private static TextBlock MakePlaybackLabel(TextAlignment alignment) => new()

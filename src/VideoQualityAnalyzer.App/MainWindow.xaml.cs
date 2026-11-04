@@ -780,13 +780,20 @@ public partial class MainWindow : Window
     {
         if (!initialized)
             return;
+        UpdatePlaybackControls();
+        MeasurementText.Text = $"再生位置からの換算fps: 左 {FormatPlaybackFps(left)} / 右 {FormatPlaybackFps(right)}　｜　" +
+            $"実提示fps・左右PTS差: 未測定　｜　CPU {(cpuPercent.HasValue ? $"{cpuPercent.Value:F1}%" : "計測中")} / メモリ {memoryMb:F0} MiB / GPU 不明";
+
+    }
+
+    private void UpdatePlaybackControls()
+    {
+        if (!initialized) return;
         UpdatePlayPauseButton();
         var position = pendingSeekPosition ?? CurrentPosition();
         qualityGraphPanel?.SetPlaybackPosition(position);
         var duration = CommonDuration();
         TimeText.Text = $"{position:hh\\:mm\\:ss} / {duration:hh\\:mm\\:ss}";
-        MeasurementText.Text = $"再生位置からの換算fps: 左 {FormatPlaybackFps(left)} / 右 {FormatPlaybackFps(right)}　｜　" +
-            $"実提示fps・左右PTS差: 未測定　｜　CPU {(cpuPercent.HasValue ? $"{cpuPercent.Value:F1}%" : "計測中")} / メモリ {memoryMb:F0} MiB / GPU 不明";
         programmaticSlider = true;
         SeekSlider.Maximum = Math.Max(1, duration.TotalSeconds);
         if (!seekSliderPointerActive && !seekSliderDragging && pendingSeekPosition is null)
@@ -797,6 +804,7 @@ public partial class MainWindow : Window
     private void UpdateFrameStatus()
     {
         if (!initialized) return;
+        UpdatePlaybackControls();
         var framePrefix = comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（時刻から推定）: ";
         LeftFrameStatus.Text = framePrefix + FormatFramePosition(left);
         RightFrameStatus.Text = framePrefix + FormatFramePosition(right);
