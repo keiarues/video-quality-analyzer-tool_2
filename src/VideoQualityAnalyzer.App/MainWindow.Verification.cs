@@ -6,6 +6,30 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
+    private async Task VerifyPlaybackRefreshAsync()
+    {
+        try
+        {
+            if (comparisonActive || left.Video is null) throw new InvalidOperationException("通常プレビューの動画1本で起動してください。");
+            displayTimer.Stop();
+            Play_Click(this, new RoutedEventArgs());
+            await Task.Delay(600);
+            if (left.LastShownPosition is not { } shown || shown <= TimeSpan.Zero ||
+                Math.Abs(SeekSlider.Value - shown.TotalSeconds) > 0.001 ||
+                qualityGraphPanel is null || Math.Abs(qualityGraphPanel.PlayheadPosition.TotalSeconds - shown.TotalSeconds) > 0.001)
+                throw new InvalidOperationException("通常プレビューの反映フレーム時刻と再生表示が一致しません。");
+            PausePlayback();
+            // 一時停止要求時に反映待ちだった画像通知が完了してから停止位置を比較する。
+            await Task.Delay(150);
+            var frozen = SeekSlider.Value;
+            await Task.Delay(150);
+            if (Math.Abs(SeekSlider.Value - frozen) > 0.001) throw new InvalidOperationException("一時停止中に表示位置が進んでいます。");
+            Console.WriteLine("通常プレビュー: 定期タイマー停止中の反映フレーム時刻・グラフ・再生制御の一致と一時停止が合格");
+            Application.Current.Shutdown(0);
+        }
+        catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }
+    }
+
     private async Task VerifyMainEvaluationAsync()
     {
         try
@@ -190,6 +214,9 @@ public partial class MainWindow
             displayTimer.Stop();
             Play_Click(this, new RoutedEventArgs());
             await Task.Delay(250);
+            if (qualityGraphPanel.PlayheadPosition <= beforePlay ||
+                Math.Abs(SeekSlider.Value - qualityGraphPanel.PlayheadPosition.TotalSeconds) > 0.001)
+                throw new InvalidOperationException("定期タイマー停止中にフレーム通知で再生表示が更新されません。");
             PausePlayback();
             displayTimer.Start();
             if (qualityGraphPanel.PlayheadPosition <= beforePlay) throw new InvalidOperationException("再生中に縦線が進みません。");

@@ -15,6 +15,7 @@ namespace VideoQualityAnalyzer.App;
 public partial class MainWindow : Window
 {
     private readonly ObservableCollection<VideoEntry> videos = [];
+    private bool playbackRefreshQueued;
     private readonly DispatcherTimer displayTimer = new() { Interval = TimeSpan.FromMilliseconds(200) };
     private readonly DispatcherTimer seekTimer = new() { Interval = TimeSpan.FromMilliseconds(50) };
     private readonly Stopwatch playbackClock = new();
@@ -51,9 +52,10 @@ public partial class MainWindow : Window
             slot.Av1.FrameShown = position =>
             {
                 if (slot.Video is null) return;
-                if (slot.Ready) { UpdateFrameStatus(); return; }
+                slot.LastShownPosition = position;
+                RequestPlaybackRefresh();
+                if (slot.Ready) return;
                 slot.Ready = true;
-                UpdateFrameStatus();
                 UpdateSlotStatus();
                 log.Record("preview_frame_shown", slot.Side, slot.Video.Id, "ffmpeg_wpf_bitmap_copy",
                     detail: $"estimated_pts_ms={position.TotalMilliseconds:F0};gpu_presentation=unmeasured");
@@ -142,6 +144,7 @@ public partial class MainWindow : Window
             if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-comparison")) await VerifyEmbeddedComparisonAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-graphs")) await VerifyEmbeddedGraphsAsync();
+            else if (Environment.GetCommandLineArgs().Contains("--verify-main-refresh")) await VerifyPlaybackRefreshAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-seek")) await VerifySeekSliderAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-evaluation")) await VerifyMainEvaluationAsync();
         };
@@ -328,7 +331,6 @@ public partial class MainWindow : Window
         UpdateEmbeddedComparison(leftVideo, rightVideo, position, resume);
         RightMedia.IsMuted = true;
         UpdateInfo();
-        UpdateFrameStatus();
         RefreshEmbeddedGraphs();
         UpdateTimeDisplay();
     }
@@ -342,6 +344,7 @@ public partial class MainWindow : Window
         slot.Media.Close();
         slot.Media.Source = null;
         slot.Video = video;
+        slot.LastShownPosition = null;
         slot.Generation = generation;
         slot.Ready = false;
         slot.FpsSampleStamp = 0;
@@ -493,6 +496,7 @@ public partial class MainWindow : Window
         isPlaying = false;
         UpdatePlayPauseButton();
         ResetFpsSamples();
+        left.LastShownPosition = right.LastShownPosition = null;
         basePosition = TimeSpan.Zero;
         if (comparisonActive && comparisonPanel is not null) comparisonChangeTask = comparisonPanel.SeekAsync(TimeSpan.Zero, false);
         if (left.Av1.IsOpen) left.Av1.Seek(TimeSpan.Zero);
@@ -559,6 +563,7 @@ public partial class MainWindow : Window
     {
         if (left.Video is null)
             return;
+        left.LastShownPosition = right.LastShownPosition = null;
         basePosition = ClampToCommon(position);
         if (comparisonActive && comparisonPanel is not null) comparisonChangeTask = comparisonPanel.SeekAsync(basePosition, isPlaying);
         ResetFpsSamples();
@@ -644,7 +649,7 @@ public partial class MainWindow : Window
         if (comparisonActive)
         {
             UpdateResourceSample();
-            UpdateTimeDisplay();
+            UpdatePerformanceDisplay();
             return;
         }
         SamplePlaybackFps(left);
@@ -681,7 +686,7 @@ public partial class MainWindow : Window
                 driftStart = null;
             }
         }
-        UpdateTimeDisplay();
+        UpdatePerformanceDisplay();
     }
 
     private void ResetFpsSamples()
@@ -776,21 +781,36 @@ public partial class MainWindow : Window
     private static TimeSpan ClampToVideo(TimeSpan time, VideoDescriptor video) =>
         video.Duration > TimeSpan.Zero && time > video.Duration ? video.Duration : time;
 
-    private void UpdateTimeDisplay()
+    // 操作イベントは即時反映し、フレーム通知は同じ入口へまとめる。
+    private void UpdateTimeDisplay() => UpdateFrameStatus();
+
+    private void RequestPlaybackRefresh()
     {
-        if (!initialized)
-            return;
-        UpdatePlaybackControls();
+        if (closing || playbackRefreshQueued) return;
+        playbackRefreshQueued = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Render, new Action(() =>
+        {
+            playbackRefreshQueued = false;
+            if (!closing) UpdateTimeDisplay();
+        }));
+    }
+
+    private void UpdatePerformanceDisplay()
+    {
+        if (!initialized) return;
         MeasurementText.Text = $"再生位置からの換算fps: 左 {FormatPlaybackFps(left)} / 右 {FormatPlaybackFps(right)}　｜　" +
             $"実提示fps・左右PTS差: 未測定　｜　CPU {(cpuPercent.HasValue ? $"{cpuPercent.Value:F1}%" : "計測中")} / メモリ {memoryMb:F0} MiB / GPU 不明";
 
     }
 
+    private TimeSpan DisplayedPlaybackPosition() => comparisonActive && comparisonPanel is not null
+        ? comparisonPanel.Position : left.LastShownPosition ?? right.LastShownPosition ?? CurrentPosition();
+
     private void UpdatePlaybackControls()
     {
         if (!initialized) return;
         UpdatePlayPauseButton();
-        var position = pendingSeekPosition ?? CurrentPosition();
+        var position = pendingSeekPosition ?? DisplayedPlaybackPosition();
         qualityGraphPanel?.SetPlaybackPosition(position);
         var duration = CommonDuration();
         TimeText.Text = $"{position:hh\\:mm\\:ss} / {duration:hh\\:mm\\:ss}";
@@ -805,7 +825,7 @@ public partial class MainWindow : Window
     {
         if (!initialized) return;
         UpdatePlaybackControls();
-        var framePrefix = comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（時刻から推定）: ";
+        var framePrefix = comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（反映時刻から換算）: ";
         LeftFrameStatus.Text = framePrefix + FormatFramePosition(left);
         RightFrameStatus.Text = framePrefix + FormatFramePosition(right);
         if (comparisonActive) comparisonPanel?.SetFrameStatus(LeftFrameStatus.Text, RightFrameStatus.Text);
@@ -821,7 +841,7 @@ public partial class MainWindow : Window
         var total = video.TotalFrames ?? (video.Duration > TimeSpan.Zero
             ? (long)Math.Round(video.Duration.TotalSeconds * video.AverageFrameRate) : 0);
         var position = comparisonActive && comparisonPanel?.CurrentFrameNumber is { } number ? number :
-            Math.Max(1, (long)Math.Floor(SlotPosition(slot).TotalSeconds * video.AverageFrameRate) + 1);
+            Math.Max(1, (long)Math.Floor((slot.LastShownPosition ?? SlotPosition(slot)).TotalSeconds * video.AverageFrameRate) + 1);
         if (total > 0)
             position = Math.Min(position, total);
         return total > 0
@@ -893,6 +913,7 @@ public partial class MainWindow : Window
         public VideoDescriptor? Video { get; set; }
         public long Generation { get; set; }
         public bool Ready { get; set; }
+        public TimeSpan? LastShownPosition { get; set; }
         public long OpenStarted { get; set; }
         public long FpsSampleStamp { get; set; }
         public TimeSpan FpsSamplePosition { get; set; }

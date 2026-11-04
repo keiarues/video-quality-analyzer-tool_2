@@ -38,12 +38,13 @@ public partial class MainWindow
         }
         left.Av1.Close();
         right.Av1.Close();
+        left.LastShownPosition = right.LastShownPosition = null;
         if (comparisonPanel is null)
         {
             comparisonPanel = new ComparisonPanel(leftVideo!.Path, rightVideo!.Path, 0,
                 videoPaths: videos.Select(entry => entry.Descriptor.Path), showBlur: false, embedded: true);
             ComparisonHost.Content = comparisonPanel;
-            comparisonPanel.FrameShown += UpdateFrameStatus;
+            comparisonPanel.FrameShown += RequestPlaybackRefresh;
             comparisonPanel.PlaybackEnded += () =>
             {
                 if (!comparisonActive) return;
