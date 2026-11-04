@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -45,6 +45,11 @@ public sealed class QualityGraphPanel : UserControl
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         var leftGraph = MakeGraph("フレームグラフ：時刻（秒）と品質", timeline);
         var rightGraph = MakeGraph("ファイルグラフ：平均ビットレート（kbps）と平均品質", averages);
+        var legend = new WrapPanel();
+        var legendScroll = new ScrollViewer { Content = legend, MaxHeight = 64,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        DockPanel.SetDock(legendScroll, Dock.Bottom);
+        rightGraph.Children.Insert(1, legendScroll);
         Grid.SetColumn(rightGraph, 1);
         grid.Children.Add(leftGraph);
         grid.Children.Add(rightGraph);
@@ -61,6 +66,7 @@ public sealed class QualityGraphPanel : UserControl
             displayedVideoIds.Clear();
             timeline.Children.Clear();
             averages.Children.Clear();
+            legend.Children.Clear();
             if (metric.SelectedItem is not TabItem { Tag: QualityMetric selected }) return;
             var available = (allVideos ?? videos).Where(video => results.ContainsKey((video.Id, selected))).ToArray();
             if (available.Length == 0) { maximumTime = 0; status.Text = "この指標の完了結果はありません。"; return; }
@@ -102,6 +108,21 @@ public sealed class QualityGraphPanel : UserControl
                     previousPoints[group] = center;
                 }
                 averages.Children.Add(point);
+                var label = new TextBlock { Text = $"{result.Average:F4} / {rates[index]:N0} kbps",
+                    FontSize = UiTheme.Small, Foreground = UiTheme.OnLight, Background = Brushes.WhiteSmoke,
+                    IsHitTestVisible = false, Tag = "点の評価値" };
+                label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                Canvas.SetLeft(label, Math.Clamp(Canvas.GetLeft(point) + 14, fileArea.Left,
+                    Math.Max(fileArea.Left, averages.ActualWidth - label.DesiredSize.Width - 4)));
+                Canvas.SetTop(label, Math.Clamp(Canvas.GetTop(point) - label.DesiredSize.Height,
+                    0, Math.Max(0, averages.ActualHeight - label.DesiredSize.Height)));
+                averages.Children.Add(label);
+                var legendItem = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 2, 10, 2),
+                    ToolTip = video.Name };
+                legendItem.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = color, Margin = new Thickness(0, 0, 5, 0) });
+                legendItem.Children.Add(new TextBlock { Text = video.Name, FontSize = UiTheme.Small,
+                    Foreground = UiTheme.OnLight, MaxWidth = 220, TextTrimming = TextTrimming.CharacterEllipsis });
+                legend.Children.Add(legendItem);
             }
             timeline.Children.Add(playhead);
             UpdatePlayhead();
@@ -173,6 +194,9 @@ public sealed class QualityGraphPanel : UserControl
                     if (canvas.Children.OfType<Line>().Count(line => Equals(line.Tag, "グリッド")) != 12 ||
                         canvas.Children.OfType<TextBlock>().Count(label => Equals(label.Tag, "目盛り")) != 12)
                         throw new InvalidOperationException("軸の目盛りまたはグリッドが不足しています。");
+                if (averages.Children.OfType<TextBlock>().Count(label => Equals(label.Tag, "点の評価値")) != FilePointCount ||
+                    legend.Children.Count != FilePointCount)
+                    throw new InvalidOperationException("点の評価値・ビットレート表示または凡例が不足しています。");
                 // 別の動画が表示対象だった状態からファイル点を選択して切り替える。
                 var target = averages.Children.OfType<Ellipse>().First();
                 selectedIds.Clear();
