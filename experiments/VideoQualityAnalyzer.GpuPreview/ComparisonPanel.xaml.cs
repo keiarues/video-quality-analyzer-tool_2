@@ -48,8 +48,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
     private WriteableBitmap? playingHeatmap;
 
     private static string FormatVideoDetails(VideoDescriptor video) =>
-        $"{video.Codec} / {video.Width}×{video.Height} / 長さ {video.Duration:hh\\:mm\\:ss} / 音声 {(video.HasAudio ? "あり" : "なし")}\n" +
-        $"平均 {video.AverageFrameRate:F3} fps / 公称 {video.NominalFrameRate:F3} fps";
+        $"{video.Codec} / {(video.AverageBitrate is { } bitrate ? $"{bitrate / 1000.0:N0} kbps" : "— kbps")} / {video.Width}×{video.Height} / {video.AverageFrameRate:F3} fps / 音声 {(video.HasAudio ? "あり" : "なし")}";
 
     public ComparisonPanel(string leftPath, string rightPath, long frameNumber,
         bool showWipe = false, bool benchmarkMode = false, bool captureBenchmark = false,
@@ -127,6 +126,12 @@ public partial class ComparisonPanel : UserControl, IDisposable
     public event Action? PlaybackEnded;
     public bool IsPlaying => playbackCancellation is not null && !playbackPaused;
     public bool IsReady => currentLeft is not null && currentRight is not null;
+    public void SetFrameStatus(string left, string right)
+    {
+        LeftFrameStatus.Text = left;
+        RightFrameStatus.Text = right;
+    }
+
     public TimeSpan Position => currentLeft is null ? requestedPosition : TimeSpan.FromSeconds(currentLeft.FrameNumber / sourceFrameRate);
     public long? CurrentFrameNumber => currentLeft?.FrameNumber;
     public void Play() { resumeRequested = true; if (IsReady && !IsPlaying) PlayPause_Click(this, new RoutedEventArgs()); }

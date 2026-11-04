@@ -17,7 +17,7 @@
 
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="600" MinWidth="300" />
+                <ColumnDefinition Width="650" MinWidth="300" />
                 <ColumnDefinition Width="12" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
@@ -35,6 +35,7 @@
                         <TextBlock Text="複数選択できます。ファイルのドラッグ＆ドロップにも対応。" TextWrapping="Wrap" Foreground="{StaticResource UiMutedBrush}" Margin="3,0,3,8" />
                     </StackPanel>
                     <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
+                        <TextBlock Text="評価設定" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,8" />
                         <StackPanel Orientation="Horizontal">
                             <StackPanel Name="EvaluationMetricChecks" Orientation="Vertical">
                             <CheckBox Name="VmafCheck" Content="VMAF" Margin="0,3,16,3" VerticalAlignment="Center" />
@@ -104,6 +105,7 @@
                                 <StackPanel>
                                     <TextBlock Name="LeftName" Text="左: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                     <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
+                                    <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" />
                                     <TextBlock Name="LeftStatus" Text="待機中" Foreground="{StaticResource UiMutedBrush}" FontSize="{StaticResource UiFontSmall}" />
                                 </StackPanel>
                             </Border>
@@ -119,6 +121,7 @@
                                 <StackPanel>
                                     <TextBlock Name="RightName" Text="右: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                                     <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
+                                    <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" />
                                     <TextBlock Name="RightStatus" Text="待機中" Foreground="{StaticResource UiMutedBrush}" FontSize="{StaticResource UiFontSmall}" />
                                 </StackPanel>
                             </Border>
@@ -147,7 +150,6 @@
                             PreviewMouseLeftButtonDown="SeekSlider_MouseDown"
                             PreviewMouseLeftButtonUp="SeekSlider_MouseUp" />
                 </DockPanel>
-                <TextBlock Name="FrameText" FontSize="{StaticResource UiFontSmall}" Text="フレーム位置: 左 — / 右 —" Foreground="{StaticResource UiMutedBrush}" Margin="4,5,0,0" TextWrapping="Wrap" />
                 <WrapPanel Name="PlaybackButtons" Margin="0,8,0,0">
                     <WrapPanel.Resources>
                         <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">

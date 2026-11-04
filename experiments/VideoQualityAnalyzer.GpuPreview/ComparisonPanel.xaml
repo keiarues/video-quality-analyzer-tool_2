@@ -74,11 +74,13 @@
                 <DockPanel Grid.Column="0" Margin="0,0,8,0">
                     <TextBlock Name="LeftFrameLabel" Text="左フレーム" TextTrimming="CharacterEllipsis" DockPanel.Dock="Top" Margin="0,0,0,5" />
                     <TextBlock Name="LeftDetails" DockPanel.Dock="Top" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="0,0,0,5" />
+                    <TextBlock Name="LeftFrameStatus" DockPanel.Dock="Top" Style="{StaticResource UiSmallTextStyle}" Margin="0,0,0,5" />
                     <Border Background="Black"><Image Name="LeftImage" Stretch="Uniform" /></Border>
                 </DockPanel>
                 <DockPanel Grid.Column="1" Margin="0,0,8,0">
                     <TextBlock Name="RightFrameLabel" Text="右フレーム" TextTrimming="CharacterEllipsis" DockPanel.Dock="Top" Margin="0,0,0,5" />
                     <TextBlock Name="RightDetails" DockPanel.Dock="Top" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="0,0,0,5" />
+                    <TextBlock Name="RightFrameStatus" DockPanel.Dock="Top" Style="{StaticResource UiSmallTextStyle}" Margin="0,0,0,5" />
                     <Border Background="Black"><Image Name="RightImage" Stretch="Uniform" /></Border>
                 </DockPanel>
                 <DockPanel Name="HeatmapPanel" Grid.Column="2">

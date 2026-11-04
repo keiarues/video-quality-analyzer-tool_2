@@ -730,8 +730,10 @@ public partial class MainWindow : Window
         qualityGraphPanel?.SetPlaybackPosition(position);
         var duration = CommonDuration();
         TimeText.Text = $"{position:hh\\:mm\\:ss} / {duration:hh\\:mm\\:ss}";
-        FrameText.Text = (comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（再生時刻から推定）: ") +
-            $"左 {FormatFramePosition(left)}　｜　右 {FormatFramePosition(right)}";
+        var framePrefix = comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（時刻から推定）: ";
+        LeftFrameStatus.Text = framePrefix + FormatFramePosition(left);
+        RightFrameStatus.Text = framePrefix + FormatFramePosition(right);
+        if (comparisonActive) comparisonPanel?.SetFrameStatus(LeftFrameStatus.Text, RightFrameStatus.Text);
         MeasurementText.Text = $"再生位置からの換算fps: 左 {FormatPlaybackFps(left)} / 右 {FormatPlaybackFps(right)}　｜　" +
             $"実提示fps・左右PTS差: 未測定　｜　CPU {(cpuPercent.HasValue ? $"{cpuPercent.Value:F1}%" : "計測中")} / メモリ {memoryMb:F0} MiB / GPU 不明";
         programmaticSlider = true;
@@ -775,8 +777,7 @@ public partial class MainWindow : Window
     }
 
     private static string FormatVideoDetails(VideoDescriptor? video) => video is null ? "" :
-        $"{video.Codec} / {video.Width}×{video.Height} / 長さ {video.Duration:hh\\:mm\\:ss} / 音声 {(video.HasAudio ? "あり" : "なし")}\n" +
-        $"平均 {video.AverageFrameRate:F3} fps / 公称 {video.NominalFrameRate:F3} fps";
+        $"{video.Codec} / {(video.AverageBitrate is { } bitrate ? $"{bitrate / 1000.0:N0} kbps" : "— kbps")} / {video.Width}×{video.Height} / {video.AverageFrameRate:F3} fps / 音声 {(video.HasAudio ? "あり" : "なし")}";
 
     private void Window_DragOver(object sender, DragEventArgs e)
     {
