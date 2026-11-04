@@ -15,7 +15,9 @@ public partial class MainWindow
     private void InitializeEvaluationControls()
     {
         foreach (var (check, metric) in new[] { (VmafCheck, QualityMetric.Vmaf), (SsimCheck, QualityMetric.Ssim), (PsnrCheck, QualityMetric.Psnr) })
-            check.ToolTip = new TextBlock { Text = QualityMetricHelp.GetText(metric), MaxWidth = 380, TextWrapping = TextWrapping.Wrap };
+        {
+            check.MouseEnter += (_, _) => EvaluationHelpText.Text = QualityMetricHelp.GetText(metric);
+        }
     }
 
     private void Evaluate_Click(object sender, RoutedEventArgs e)

@@ -36,15 +36,22 @@
                     </StackPanel>
                     <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
                         <TextBlock Text="評価設定" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,8" />
-                        <StackPanel Orientation="Horizontal">
-                            <StackPanel Name="EvaluationMetricChecks" Orientation="Vertical">
-                            <CheckBox Name="VmafCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="VMAF" Margin="0,3,16,3" VerticalAlignment="Center" />
-                            <CheckBox Name="SsimCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="SSIM" IsChecked="True" Margin="0,3,16,3" VerticalAlignment="Center" />
-                            <CheckBox Name="PsnrCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="PSNR" Margin="0,3,16,3" VerticalAlignment="Center" />
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Border Grid.Column="0" BorderBrush="{StaticResource UiMutedBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,12,0">
+                                <TextBlock Name="EvaluationHelpText" Text="評価方法にマウスを合わせると解説を表示します。" TextWrapping="Wrap" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Name="EvaluationMetricChecks" Orientation="Vertical">
+                            <CheckBox Name="VmafCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="VMAF" Margin="0,3,0,3" VerticalAlignment="Center" />
+                            <CheckBox Name="SsimCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="SSIM" IsChecked="True" Margin="0,3,0,3" VerticalAlignment="Center" />
+                            <CheckBox Name="PsnrCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="PSNR" Margin="0,3,0,3" VerticalAlignment="Center" />
                             </StackPanel>
-                            <Button VerticalAlignment="Center" Name="EvaluationStartButton" Content="評価を開始" Click="Evaluate_Click" MinWidth="110" />
-                        </StackPanel>
-                        <TextBlock Name="EvaluationStatus" FontSize="{StaticResource UiFontSmall}" Text="未選択の場合はすべての比較動画を評価します。" TextWrapping="Wrap" Margin="0,5,0,0" Foreground="{StaticResource UiMutedBrush}" />
+                        </Grid>
+                        <Button HorizontalAlignment="Right" Margin="0,8,0,0" Name="EvaluationStartButton" Content="評価を開始" Click="Evaluate_Click" MinWidth="110" />
+                        <TextBlock Name="EvaluationStatus" FontSize="{StaticResource UiFontSmall}" Text="ファイル未選択の場合はすべての比較動画を評価します。" TextWrapping="Wrap" Margin="0,5,0,0" Foreground="{StaticResource UiMutedBrush}" />
                     </StackPanel>
                     <DataGrid Name="VideoList" SelectionMode="Extended" SelectionUnit="FullRow"
                               PreviewMouseLeftButtonDown="VideoList_PreviewMouseLeftButtonDown" SelectionChanged="VideoList_SelectionChanged" Sorting="VideoList_Sorting"
