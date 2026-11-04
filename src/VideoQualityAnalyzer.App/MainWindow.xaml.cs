@@ -116,6 +116,26 @@ public partial class MainWindow : Window
                 catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }
                 return;
             }
+            if (Environment.GetCommandLineArgs().Contains("--verify-sidebar"))
+            {
+                try
+                {
+                    SidebarColumn.Width = new GridLength(580);
+                    UpdateLayout();
+                    var width = SidebarColumn.ActualWidth;
+                    SidebarToggle_Click(this, new RoutedEventArgs());
+                    UpdateLayout();
+                    if (SidebarPanel.Visibility != Visibility.Collapsed || SidebarColumn.ActualWidth != 0)
+                        throw new InvalidOperationException("一覧の最小化に失敗しました。");
+                    SidebarToggle_Click(this, new RoutedEventArgs());
+                    UpdateLayout();
+                    if (SidebarPanel.Visibility != Visibility.Visible || Math.Abs(SidebarColumn.ActualWidth - width) > 1)
+                        throw new InvalidOperationException("一覧の幅の復元に失敗しました。");
+                    Application.Current.Shutdown(0);
+                }
+                catch { Application.Current.Shutdown(1); }
+                return;
+            }
             var startupFiles = Environment.GetCommandLineArgs().Skip(1).Where(File.Exists).ToArray();
             if (startupFiles.Length > 0)
                 await AddFilesAsync(startupFiles);
@@ -125,6 +145,30 @@ public partial class MainWindow : Window
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-seek")) await VerifySeekSliderAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-evaluation")) await VerifyMainEvaluationAsync();
         };
+    }
+
+    private double expandedSidebarWidth = 650;
+    private bool sidebarCollapsed;
+
+    private void SidebarToggle_Click(object sender, RoutedEventArgs e)
+    {
+        if (!sidebarCollapsed)
+        {
+            expandedSidebarWidth = SidebarColumn.ActualWidth;
+            SidebarPanel.Visibility = SidebarSplitter.Visibility = Visibility.Collapsed;
+            SidebarColumn.MinWidth = 0;
+            SidebarColumn.Width = new GridLength(0);
+            SidebarSplitterColumn.Width = new GridLength(0);
+        }
+        else
+        {
+            SidebarColumn.MinWidth = 300;
+            SidebarColumn.Width = new GridLength(Math.Max(300, expandedSidebarWidth));
+            SidebarSplitterColumn.Width = new GridLength(12);
+            SidebarPanel.Visibility = SidebarSplitter.Visibility = Visibility.Visible;
+        }
+        sidebarCollapsed = !sidebarCollapsed;
+        SidebarToggleButton.Content = sidebarCollapsed ? "▶ 一覧を復元" : "◀ 一覧を最小化";
     }
 
     private async void Add_Click(object sender, RoutedEventArgs e)
