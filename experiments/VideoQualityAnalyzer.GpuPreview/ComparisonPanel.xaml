@@ -65,28 +65,46 @@
                        VerticalAlignment="Center" Margin="10,0,0,0" Foreground="{StaticResource UiMutedBrush}" />
                         </WrapPanel>
                         <ContentControl Name="HeatmapContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
-            <Grid Name="ThreeViewGrid" TextElement.Foreground="{StaticResource TextBrush}">
+            <Grid Grid.IsSharedSizeScope="True" Name="ThreeViewGrid" TextElement.Foreground="{StaticResource TextBrush}">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Name="HeatmapColumn" Width="*" />
                 </Grid.ColumnDefinitions>
-                <DockPanel Grid.Column="0" Margin="0,0,8,0">
-                    <TextBlock Name="LeftFrameLabel" Text="左フレーム" TextTrimming="CharacterEllipsis" DockPanel.Dock="Top" Margin="0,0,0,5" />
-                    <TextBlock Name="LeftDetails" DockPanel.Dock="Top" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="0,0,0,5" />
-                    <TextBlock Name="LeftFrameStatus" DockPanel.Dock="Top" Style="{StaticResource UiSmallTextStyle}" Margin="0,0,0,5" />
-                    <Border Background="Black"><Image Name="LeftImage" Stretch="Uniform" /></Border>
-                </DockPanel>
-                <DockPanel Grid.Column="1" Margin="0,0,8,0">
-                    <TextBlock Name="RightFrameLabel" Text="右フレーム" TextTrimming="CharacterEllipsis" DockPanel.Dock="Top" Margin="0,0,0,5" />
-                    <TextBlock Name="RightDetails" DockPanel.Dock="Top" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="0,0,0,5" />
-                    <TextBlock Name="RightFrameStatus" DockPanel.Dock="Top" Style="{StaticResource UiSmallTextStyle}" Margin="0,0,0,5" />
-                    <Border Background="Black"><Image Name="RightImage" Stretch="Uniform" /></Border>
-                </DockPanel>
-                <DockPanel Name="HeatmapPanel" Grid.Column="2">
-                    <TextBlock Text="差分ヒートマップ" DockPanel.Dock="Top" Margin="0,0,0,5" />
-                    <Border Background="Black"><Image Name="HeatmapImage" Stretch="Uniform" /></Border>
-                </DockPanel>
+                <Grid Grid.Column="0" Margin="0,0,8,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" SharedSizeGroup="PreviewHeader" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Name="LeftFrameLabel" Text="左フレーム" TextTrimming="CharacterEllipsis" Margin="0,0,0,5" />
+                        <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="0,0,0,5" />
+                        <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" Margin="0,0,0,5" />
+                    </StackPanel>
+                    <Border Grid.Row="1" Background="Black"><Image Name="LeftImage" Stretch="Uniform" /></Border>
+                </Grid>
+                <Grid Grid.Column="1" Margin="0,0,8,0">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" SharedSizeGroup="PreviewHeader" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Name="RightFrameLabel" Text="右フレーム" TextTrimming="CharacterEllipsis" Margin="0,0,0,5" />
+                        <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="0,0,0,5" />
+                        <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" Margin="0,0,0,5" />
+                    </StackPanel>
+                    <Border Grid.Row="1" Background="Black"><Image Name="RightImage" Stretch="Uniform" /></Border>
+                </Grid>
+                <Grid Name="HeatmapPanel" Grid.Column="2">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" SharedSizeGroup="PreviewHeader" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Row="0">
+                        <TextBlock Text="差分ヒートマップ" Margin="0,0,0,5" />
+                    </StackPanel>
+                    <Border Grid.Row="1" Background="Black"><Image Name="HeatmapImage" Stretch="Uniform" /></Border>
+                </Grid>
             </Grid>
                         </ContentControl>
                     </DockPanel>
