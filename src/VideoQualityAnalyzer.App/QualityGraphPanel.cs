@@ -45,11 +45,59 @@ public sealed class QualityGraphPanel : UserControl
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         var leftGraph = MakeGraph("フレームグラフ：時刻（秒）と品質", timeline);
         var rightGraph = MakeGraph("ファイルグラフ：平均ビットレート（kbps）と平均品質", averages);
-        var legend = new WrapPanel();
-        var legendScroll = new ScrollViewer { Content = legend, MaxHeight = 64,
+        var legend = new StackPanel();
+        var legendScroll = new ScrollViewer { Content = legend, MaxHeight = 180,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
-        DockPanel.SetDock(legendScroll, Dock.Bottom);
-        rightGraph.Children.Insert(1, legendScroll);
+        var legendBody = new DockPanel();
+        var legendHeader = new DockPanel();
+        var collapseLegend = new Button { Content = "−", MinWidth = 24, Padding = new Thickness(2),
+            ToolTip = "凡例を折りたたむ" };
+        DockPanel.SetDock(collapseLegend, Dock.Right);
+        legendHeader.Children.Add(collapseLegend);
+        var legendDrag = new System.Windows.Controls.Primitives.Thumb { Height = 24,
+            Cursor = System.Windows.Input.Cursors.SizeAll, ToolTip = "ドラッグして凡例を移動",
+            Template = new ControlTemplate(typeof(System.Windows.Controls.Primitives.Thumb))
+            {
+                VisualTree = MakeLegendHeader()
+            } };
+        legendHeader.Children.Add(legendDrag);
+        DockPanel.SetDock(legendHeader, Dock.Top);
+        legendBody.Children.Add(legendHeader);
+        legendBody.Children.Add(legendScroll);
+        var legendBox = new Border { Width = 230, Background = Brushes.WhiteSmoke, BorderBrush = Brushes.Gray,
+            BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(5), Child = legendBody };
+        var overlay = new Canvas { ClipToBounds = true };
+        overlay.Children.Add(legendBox);
+        rightGraph.Children.Remove(averages);
+        var fileLayers = new Grid();
+        fileLayers.Children.Add(averages);
+        fileLayers.Children.Add(overlay);
+        rightGraph.Children.Add(fileLayers);
+        var legendPositioned = false;
+        void ClampLegend(double x, double y)
+        {
+            legendBox.Width = Math.Min(230, Math.Max(1, overlay.ActualWidth - 12));
+            legendScroll.MaxHeight = Math.Min(180, Math.Max(0, overlay.ActualHeight - 50));
+            legendBox.Measure(new Size(legendBox.Width, double.PositiveInfinity));
+            Canvas.SetLeft(legendBox, Math.Clamp(x, 0, Math.Max(0, overlay.ActualWidth - legendBox.DesiredSize.Width)));
+            Canvas.SetTop(legendBox, Math.Clamp(y, 0, Math.Max(0, overlay.ActualHeight - legendBox.DesiredSize.Height)));
+        }
+        overlay.SizeChanged += (_, _) =>
+        {
+            ClampLegend(legendPositioned ? Canvas.GetLeft(legendBox) : overlay.ActualWidth - 242,
+                legendPositioned ? Canvas.GetTop(legendBox) : 8);
+            legendPositioned = true;
+        };
+        legendDrag.DragDelta += (_, e) => ClampLegend(Canvas.GetLeft(legendBox) + e.HorizontalChange,
+            Canvas.GetTop(legendBox) + e.VerticalChange);
+        collapseLegend.Click += (_, _) =>
+        {
+            var collapsed = legendScroll.Visibility == Visibility.Visible;
+            legendScroll.Visibility = collapsed ? Visibility.Collapsed : Visibility.Visible;
+            collapseLegend.Content = collapsed ? "＋" : "−";
+            collapseLegend.ToolTip = collapsed ? "凡例を展開" : "凡例を折りたたむ";
+            ClampLegend(Canvas.GetLeft(legendBox), Canvas.GetTop(legendBox));
+        };
         Grid.SetColumn(rightGraph, 1);
         grid.Children.Add(leftGraph);
         grid.Children.Add(rightGraph);
@@ -121,7 +169,7 @@ public sealed class QualityGraphPanel : UserControl
                     ToolTip = video.Name };
                 legendItem.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = color, Margin = new Thickness(0, 0, 5, 0) });
                 legendItem.Children.Add(new TextBlock { Text = video.Name, FontSize = UiTheme.Small,
-                    Foreground = UiTheme.OnLight, MaxWidth = 220, TextTrimming = TextTrimming.CharacterEllipsis });
+                    Foreground = UiTheme.OnLight, MaxWidth = 175, TextTrimming = TextTrimming.CharacterEllipsis });
                 legend.Children.Add(legendItem);
             }
             timeline.Children.Add(playhead);
@@ -197,6 +245,13 @@ public sealed class QualityGraphPanel : UserControl
                 if (averages.Children.OfType<TextBlock>().Count(label => Equals(label.Tag, "点の評価値")) != FilePointCount ||
                     legend.Children.Count != FilePointCount)
                     throw new InvalidOperationException("点の評価値・ビットレート表示または凡例が不足しています。");
+                collapseLegend.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                if (legendScroll.Visibility != Visibility.Collapsed) throw new InvalidOperationException("凡例を折りたためません。");
+                collapseLegend.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                legendDrag.RaiseEvent(new System.Windows.Controls.Primitives.DragDeltaEventArgs(-20, 10)
+                    { RoutedEvent = System.Windows.Controls.Primitives.Thumb.DragDeltaEvent });
+                if (legendScroll.Visibility != Visibility.Visible || Canvas.GetLeft(legendBox) < 0 || Canvas.GetTop(legendBox) < 0)
+                    throw new InvalidOperationException("凡例の復元または移動が不正です。");
                 // 別の動画が表示対象だった状態からファイル点を選択して切り替える。
                 var target = averages.Children.OfType<Ellipse>().First();
                 selectedIds.Clear();
@@ -279,6 +334,15 @@ public sealed class QualityGraphPanel : UserControl
         playhead.Y2 = area.Bottom;
     }
 
+    private static FrameworkElementFactory MakeLegendHeader()
+    {
+        var text = new FrameworkElementFactory(typeof(TextBlock));
+        text.SetValue(TextBlock.TextProperty, "凡例（移動可）");
+        text.SetValue(TextBlock.ForegroundProperty, UiTheme.OnLight);
+        text.SetValue(TextBlock.BackgroundProperty, Brushes.Transparent);
+        return text;
+    }
+
     private static DockPanel MakeGraph(string title, Canvas canvas)
     {
         var panel = new DockPanel { Margin = new Thickness(6) };
@@ -308,7 +372,7 @@ public sealed class QualityGraphPanel : UserControl
                 Stroke = Brushes.LightGray, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
             canvas.Children.Add(new Line { X1 = area.Left, X2 = area.Right, Y1 = y, Y2 = y,
                 Stroke = Brushes.LightGray, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
-            AddTick(canvas, (maximumX * fraction).ToString(unit == "kbps" ? "N0" : "G4"), x, area.Bottom + 6, true);
+            AddTick(canvas, (maximumX * fraction).ToString(unit == "kbps" ? "N0" : "0.##") + (unit == "kbps" ? " kbps" : "秒"), x, area.Bottom + 6, true);
             AddTick(canvas, (minimumY + (maximumY - minimumY) * fraction).ToString("G4"), area.Left - 7, y, false);
         }
         canvas.Children.Add(new Polyline { Stroke = Brushes.DimGray, StrokeThickness = 1,
@@ -326,7 +390,8 @@ public sealed class QualityGraphPanel : UserControl
         var label = new TextBlock { Text = text, Foreground = UiTheme.OnLight, FontSize = UiTheme.Small,
             Tag = "目盛り", IsHitTestVisible = false };
         label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-        Canvas.SetLeft(label, horizontal ? x - label.DesiredSize.Width / 2 : x - label.DesiredSize.Width);
+        Canvas.SetLeft(label, horizontal ? Math.Clamp(x - label.DesiredSize.Width / 2, 0,
+            Math.Max(0, canvas.ActualWidth - label.DesiredSize.Width)) : x - label.DesiredSize.Width);
         Canvas.SetTop(label, horizontal ? y : y - label.DesiredSize.Height / 2);
         canvas.Children.Add(label);
     }
