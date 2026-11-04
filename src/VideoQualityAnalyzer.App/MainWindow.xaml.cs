@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel;
+﻿using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -226,6 +226,11 @@ public partial class MainWindow : Window
         VideoList.Items.Refresh();
         suppressSelection = false;
         UpdateSelection();
+    }
+
+    private void ClearSelection_Click(object sender, RoutedEventArgs e)
+    {
+        VideoList.UnselectAll();
     }
 
     private void VideoList_SelectionChanged(object sender, SelectionChangedEventArgs e)
