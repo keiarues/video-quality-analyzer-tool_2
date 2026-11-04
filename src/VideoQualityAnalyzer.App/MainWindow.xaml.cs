@@ -50,8 +50,10 @@ public partial class MainWindow : Window
         {
             slot.Av1.FrameShown = position =>
             {
-                if (slot.Ready || slot.Video is null) return;
+                if (slot.Video is null) return;
+                if (slot.Ready) { UpdateFrameStatus(); return; }
                 slot.Ready = true;
+                UpdateFrameStatus();
                 UpdateSlotStatus();
                 log.Record("preview_frame_shown", slot.Side, slot.Video.Id, "ffmpeg_wpf_bitmap_copy",
                     detail: $"estimated_pts_ms={position.TotalMilliseconds:F0};gpu_presentation=unmeasured");
@@ -274,6 +276,7 @@ public partial class MainWindow : Window
         UpdateEmbeddedComparison(leftVideo, rightVideo, position, resume);
         RightMedia.IsMuted = true;
         UpdateInfo();
+        UpdateFrameStatus();
         RefreshEmbeddedGraphs();
         UpdateTimeDisplay();
     }
@@ -730,10 +733,6 @@ public partial class MainWindow : Window
         qualityGraphPanel?.SetPlaybackPosition(position);
         var duration = CommonDuration();
         TimeText.Text = $"{position:hh\\:mm\\:ss} / {duration:hh\\:mm\\:ss}";
-        var framePrefix = comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（時刻から推定）: ";
-        LeftFrameStatus.Text = framePrefix + FormatFramePosition(left);
-        RightFrameStatus.Text = framePrefix + FormatFramePosition(right);
-        if (comparisonActive) comparisonPanel?.SetFrameStatus(LeftFrameStatus.Text, RightFrameStatus.Text);
         MeasurementText.Text = $"再生位置からの換算fps: 左 {FormatPlaybackFps(left)} / 右 {FormatPlaybackFps(right)}　｜　" +
             $"実提示fps・左右PTS差: 未測定　｜　CPU {(cpuPercent.HasValue ? $"{cpuPercent.Value:F1}%" : "計測中")} / メモリ {memoryMb:F0} MiB / GPU 不明";
         programmaticSlider = true;
@@ -743,12 +742,21 @@ public partial class MainWindow : Window
         programmaticSlider = false;
     }
 
+    private void UpdateFrameStatus()
+    {
+        if (!initialized) return;
+        var framePrefix = comparisonActive ? "元フレーム位置（0始まり）: " : "フレーム位置（時刻から推定）: ";
+        LeftFrameStatus.Text = framePrefix + FormatFramePosition(left);
+        RightFrameStatus.Text = framePrefix + FormatFramePosition(right);
+        if (comparisonActive) comparisonPanel?.SetFrameStatus(LeftFrameStatus.Text, RightFrameStatus.Text);
+    }
+
     private string FormatPlaybackFps(SlotState slot) =>
         isPlaying && slot.PlaybackFps is { } fps ? $"{fps:F1}" : "—";
 
     private string FormatFramePosition(SlotState slot)
     {
-        if (!slot.Ready || slot.Video is not { AverageFrameRate: > 0 } video)
+        if ((!slot.Ready && !(comparisonActive && comparisonPanel?.CurrentFrameNumber is not null)) || slot.Video is not { AverageFrameRate: > 0 } video)
             return "—";
         var total = video.TotalFrames ?? (video.Duration > TimeSpan.Zero
             ? (long)Math.Round(video.Duration.TotalSeconds * video.AverageFrameRate) : 0);

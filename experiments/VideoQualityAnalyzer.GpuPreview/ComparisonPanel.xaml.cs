@@ -124,6 +124,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
     private double sourceFrameRate = 30;
     private TimeSpan requestedPosition;
     public event Action? PlaybackEnded;
+    public event Action? FrameShown;
     public bool IsPlaying => playbackCancellation is not null && !playbackPaused;
     public bool IsReady => currentLeft is not null && currentRight is not null;
     public void SetFrameStatus(string left, string right)
@@ -361,6 +362,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
                     currentLeft = left;
                     currentRight = right;
                     UpdatePlayingBitmaps(left, right, difference);
+                    FrameShown?.Invoke();
                     presented = true;
                     if (captureBenchmark) UpdateCaptureMarker(left.FrameNumber);
                     displayed++;
@@ -899,6 +901,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
             RightImage.Source = WipeRightImage.Source = rightBitmap;
             UpdateWipeBoundary();
             RefreshHeatmap();
+            FrameShown?.Invoke();
             if (candidate is not null)
             {
                 preparedReader = candidate;
