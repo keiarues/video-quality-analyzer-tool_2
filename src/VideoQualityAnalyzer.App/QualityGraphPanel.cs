@@ -13,6 +13,7 @@ public sealed class QualityGraphPanel : UserControl
     private readonly Canvas averages = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
     private readonly TabControl metric = new();
     private readonly TextBlock status = new() { FontSize = UiTheme.Small, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8) };
+    private readonly Dictionary<string, Brush> videoColors = new();
     private readonly TextBlock leftPlaybackStatus = MakePlaybackLabel(TextAlignment.Right);
     private readonly TextBlock rightPlaybackStatus = MakePlaybackLabel(TextAlignment.Left);
     private readonly TextBlock playbackTimeLabel = MakePlaybackLabel(TextAlignment.Left);
@@ -162,6 +163,7 @@ public sealed class QualityGraphPanel : UserControl
         void Draw()
         {
             displayedVideoIds.Clear();
+            videoColors.Clear();
             timeline.Children.Clear();
             averages.Children.Clear();
             legend.Children.Clear();
@@ -199,6 +201,7 @@ public sealed class QualityGraphPanel : UserControl
                 var video = available[index];
                 var result = results[(video.Id, selected)];
                 var color = colors[index % colors.Length];
+                videoColors[video.Id] = color;
                 var line = new Polyline { Stroke = color, StrokeThickness = 1, ToolTip = video.Name };
                 foreach (var frame in result.Frames)
                     line.Points.Add(new Point(timeArea.Left + frame.Number / video.AverageFrameRate / Math.Max(0.001, maximumTime) * timeArea.Width,
@@ -355,6 +358,9 @@ public sealed class QualityGraphPanel : UserControl
                 if (!leftPlaybackStatus.Text.StartsWith("--\n") || rightPlaybackStatus.Text.StartsWith("--\n") ||
                     !rightPlaybackStatus.Text.Contains(playbackVideo.Name) || !playbackTimeLabel.Text.EndsWith("秒"))
                     throw new InvalidOperationException("左右の再生ステータスまたは元動画の評価値表示が不正です。");
+                if (!Equals(rightPlaybackStatus.Foreground, videoColors[playbackVideo.Id]) ||
+                    !Equals(leftPlaybackStatus.Foreground, UiTheme.OnLight) || !Equals(playbackTimeLabel.Foreground, UiTheme.OnLight))
+                    throw new InvalidOperationException("再生ステータスの系列色または秒数の標準色が不正です。");
                 UpdateLayout();
                 var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap(
                     (int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
@@ -458,6 +464,10 @@ public sealed class QualityGraphPanel : UserControl
         playhead.X1 = playhead.X2 = area.Left + Math.Clamp(playbackPosition.TotalSeconds / Math.Max(0.001, maximumTime), 0, 1) * area.Width;
         playhead.Y1 = area.Top;
         playhead.Y2 = area.Bottom;
+        leftPlaybackStatus.Foreground = playbackLeft is not null && videoColors.TryGetValue(playbackLeft.Id, out var leftColor)
+            ? leftColor : UiTheme.OnLight;
+        rightPlaybackStatus.Foreground = playbackRight is not null && videoColors.TryGetValue(playbackRight.Id, out var rightColor)
+            ? rightColor : UiTheme.OnLight;
         leftPlaybackStatus.Text = $"{PlaybackValue(playbackLeft)}\n{playbackLeft?.Name ?? "--"}";
         rightPlaybackStatus.Text = $"{PlaybackValue(playbackRight)}\n{playbackRight?.Name ?? "--"}";
         playbackTimeLabel.Text = $"{playbackPosition.TotalSeconds:0.##}秒";
