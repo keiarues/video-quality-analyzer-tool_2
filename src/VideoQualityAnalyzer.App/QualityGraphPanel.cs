@@ -64,7 +64,7 @@ public sealed class QualityGraphPanel : UserControl
         DockPanel.SetDock(legendHeader, Dock.Top);
         legendBody.Children.Add(legendHeader);
         legendBody.Children.Add(legendScroll);
-        var legendBox = new Border { Width = 230, Background = Brushes.WhiteSmoke, BorderBrush = Brushes.Gray,
+        var legendBox = new Border { Width = 350, Background = Brushes.WhiteSmoke, BorderBrush = Brushes.Gray,
             BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(5), Child = legendBody };
         var overlay = new Canvas { ClipToBounds = true };
         overlay.Children.Add(legendBox);
@@ -76,17 +76,58 @@ public sealed class QualityGraphPanel : UserControl
         var legendPositioned = false;
         void ClampLegend(double x, double y)
         {
-            legendBox.Width = Math.Min(230, Math.Max(1, overlay.ActualWidth - 12));
+            legendBox.Width = Math.Min(350, Math.Max(1, overlay.ActualWidth - 12));
             legendScroll.MaxHeight = Math.Min(180, Math.Max(0, overlay.ActualHeight - 50));
             legendBox.Measure(new Size(legendBox.Width, double.PositiveInfinity));
             Canvas.SetLeft(legendBox, Math.Clamp(x, 0, Math.Max(0, overlay.ActualWidth - legendBox.DesiredSize.Width)));
             Canvas.SetTop(legendBox, Math.Clamp(y, 0, Math.Max(0, overlay.ActualHeight - legendBox.DesiredSize.Height)));
         }
+        void PlaceLegend()
+        {
+            ClampLegend(0, 0);
+            var area = PlotArea(averages);
+            var width = legendBox.DesiredSize.Width;
+            var height = legendBox.DesiredSize.Height;
+            var left = area.Left;
+            var right = Math.Max(left, area.Right - width);
+            var top = area.Top;
+            var bottom = Math.Max(top, area.Bottom - height);
+            // 同点なら右下を優先。四隅と各辺の中央を比較する。
+            Point[] candidates = [new(right, bottom), new(left, bottom), new(right, top), new(left, top),
+                new((left + right) / 2, bottom), new(right, (top + bottom) / 2),
+                new(left, (top + bottom) / 2), new((left + right) / 2, top)];
+            double Score(Point position)
+            {
+                var box = new Rect(position, new Size(width, height));
+                double score = 0;
+                foreach (var child in averages.Children.OfType<FrameworkElement>())
+                {
+                    if (child is Line line && !Equals(line.Tag, "グリッド"))
+                    {
+                        // 接続線は線上の点で評価し、斜線の外接矩形を過大評価しない。
+                        for (var step = 0; step <= 24; step++)
+                            if (box.Contains(new Point(line.X1 + (line.X2 - line.X1) * step / 24,
+                                line.Y1 + (line.Y2 - line.Y1) * step / 24))) score += 2;
+                    }
+                    else if (child is Ellipse || child is TextBlock { Tag: "点の評価値" })
+                    {
+                        child.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                        var bounds = new Rect(Canvas.GetLeft(child), Canvas.GetTop(child), child.DesiredSize.Width, child.DesiredSize.Height);
+                        if (!box.IntersectsWith(bounds)) continue;
+                        var overlap = Rect.Intersect(box, bounds);
+                        score += overlap.Width * overlap.Height + (child is Ellipse ? 1000 : 100);
+                    }
+                }
+                return score;
+            }
+            var best = candidates.OrderBy(Score).First();
+            ClampLegend(best.X, best.Y);
+            legendPositioned = true;
+        }
         overlay.SizeChanged += (_, _) =>
         {
-            ClampLegend(legendPositioned ? Canvas.GetLeft(legendBox) : overlay.ActualWidth - 242,
-                legendPositioned ? Canvas.GetTop(legendBox) : 8);
-            legendPositioned = true;
+            if (legendPositioned) ClampLegend(Canvas.GetLeft(legendBox), Canvas.GetTop(legendBox));
+            else PlaceLegend();
         };
         legendDrag.DragDelta += (_, e) => ClampLegend(Canvas.GetLeft(legendBox) + e.HorizontalChange,
             Canvas.GetTop(legendBox) + e.VerticalChange);
@@ -117,7 +158,7 @@ public sealed class QualityGraphPanel : UserControl
             legend.Children.Clear();
             if (metric.SelectedItem is not TabItem { Tag: QualityMetric selected }) return;
             var available = (allVideos ?? videos).Where(video => results.ContainsKey((video.Id, selected))).ToArray();
-            if (available.Length == 0) { maximumTime = 0; status.Text = "この指標の完了結果はありません。"; return; }
+            if (available.Length == 0) { PlaceLegend(); maximumTime = 0; status.Text = "この指標の完了結果はありません。"; return; }
             var values = available.SelectMany(video => results[(video.Id, selected)].Frames.Select(frame => frame.Value)).ToArray();
             var min = values.Min();
             var max = values.Max();
@@ -166,12 +207,15 @@ public sealed class QualityGraphPanel : UserControl
                     0, Math.Max(0, averages.ActualHeight - label.DesiredSize.Height)));
                 averages.Children.Add(label);
                 var legendItem = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 2, 10, 2),
-                    ToolTip = video.Name };
+                    ToolTip = $"{video.Name} / {result.Average:F4} / {rates[index]:N0} kbps" };
                 legendItem.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = color, Margin = new Thickness(0, 0, 5, 0) });
                 legendItem.Children.Add(new TextBlock { Text = video.Name, FontSize = UiTheme.Small,
-                    Foreground = UiTheme.OnLight, MaxWidth = 175, TextTrimming = TextTrimming.CharacterEllipsis });
+                    Foreground = UiTheme.OnLight, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis });
+                legendItem.Children.Add(new TextBlock { Text = $"  {result.Average:F4} / {rates[index]:N0} kbps",
+                    FontSize = UiTheme.Small, Foreground = UiTheme.OnLight });
                 legend.Children.Add(legendItem);
             }
+            PlaceLegend();
             timeline.Children.Add(playhead);
             UpdatePlayhead();
             status.Text = "左の縦線をドラッグするとシーク、右の点をクリックするとその動画のフレーム評価を表示します。点にマウスを合わせると動画名と平均値を表示します。";
@@ -245,6 +289,21 @@ public sealed class QualityGraphPanel : UserControl
                 if (averages.Children.OfType<TextBlock>().Count(label => Equals(label.Tag, "点の評価値")) != FilePointCount ||
                     legend.Children.Count != FilePointCount)
                     throw new InvalidOperationException("点の評価値・ビットレート表示または凡例が不足しています。");
+                // 凡例の現在位置に点を追加し、内容更新時に別の端へ退避することを確認する。
+                PlaceLegend();
+                var originalLegend = new Point(Canvas.GetLeft(legendBox), Canvas.GetTop(legendBox));
+                var obstacle = new Ellipse { Width = 12, Height = 12 };
+                Canvas.SetLeft(obstacle, originalLegend.X + legendBox.DesiredSize.Width / 2);
+                Canvas.SetTop(obstacle, originalLegend.Y + legendBox.DesiredSize.Height / 2);
+                averages.Children.Add(obstacle);
+                PlaceLegend();
+                if (new Point(Canvas.GetLeft(legendBox), Canvas.GetTop(legendBox)) == originalLegend)
+                    throw new InvalidOperationException("凡例が追加された点を避けて移動しません。");
+                averages.Children.Remove(obstacle);
+                PlaceLegend();
+                if (legend.Children.OfType<StackPanel>().Any(item =>
+                    !item.Children.OfType<TextBlock>().Any(text => text.Text.Contains("kbps"))))
+                    throw new InvalidOperationException("凡例に評価値とビットレートがありません。");
                 collapseLegend.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 if (legendScroll.Visibility != Visibility.Collapsed) throw new InvalidOperationException("凡例を折りたためません。");
                 collapseLegend.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
