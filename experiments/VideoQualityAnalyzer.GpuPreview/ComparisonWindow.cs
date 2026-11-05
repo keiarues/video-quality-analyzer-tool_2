@@ -16,6 +16,8 @@ public sealed class ComparisonWindow : Window
         Height = 700;
         var panel = new ComparisonPanel(leftPath, rightPath, frameNumber, showWipe,
             benchmarkMode, captureBenchmark, verifyComparison, verifySelection, videoPaths, showBlur);
+        if (Environment.GetCommandLineArgs().Contains("--zoom-test")) panel.EnableZoomTest();
+        if (Environment.GetCommandLineArgs().Contains("--zoom-test")) Title = "拡大縮小・表示位置同期テスト";
         Content = panel;
         Closed += (_, _) => panel.Dispose();
     }

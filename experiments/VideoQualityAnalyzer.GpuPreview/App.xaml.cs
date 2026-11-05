@@ -64,7 +64,7 @@ public partial class App : Application
             argument.StartsWith("--verify-comparison=", StringComparison.Ordinal) ||
             argument.StartsWith("--verify-selection=", StringComparison.Ordinal));
         var paths = e.Args.Where(argument => argument != "--direct" && argument != "--stats" &&
-            argument != "--verify-frames" && argument != comparisonOption).ToArray();
+            argument != "--verify-frames" && argument != "--zoom-test" && argument != comparisonOption).ToArray();
         if (comparisonOption is not null)
         {
             var showWipe = comparisonOption.StartsWith("--wipe-frame=", StringComparison.Ordinal) ||
