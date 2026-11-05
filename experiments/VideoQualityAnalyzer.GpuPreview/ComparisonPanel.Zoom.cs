@@ -18,7 +18,7 @@ public partial class ComparisonPanel
         var x = 0.0;
         var y = 0.0;
         var controls = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-        var label = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
+        var label = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 54, Margin = new Thickness(6, 0, 0, 0) };
         void Apply()
         {
             updating = true;
@@ -45,7 +45,7 @@ public partial class ComparisonPanel
                     viewers[i].ScrollToVerticalOffset(y / dpi.DpiScaleY);
                 }
             }
-            label.Text = fit ? "画面に合わせる" : $"{scale * 100:0}%";
+            label.Text = fit ? "自動" : $"{scale * 100:0}%";
             updating = false;
         }
         foreach (var image in images)
@@ -97,16 +97,17 @@ public partial class ComparisonPanel
         var slider = new Slider { Minimum = 10, Maximum = 500, TickFrequency = 10, IsSnapToTickEnabled = true, Value = 100, Width = 260, VerticalAlignment = VerticalAlignment.Center };
         slider.ValueChanged += (_, _) => { fit = false; scale = slider.Value / 100; Apply(); };
         controls.Children.Add(slider);
-        void AddButton(string text, Action action)
+        controls.Children.Add(label);
+        void AddButton(string text, Action action, string? toolTip = null)
         {
-            var button = new Button { Content = text, Margin = new Thickness(6, 0, 0, 0), Padding = new Thickness(8, 4, 8, 4) };
+            var button = new Button { Content = text, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(4, 4, 4, 4), MinWidth = 0, ToolTip = toolTip ?? text };
             button.Click += (_, _) => action();
             controls.Children.Add(button);
         }
-        AddButton("画面に合わせる", () => { fit = true; x = y = 0; Apply(); });
+        AddButton("⛶", () => { fit = true; x = y = 0; Apply(); }, "画面に合わせる");
         foreach (var percent in new[] { 100, 125, 150, 200 })
             AddButton($"{percent}%", () => { fit = false; slider.Value = Math.Round(percent / 10.0) * 10; scale = percent / 100.0; Apply(); });
-        controls.Children.Add(label);
+
         CommonControls.Children.Add(controls);
         WipeTab.Visibility = Visibility.Collapsed;
         HeatmapTab.Visibility = Visibility.Visible;
@@ -116,4 +117,3 @@ public partial class ComparisonPanel
         Apply();
     }
 }
-
