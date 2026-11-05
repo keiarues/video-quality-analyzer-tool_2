@@ -32,6 +32,7 @@ public sealed class WipeBoundaryController
         Update();
     }
 
+    public bool UseViewportBounds { get; set; }
     public double Fraction => fraction;
     public double ImageLeft { get; private set; }
     public double ImageWidth { get; private set; }
@@ -63,6 +64,12 @@ public sealed class WipeBoundaryController
     {
         var width = viewport.ActualWidth;
         var height = viewport.ActualHeight;
+        if (UseViewportBounds)
+        {
+            ImageWidth = width;
+            ImageLeft = 0;
+            return;
+        }
         var aspect = aspectProvider();
         ImageWidth = width > 0 && height > 0 && aspect > 0 ? Math.Min(width, height * aspect) : 0;
         ImageLeft = (width - ImageWidth) / 2;

@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -19,6 +19,19 @@ public partial class ComparisonPanel
 
     public void EnableZoom(bool testMode = false)
     {
+        if (testMode)
+        {
+            // Canvas上で配置し、拡大画像のレイアウト切り抜きが移動量に影響しないようにする。
+            foreach (var image in new[] { WipeLeftImage, WipeRightImage })
+            {
+                var parent = (Grid)image.Parent;
+                var index = parent.Children.IndexOf(image);
+                parent.Children.Remove(image);
+                var canvas = new Canvas();
+                canvas.Children.Add(image);
+                parent.Children.Insert(index, canvas);
+            }
+        }
         var images = new[] { LeftImage, RightImage, HeatmapImage };
         var viewers = new List<ScrollViewer>();
         var fit = true;
@@ -52,6 +65,35 @@ public partial class ComparisonPanel
                     image.Height = bitmap.PixelHeight * scale / dpi.DpiScaleY;
                     viewers[i].ScrollToHorizontalOffset(x / dpi.DpiScaleX);
                     viewers[i].ScrollToVerticalOffset(y / dpi.DpiScaleY);
+                }
+            }
+            if (testMode)
+            {
+                wipeBoundaryController.UseViewportBounds = !fit;
+                wipeBoundaryController.Update();
+                foreach (var image in new[] { WipeLeftImage, WipeRightImage })
+                {
+                    if (fit)
+                    {
+                        image.Width = Math.Max(0, WipeViewport.ActualWidth);
+                        image.Height = Math.Max(0, WipeViewport.ActualHeight);
+                        image.HorizontalAlignment = HorizontalAlignment.Stretch;
+                        image.VerticalAlignment = VerticalAlignment.Stretch;
+                        image.Stretch = Stretch.Uniform;
+                        image.RenderTransform = Transform.Identity;
+                    }
+                    else if (image.Source is BitmapSource bitmap)
+                    {
+                        image.HorizontalAlignment = HorizontalAlignment.Left;
+                        image.VerticalAlignment = VerticalAlignment.Top;
+                        image.Width = bitmap.PixelWidth * scale / dpi.DpiScaleX;
+                        image.Height = bitmap.PixelHeight * scale / dpi.DpiScaleY;
+                        image.Stretch = Stretch.Fill;
+                        var offsetX = Math.Clamp(x / dpi.DpiScaleX, 0, Math.Max(0, image.Width - WipeViewport.ActualWidth));
+                        var offsetY = Math.Clamp(y / dpi.DpiScaleY, 0, Math.Max(0, image.Height - WipeViewport.ActualHeight));
+                        image.RenderTransform = new TranslateTransform(Math.Max(0, (WipeViewport.ActualWidth - image.Width) / 2) - offsetX,
+                            Math.Max(0, (WipeViewport.ActualHeight - image.Height) / 2) - offsetY);
+                    }
                 }
             }
             label.Text = fit ? "自動" : $"{scale * 100:0}%";
@@ -118,10 +160,42 @@ public partial class ComparisonPanel
             AddButton($"{percent}%", () => { fit = false; slider.Value = Math.Round(percent / 10.0) * 10; scale = percent / 100.0; Apply(); });
 
         ZoomControls.Children.Add(controls);
-        if (testMode) WipeTab.Visibility = Visibility.Collapsed;
+        if (testMode)
+        {
+            WipeTab.Visibility = Visibility.Visible;
+            Point? start = null;
+            double initialX = 0, initialY = 0;
+            WipeViewport.MouseLeftButtonDown += (_, e) =>
+            {
+                if (fit || e.Handled) return;
+                start = e.GetPosition(WipeViewport);
+                initialX = x;
+                initialY = y;
+                WipeViewport.CaptureMouse();
+                e.Handled = true;
+            };
+            WipeViewport.MouseMove += (_, e) =>
+            {
+                if (start is not Point origin || !WipeViewport.IsMouseCaptured) return;
+                var point = e.GetPosition(WipeViewport);
+                var dpi = VisualTreeHelper.GetDpi(this);
+                x = Math.Max(0, initialX - (point.X - origin.X) * dpi.DpiScaleX);
+                y = Math.Max(0, initialY - (point.Y - origin.Y) * dpi.DpiScaleY);
+                Apply();
+                e.Handled = true;
+            };
+            WipeViewport.MouseLeftButtonUp += (_, e) =>
+            {
+                if (start is null) return;
+                start = null;
+                WipeViewport.ReleaseMouseCapture();
+                e.Handled = true;
+            };
+            WipeViewport.LostMouseCapture += (_, _) => start = null;
+        }
         HeatmapTab.Visibility = Visibility.Visible;
         Loaded += (_, _) => CompositionTarget.Rendering += Refresh;
-        ViewSelect.SelectionChanged += (_, _) => ZoomControls.Visibility = ViewSelect.SelectedItem == WipeTab ? Visibility.Collapsed : Visibility.Visible;
+        ViewSelect.SelectionChanged += (_, _) => ZoomControls.Visibility = !testMode && ViewSelect.SelectedItem == WipeTab ? Visibility.Collapsed : Visibility.Visible;
         void Refresh(object? sender, EventArgs args) => Apply();
         Unloaded += (_, _) => CompositionTarget.Rendering -= Refresh;
         Apply();
