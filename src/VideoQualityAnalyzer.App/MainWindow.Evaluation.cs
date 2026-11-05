@@ -48,6 +48,7 @@ public partial class MainWindow
         evaluationCancellation = source;
         SetEvaluationState(true);
         var failures = new List<string>();
+        var progressGeneration = 0;
         try
         {
             var evaluator = new QualityEvaluationService(executable);
@@ -57,13 +58,18 @@ public partial class MainWindow
                 source.Token.ThrowIfCancellationRequested();
                 var key = (candidate.Id, metric);
                 if (qualityResults.ContainsKey(key)) continue;
+                var currentProgressGeneration = ++progressGeneration;
+                qualityGraphPanel?.SetEvaluationProgress(candidate, metric, TimeSpan.Zero);
                 EvaluationStatus.Text = $"{candidate.Name} / {metric.ToString().ToUpperInvariant()} を評価中…";
                 try
                 {
                     var progress = new Progress<TimeSpan>(position =>
                     {
-                        if (ReferenceEquals(evaluationCancellation, source) && !source.IsCancellationRequested)
+                        if (ReferenceEquals(evaluationCancellation, source) && !source.IsCancellationRequested && currentProgressGeneration == progressGeneration)
+                        {
+                            qualityGraphPanel?.SetEvaluationProgress(candidate, metric, position);
                             EvaluationStatus.Text = $"{candidate.Name} / {metric.ToString().ToUpperInvariant()}: {position.TotalSeconds:F1}秒を処理済み";
+                        }
                     });
                     var result = await evaluator.EvaluateAsync(reference, candidate, metric, progress, source.Token);
                     source.Token.ThrowIfCancellationRequested();
@@ -80,6 +86,7 @@ public partial class MainWindow
         catch (OperationCanceledException) { EvaluationStatus.Foreground = UiTheme.Warning; EvaluationStatus.Text = "評価を中止しました。完了済みの結果は保持しています。"; }
         finally
         {
+            qualityGraphPanel?.EndEvaluationProgress(CurrentPosition());
             evaluationCancellation = null;
             SetEvaluationState(false);
             RefreshQualityValues();

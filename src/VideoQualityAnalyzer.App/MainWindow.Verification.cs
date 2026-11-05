@@ -37,8 +37,7 @@ public partial class MainWindow
             var candidate = videos.First(entry => !entry.IsReference);
             VideoList.SelectedItem = candidate;
             await comparisonChangeTask;
-            if (VmafCheck.IsChecked == true || SsimCheck.IsChecked != true || PsnrCheck.IsChecked == true ||
-                new[] { VmafCheck, SsimCheck, PsnrCheck }.Any(check => check.ToolTip is not System.Windows.Controls.TextBlock))
+            if (VmafCheck.IsChecked == true || SsimCheck.IsChecked != true || PsnrCheck.IsChecked == true || string.IsNullOrWhiteSpace(EvaluationHelpText.Text))
                 throw new InvalidOperationException("主画面の初期指標または説明が不正です。");
             EvaluationStartButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
             if (evaluationCancellation is null || !Equals(EvaluationStartButton.Content, "評価を中止") ||
@@ -73,7 +72,7 @@ public partial class MainWindow
                 checks.Any(check => Math.Abs(check.TranslatePoint(new Point(), this).X - checks[0].TranslatePoint(new Point(), this).X) > 1))
                 throw new InvalidOperationException("指標のチェックが縦に並んでいません。");
             if (FontFamily.Source != "Yu Gothic UI" || FontSize != (double)FindResource("UiFontMedium") ||
-                checks.Any(check => check.FontFamily.Source != FontFamily.Source || check.FontSize != FontSize) ||
+                checks.Any(check => check.FontFamily.Source != FontFamily.Source || check.FontSize != (double)FindResource("UiFontLarge")) ||
                 (double)FindResource("UiFontSmall") >= FontSize || (double)FindResource("UiFontLarge") <= FontSize)
                 throw new InvalidOperationException("共通フォントのプリセットが適用されていません。");
             if (EvaluationControls.TranslatePoint(new Point(0, 0), this).Y <

@@ -26,6 +26,8 @@ public sealed class QualityGraphPanel : UserControl
     private double maximumTime;
     private TimeSpan playbackPosition;
     private bool playheadDragging;
+    private VideoDescriptor? evaluationVideo;
+    private TimeSpan? evaluationPosition;
     private readonly Line playhead = new() { Stroke = UiTheme.OnLight, StrokeThickness = 2,
         Tag = "再生位置", IsHitTestVisible = false };
     private readonly Action<TimeSpan>? seekRequested;
@@ -55,6 +57,7 @@ public sealed class QualityGraphPanel : UserControl
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition());
+        grid.ColumnDefinitions.Insert(1, new ColumnDefinition { Width = new GridLength(10) });
         var leftGraph = MakeGraph("フレームグラフ：時刻（秒）と品質", timeline);
         var playbackCanvas = separatePlaybackLayer ? playbackOverlay : timeline;
         if (separatePlaybackLayer)
@@ -169,41 +172,61 @@ public sealed class QualityGraphPanel : UserControl
             collapseLegend.ToolTip = collapsed ? "凡例を展開" : "凡例を折りたたむ";
             ClampLegend(Canvas.GetLeft(legendBox), Canvas.GetTop(legendBox));
         };
-        Grid.SetColumn(rightGraph, 1);
+        Grid.SetColumn(rightGraph, 2);
         grid.Children.Add(leftGraph);
         grid.Children.Add(rightGraph);
         if (frameOnly)
         {
             rightGraph.Visibility = Visibility.Collapsed;
-            grid.ColumnDefinitions[1].Width = new GridLength(0);
+            grid.ColumnDefinitions[2].Width = new GridLength(0);
             metric.SelectedIndex = (int)QualityMetric.Ssim;
         }
+        var graphSplitter = new GridSplitter { Width = 10, HorizontalAlignment = HorizontalAlignment.Stretch,
+            VerticalAlignment = VerticalAlignment.Stretch, ResizeDirection = GridResizeDirection.Columns,
+            ResizeBehavior = GridResizeBehavior.PreviousAndNext, Cursor = System.Windows.Input.Cursors.SizeWE,
+            Tag = "Vertical", Template = (ControlTemplate)FindResource("ResizeBarTemplate"), ToolTip = "グラフの横幅を変更" };
+        Grid.SetColumn(graphSplitter, 1);
+        grid.Children.Add(graphSplitter);
+        var minimizedColumn = -1;
+        GridLength savedLeft = new(1, GridUnitType.Star), savedRight = new(1, GridUnitType.Star);
+        var graphToggles = new Dictionary<int, Button>();
         Button AddMinimize(DockPanel graph, int column, string name)
         {
             var title = graph.Children[0];
             var header = new DockPanel();
-            var toggle = new Button { Content = "−", MinWidth = 24, Padding = new Thickness(2), ToolTip = name + "を最小化" };
+            var toggle = new Button { Content = column == 0 ? "◀" : "▶", MinWidth = 24,
+                Padding = new Thickness(2), ToolTip = name + "を最小化" };
+            graphToggles[column] = toggle;
             graph.Children.Remove(title);
-            DockPanel.SetDock(toggle, Dock.Right);
+            DockPanel.SetDock(toggle, Dock.Left);
             header.Children.Add(toggle);
             header.Children.Add(title);
             DockPanel.SetDock(header, Dock.Top);
             graph.Children.Insert(0, header);
-            var minimized = false;
             toggle.Click += (_, _) =>
             {
-                minimized = !minimized;
-                title.Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
-                foreach (UIElement child in graph.Children)
-                    if (child != header) child.Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
-                grid.ColumnDefinitions[column].Width = minimized ? new GridLength(40) : new GridLength(1, GridUnitType.Star);
-                toggle.Content = minimized ? "＋" : "−";
-                toggle.ToolTip = name + (minimized ? "を復元" : "を最小化");
+                var restore = minimizedColumn == column;
+                if (minimizedColumn == -1) { savedLeft = grid.ColumnDefinitions[0].Width; savedRight = grid.ColumnDefinitions[2].Width; }
+                minimizedColumn = restore ? -1 : column;
+                foreach (var (pane, paneColumn) in new[] { (leftGraph, 0), (rightGraph, 2) })
+                {
+                    var minimized = minimizedColumn == paneColumn;
+                    var paneHeader = (DockPanel)pane.Children[0];
+                    paneHeader.Children[1].Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
+                    foreach (UIElement child in pane.Children)
+                        if (child != paneHeader) child.Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
+                    grid.ColumnDefinitions[paneColumn].Width = minimized ? new GridLength(40) :
+                        minimizedColumn == -1 ? (paneColumn == 0 ? savedLeft : savedRight) : new GridLength(1, GridUnitType.Star);
+                    graphToggles[paneColumn].Content = paneColumn == 0 ? (minimized ? "▶" : "◀") : (minimized ? "◀" : "▶");
+                    graphToggles[paneColumn].ToolTip = (paneColumn == 0 ? "フレームグラフ" : "ファイルグラフ") + (minimized ? "を復元" : "を最小化");
+                }
+                graphSplitter.IsEnabled = minimizedColumn == -1;
             };
             return toggle;
         }
         var minimizeFrame = AddMinimize(leftGraph, 0, "フレームグラフ");
-        var minimizeFile = AddMinimize(rightGraph, 1, "ファイルグラフ");
+        var minimizeFile = AddMinimize(rightGraph, 2, "ファイルグラフ");
+        if (frameOnly) { graphSplitter.Visibility = Visibility.Collapsed; grid.ColumnDefinitions[1].Width = new GridLength(0); }
         void ClearFileSelection()
         {
             selectedIds.Clear();
@@ -239,7 +262,7 @@ public sealed class QualityGraphPanel : UserControl
             {
                 var durations = new[] { playbackLeft, playbackRight }.OfType<VideoDescriptor>()
                     .Where(video => video.Duration > TimeSpan.Zero).Select(video => video.Duration.TotalSeconds).ToArray();
-                maximumTime = durations.Length > 0 ? durations.Min() : 0;
+                maximumTime = evaluationVideo?.Duration.TotalSeconds ?? (durations.Length > 0 ? durations.Min() : 0);
                 if (maximumTime > 0) DrawAxes(timeline, PlotArea(timeline), maximumTime, 0, 1, "秒");
                 AttachPlaybackVisuals();
                 UpdatePlayhead();
@@ -252,6 +275,7 @@ public sealed class QualityGraphPanel : UserControl
             var max = values.Max();
             if (max - min < 0.000001) { min -= 0.5; max += 0.5; }
             maximumTime = available.Max(video => results[(video.Id, selected)].Frames.Max(frame => frame.Number) / video.AverageFrameRate);
+            if (evaluationVideo is not null) maximumTime = evaluationVideo.Duration.TotalSeconds;
             var rates = available.Select(Bitrate).ToArray();
             var maxRate = Math.Max(1, rates.Max());
             var timeArea = PlotArea(timeline);
@@ -372,7 +396,7 @@ public sealed class QualityGraphPanel : UserControl
             try
             {
                 UpdateLayout();
-                if (metric.Items.Count != 3 || grid.ColumnDefinitions.Count != 2 ||
+                if (metric.Items.Count != 3 || grid.ColumnDefinitions.Count != 3 ||
                     !timeline.Children.OfType<Polyline>().Any(line => line.Tag is null) || !averages.Children.OfType<Ellipse>().Any())
                     throw new InvalidOperationException("グラフのタブまたは横並び表示が不正です。");
                 foreach (var canvas in new[] { timeline, averages })
@@ -437,6 +461,15 @@ public sealed class QualityGraphPanel : UserControl
                     toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 }
                 UpdateLayout();
+                SetEvaluationProgress(playbackVideo, QualityMetric.Ssim, TimeSpan.FromSeconds(playbackVideo.Duration.TotalSeconds / 2));
+                var progressPosition = PlayheadPosition;
+                SetPlaybackPosition(TimeSpan.Zero);
+                if (metric.SelectedIndex != (int)QualityMetric.Ssim || PlayheadPosition != progressPosition ||
+                    Math.Abs(progressPosition.TotalSeconds - playbackVideo.Duration.TotalSeconds / 2) > 0.001)
+                    throw new InvalidOperationException("計算中のタブまたは進捗位置が不正です。");
+                EndEvaluationProgress(TimeSpan.Zero);
+                SelectMetric(QualityMetric.Psnr);
+                UpdateLayout();
                 var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap(
                     (int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
                 snapshot.Render((Visual)Content);
@@ -459,6 +492,24 @@ public sealed class QualityGraphPanel : UserControl
     public IReadOnlyCollection<string> DisplayedVideoIds => displayedVideoIds;
     public int FilePointCount => averages.Children.OfType<Ellipse>().Count();
     public void UpdateData(VideoDescriptor[] selected, VideoDescriptor[] all, IReadOnlyDictionary<string, string>? groups) => updateData(selected, all, groups);
+    public void SetEvaluationProgress(VideoDescriptor video, QualityMetric value, TimeSpan position)
+    {
+        var changed = evaluationVideo?.Id != video.Id || evaluationPosition is null || (int)value != metric.SelectedIndex;
+        evaluationVideo = video;
+        evaluationPosition = position;
+        playbackPosition = TimeSpan.FromSeconds(Math.Clamp(position.TotalSeconds, 0, Math.Max(0, video.Duration.TotalSeconds)));
+        SelectMetric(value);
+        if (changed) redrawPlaybackGraph(); else UpdatePlayhead();
+    }
+
+    public void EndEvaluationProgress(TimeSpan position)
+    {
+        evaluationVideo = null;
+        evaluationPosition = null;
+        playbackPosition = position;
+        redrawPlaybackGraph();
+    }
+
     public void SelectMetric(QualityMetric value) => metric.SelectedIndex = (int)value;
     public void SeekToFraction(double fraction) => seekToFraction(fraction);
     public void SelectFile(string id)
@@ -498,14 +549,14 @@ public sealed class QualityGraphPanel : UserControl
     }
     public void SetPlaybackPosition(TimeSpan position)
     {
-        if (playheadDragging) return;
+        if (playheadDragging || evaluationPosition is not null) return;
         playbackPosition = position;
         UpdatePlayhead();
     }
 
     public void BeginPlayheadDrag(double fraction)
     {
-        if (maximumTime <= 0) return;
+        if (maximumTime <= 0 || evaluationPosition is not null) return;
         playheadDragging = true;
         MovePlayheadDrag(fraction);
     }
