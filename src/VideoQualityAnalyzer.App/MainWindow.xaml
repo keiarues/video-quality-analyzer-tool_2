@@ -208,6 +208,7 @@
                     <CheckBox Name="MuteCheck" Content="ミュート" VerticalAlignment="Center" Margin="10,0,0,0"
                               Checked="MuteCheck_Changed" Unchecked="MuteCheck_Changed" />
                 </WrapPanel>
+                <StackPanel Name="PreviewZoomControls" />
                 <TextBlock Name="StatusText" FontSize="{StaticResource UiFontSmall}" Text="動画を追加してください。" Foreground="{StaticResource UiMutedBrush}" Margin="4,8,0,0" />
             </StackPanel>
         </Border>

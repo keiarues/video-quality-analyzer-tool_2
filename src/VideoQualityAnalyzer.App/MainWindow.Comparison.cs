@@ -20,6 +20,7 @@ public partial class MainWindow
 
     private void UpdateEmbeddedComparison(VideoDescriptor? leftVideo, VideoDescriptor? rightVideo, TimeSpan position, bool resume)
     {
+        PreviewZoomControls.Visibility = comparisonActive ? Visibility.Visible : Visibility.Collapsed;
         var wasComparisonVisible = ComparisonHost.Visibility == Visibility.Visible;
         InitialPreviewTabs.Visibility = comparisonActive ? Visibility.Collapsed : Visibility.Visible;
         ComparisonHost.Visibility = comparisonActive ? Visibility.Visible : Visibility.Collapsed;
@@ -44,6 +45,7 @@ public partial class MainWindow
             comparisonPanel = new ComparisonPanel(leftVideo!.Path, rightVideo!.Path, 0,
                 videoPaths: videos.Select(entry => entry.Descriptor.Path), showBlur: false, embedded: true);
             comparisonPanel.EnableZoom();
+            comparisonPanel.MoveZoomControlsTo(PreviewZoomControls);
             comparisonPanel.SourcesRequested += (leftPath, rightPath) =>
             {
                 previewLeftOverride = videos.FirstOrDefault(entry => string.Equals(entry.Descriptor.Path, leftPath, StringComparison.OrdinalIgnoreCase))?.Descriptor.Id;

@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -8,6 +8,13 @@ namespace VideoQualityAnalyzer.GpuPreview;
 public partial class ComparisonPanel
 {
     // 専用比較ウィンドウだけで有効にする。再生とフレーム選択は既存の共通処理を使う。
+    public void MoveZoomControlsTo(Panel host)
+    {
+        if (ZoomControls.Parent is Panel parent) parent.Children.Remove(ZoomControls);
+        host.Children.Add(ZoomControls);
+        ZoomControls.Margin = new Thickness(0, 4, 0, 0);
+    }
+
     public void EnableZoomTest() => EnableZoom(true);
 
     public void EnableZoom(bool testMode = false)
