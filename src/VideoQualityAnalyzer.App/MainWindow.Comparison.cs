@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using VideoQualityAnalyzer.Core;
 using VideoQualityAnalyzer.GpuPreview;
 
@@ -43,6 +43,7 @@ public partial class MainWindow
         {
             comparisonPanel = new ComparisonPanel(leftVideo!.Path, rightVideo!.Path, 0,
                 videoPaths: videos.Select(entry => entry.Descriptor.Path), showBlur: false, embedded: true);
+            comparisonPanel.EnableZoom();
             ComparisonHost.Content = comparisonPanel;
             comparisonPanel.FrameShown += RequestPlaybackRefresh;
             comparisonPanel.PlaybackEnded += () =>

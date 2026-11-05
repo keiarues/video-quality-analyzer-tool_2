@@ -8,7 +8,9 @@ namespace VideoQualityAnalyzer.GpuPreview;
 public partial class ComparisonPanel
 {
     // 専用比較ウィンドウだけで有効にする。再生とフレーム選択は既存の共通処理を使う。
-    public void EnableZoomTest()
+    public void EnableZoomTest() => EnableZoom(true);
+
+    public void EnableZoom(bool testMode = false)
     {
         var images = new[] { LeftImage, RightImage, HeatmapImage };
         var viewers = new List<ScrollViewer>();
@@ -108,10 +110,11 @@ public partial class ComparisonPanel
         foreach (var percent in new[] { 100, 125, 150, 200 })
             AddButton($"{percent}%", () => { fit = false; slider.Value = Math.Round(percent / 10.0) * 10; scale = percent / 100.0; Apply(); });
 
-        CommonControls.Children.Add(controls);
-        WipeTab.Visibility = Visibility.Collapsed;
+        ZoomControls.Children.Add(controls);
+        if (testMode) WipeTab.Visibility = Visibility.Collapsed;
         HeatmapTab.Visibility = Visibility.Visible;
-        CompositionTarget.Rendering += Refresh;
+        Loaded += (_, _) => CompositionTarget.Rendering += Refresh;
+        ViewSelect.SelectionChanged += (_, _) => ZoomControls.Visibility = ViewSelect.SelectedItem == WipeTab ? Visibility.Collapsed : Visibility.Visible;
         void Refresh(object? sender, EventArgs args) => Apply();
         Unloaded += (_, _) => CompositionTarget.Rendering -= Refresh;
         Apply();
