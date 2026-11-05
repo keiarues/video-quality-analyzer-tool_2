@@ -87,11 +87,11 @@
                     Click="SidebarToggle_Click" Width="28" Height="30" MinWidth="0" Padding="0" Margin="2,0,2,0" VerticalAlignment="Top" />
             <Grid Grid.Column="2" Name="PreviewLayout">
                 <Grid.RowDefinitions>
-                    <RowDefinition Name="PreviewRow" Height="*" MinHeight="120" />
+                    <RowDefinition Name="PreviewRow" Height="1.2*" MinHeight="120" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="10" />
-                    <RowDefinition Name="QualityGraphRow" Height="260" MinHeight="200" />
+                    <RowDefinition Name="QualityGraphRow" Height="*" MinHeight="200" />
                 </Grid.RowDefinitions>
                 <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0" Background="{StaticResource BackgroundBrush}">
                     <TabItem>

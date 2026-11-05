@@ -44,12 +44,14 @@ public partial class MainWindow
 
     private void QualityGraphResize_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
     {
-        // グラフ行だけを指定し、残りの高さは映像行に吸収させる。
+        // 手動調整後も上下の比率を保持し、ウィンドウサイズに追従させる。
         var fixedHeight = PreviewLayout.RowDefinitions[1].ActualHeight +
             PreviewLayout.RowDefinitions[2].ActualHeight + PreviewLayout.RowDefinitions[3].ActualHeight;
         var maximum = Math.Max(QualityGraphRow.MinHeight, PreviewLayout.ActualHeight - fixedHeight - PreviewRow.MinHeight);
         var height = Math.Clamp(QualityGraphRow.ActualHeight - e.VerticalChange, QualityGraphRow.MinHeight, maximum);
-        QualityGraphRow.Height = new System.Windows.GridLength(height);
+        var available = PreviewRow.ActualHeight + QualityGraphRow.ActualHeight;
+        PreviewRow.Height = new System.Windows.GridLength(Math.Max(1, available - height), System.Windows.GridUnitType.Star);
+        QualityGraphRow.Height = new System.Windows.GridLength(Math.Max(1, height), System.Windows.GridUnitType.Star);
         e.Handled = true;
     }
 

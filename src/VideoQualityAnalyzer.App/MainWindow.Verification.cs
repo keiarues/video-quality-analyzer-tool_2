@@ -174,6 +174,14 @@ public partial class MainWindow
             if (QualityGraphHost.TranslatePoint(new Point(0, 0), this).Y <
                 PlaybackControls.TranslatePoint(new Point(0, PlaybackControls.ActualHeight), this).Y)
                 throw new InvalidOperationException("品質グラフが再生制御の下にありません。");
+            var originalWindowHeight = Height;
+            var originalRatio = PreviewRow.ActualHeight / QualityGraphRow.ActualHeight;
+            Height += 100;
+            UpdateLayout();
+            if (Math.Abs(PreviewRow.ActualHeight / QualityGraphRow.ActualHeight - originalRatio) > 0.01)
+                throw new InvalidOperationException("ウィンドウ変更時にプレビューとグラフの比率が保たれません。");
+            Height = originalWindowHeight;
+            UpdateLayout();
             var originalGraphHeight = QualityGraphHost.ActualHeight;
             var originalControlHeight = PlaybackControls.ActualHeight;
             var originalPreviewHeight = ComparisonHost.ActualHeight;

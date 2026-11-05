@@ -198,7 +198,7 @@ public sealed class QualityGraphPanel : UserControl
                 Padding = new Thickness(2), ToolTip = name + "を最小化" };
             graphToggles[column] = toggle;
             graph.Children.Remove(title);
-            DockPanel.SetDock(toggle, Dock.Left);
+            DockPanel.SetDock(toggle, column == 0 ? Dock.Right : Dock.Left);
             header.Children.Add(toggle);
             header.Children.Add(title);
             DockPanel.SetDock(header, Dock.Top);
