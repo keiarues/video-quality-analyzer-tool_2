@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IO;
 using System.Text.Json;
 using System.Windows;
@@ -620,10 +620,11 @@ public partial class ComparisonPanel : UserControl, IDisposable
                 throw new InvalidOperationException("2画面表示に切り替わりません。");
             CheckAlignedPair();
             ViewSelect.SelectedIndex = 2;
+            await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Loaded);
             UpdateLayout();
-            if (!HeatmapOptions.IsVisible || !HeatmapOptions.IsAncestorOf(GainSelect) ||
+            if (!HeatmapOptions.IsVisible || !HeatmapPanel.IsAncestorOf(GainSelect) ||
                 HeatmapTab.Content is not DockPanel optionsPanel || !optionsPanel.Children.Contains(HeatmapOptions))
-                throw new InvalidOperationException("ヒートマップ専用オプションがタブ内にありません。");
+                throw new InvalidOperationException($"ヒートマップ専用オプションがタブ内にありません。表示={HeatmapOptions.IsVisible} 配置={HeatmapPanel.IsAncestorOf(GainSelect)} 内容={HeatmapTab.Content?.GetType().Name}");
             var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
             snapshot.Render((Visual)Content);
             var encoder = new PngBitmapEncoder();
@@ -686,7 +687,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
         }
         catch (Exception exception)
         {
-            Console.Error.WriteLine($"比較操作: {operation} / タブ {ViewSelect.SelectedIndex} / ワイプ領域 {WipeViewport.ActualWidth}×{WipeViewport.ActualHeight} / 元画像幅 {wipeBoundaryController.ImageWidth}");
+            Console.Error.WriteLine($"比較操作: {operation} / 理由: {exception.Message} / タブ {ViewSelect.SelectedIndex} / ワイプ領域 {WipeViewport.ActualWidth}×{WipeViewport.ActualHeight} / 元画像幅 {wipeBoundaryController.ImageWidth}");
             WriteVerificationResult("comparison-operations-failed", new
             {
                 LeftVideo = Path.GetFileName(leftPath), RightVideo = Path.GetFileName(rightPath),

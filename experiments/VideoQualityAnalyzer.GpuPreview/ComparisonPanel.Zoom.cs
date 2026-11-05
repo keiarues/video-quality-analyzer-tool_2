@@ -7,7 +7,7 @@ namespace VideoQualityAnalyzer.GpuPreview;
 
 public partial class ComparisonPanel
 {
-    // 専用比較ウィンドウだけで有効にする。再生とフレーム選択は既存の共通処理を使う。
+    // 再生とフレーム選択は既存の共通処理を使い、各比較表示で倍率と位置を共有する。
     public void MoveZoomControlsTo(Panel host)
     {
         if (ZoomControls.Parent is Panel parent) parent.Children.Remove(ZoomControls);
@@ -19,7 +19,6 @@ public partial class ComparisonPanel
 
     public void EnableZoom(bool testMode = false)
     {
-        if (testMode)
         {
             // Canvas上で配置し、拡大画像のレイアウト切り抜きが移動量に影響しないようにする。
             foreach (var image in new[] { WipeLeftImage, WipeRightImage })
@@ -67,7 +66,6 @@ public partial class ComparisonPanel
                     viewers[i].ScrollToVerticalOffset(y / dpi.DpiScaleY);
                 }
             }
-            if (testMode)
             {
                 wipeBoundaryController.UseViewportBounds = !fit;
                 wipeBoundaryController.Update();
@@ -160,7 +158,6 @@ public partial class ComparisonPanel
             AddButton($"{percent}%", () => { fit = false; slider.Value = Math.Round(percent / 10.0) * 10; scale = percent / 100.0; Apply(); });
 
         ZoomControls.Children.Add(controls);
-        if (testMode)
         {
             WipeTab.Visibility = Visibility.Visible;
             Point? start = null;
@@ -195,7 +192,7 @@ public partial class ComparisonPanel
         }
         HeatmapTab.Visibility = Visibility.Visible;
         Loaded += (_, _) => CompositionTarget.Rendering += Refresh;
-        ViewSelect.SelectionChanged += (_, _) => ZoomControls.Visibility = !testMode && ViewSelect.SelectedItem == WipeTab ? Visibility.Collapsed : Visibility.Visible;
+        ZoomControls.Visibility = Visibility.Visible;
         void Refresh(object? sender, EventArgs args) => Apply();
         Unloaded += (_, _) => CompositionTarget.Rendering -= Refresh;
         Apply();
