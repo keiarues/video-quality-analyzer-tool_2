@@ -158,7 +158,7 @@ public partial class MainWindow : Window
             EvaluationHelpBorder.Height = EvaluationHelpBorder.ActualHeight * 2;
     }
 
-    private double expandedSidebarWidth = 650;
+    private double expandedSidebarWidth = 700;
     private bool sidebarCollapsed;
 
     private void SidebarToggle_Click(object sender, RoutedEventArgs e)
