@@ -141,7 +141,9 @@ public partial class MainWindow : Window
             var startupFiles = Environment.GetCommandLineArgs().Skip(1).Where(File.Exists).ToArray();
             if (startupFiles.Length > 0)
                 await AddFilesAsync(startupFiles);
-            if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
+            var graphPlaybackCheck = Environment.GetCommandLineArgs().FirstOrDefault(arg => arg.StartsWith("--verify-main-graph-playback="));
+            if (graphPlaybackCheck is not null) await VerifyMainGraphPlaybackAsync(graphPlaybackCheck.Split('=', 2)[1]);
+            else if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-comparison")) await VerifyEmbeddedComparisonAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-graphs")) await VerifyEmbeddedGraphsAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-refresh")) await VerifyPlaybackRefreshAsync();

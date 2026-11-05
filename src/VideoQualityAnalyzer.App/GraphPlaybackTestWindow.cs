@@ -28,7 +28,7 @@ internal sealed class GraphPlaybackTestWindow : Window
     private Exception? playbackError;
     private readonly CancellationTokenSource lifetime = new();
 
-    public GraphPlaybackTestWindow(SsimTestCache cache, string cachePath, bool automatic)
+    public GraphPlaybackTestWindow(SsimTestCache cache, string cachePath, bool automatic, bool verifyOperations = false)
     {
         this.cache = cache;
         this.cachePath = cachePath;
@@ -74,6 +74,49 @@ internal sealed class GraphPlaybackTestWindow : Window
         {
             BuildGraph();
             status.Text = $"保存済みSSIM {cache.Entries.Length}本を読み込み済み。評価計算なし。保存先：{cachePath}";
+            if (verifyOperations)
+            {
+                try
+                {
+                    Activate();
+                    count.SelectedIndex = cache.Entries.Length;
+                    UpdateLayout();
+                    graph!.VerifyCachedGraphPixels();
+                    Width = 980; Height = 720;
+                    await Task.Delay(200);
+                    graph.VerifyCachedGraphPixels();
+                    Width = 1200; Height = 850;
+                    await Task.Delay(200);
+                    graph.VerifyCachedGraphPixels();
+                    graph.SelectFile(cache.Entries.Last().Video.Id);
+                    if (!graph.DisplayedVideoIds.SequenceEqual(new[] { cache.Entries.Last().Video.Id }))
+                        throw new InvalidOperationException("ファイル選択後の表示系列が不正です。");
+                    graph.VerifyCachedGraphPixels();
+                    graph.SelectMetric(QualityMetric.Psnr);
+                    if (graph.DisplayedVideoIds.Count != 0) throw new InvalidOperationException("未評価の指標に古い系列が残っています。");
+                    graph.VerifyCachedGraphPixels();
+                    graph.SelectMetric(QualityMetric.Ssim);
+                    graph.VerifyCachedGraphPixels();
+                    player.Open(cache.Reference, TimeSpan.Zero, true);
+                    await Task.Delay(600);
+                    player.Pause();
+                    graph.BeginPlayheadDrag(.5); graph.EndPlayheadDrag();
+                    await Task.Delay(300);
+                    graph.VerifyCachedGraphPixels();
+                    graph.UpdateData([], [], null);
+                    if (graph.DisplayedVideoIds.Count != 0 || graph.FilePointCount != 0)
+                        throw new InvalidOperationException("データ消去後のグラフが残っています。");
+                    graph.VerifyCachedGraphPixels();
+                    await File.WriteAllTextAsync(cachePath + ".operations.txt", "合格：拡大縮小・選択・指標切替・再生・停止中シーク・消去。各状態でキャッシュと再描画の画素平均差3以下。実画面提示は未測定。");
+                    Application.Current.Shutdown(0);
+                }
+                catch (Exception error)
+                {
+                    await File.WriteAllTextAsync(cachePath + ".operations.txt", error.ToString());
+                    Application.Current.Shutdown(1);
+                }
+                return;
+            }
             if (automatic)
             {
                 Activate();

@@ -416,6 +416,32 @@ public sealed class QualityGraphPanel : UserControl
 
     public TimeSpan PlayheadPosition => playbackPosition;
     public double PlayheadX => playhead.X1;
+    // 専用操作試験用。キャッシュ表示と、その場で描き直した静的グラフを照合する。
+    internal void VerifyCachedGraphPixels()
+    {
+        UpdateLayout();
+        byte[] Capture()
+        {
+            var width = Math.Max(1, (int)timeline.ActualWidth);
+            var height = Math.Max(1, (int)timeline.ActualHeight);
+            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+            bitmap.Render(timeline);
+            var pixels = new byte[width * height * 4];
+            bitmap.CopyPixels(pixels, width * 4, 0);
+            return pixels;
+        }
+        var mode = timeline.CacheMode;
+        if (mode is not BitmapCache) throw new InvalidOperationException("静的グラフのキャッシュが有効ではありません。");
+        var cached = Capture();
+        try
+        {
+            timeline.CacheMode = null;
+            var fresh = Capture();
+            var difference = cached.Zip(fresh, (a, b) => Math.Abs(a - b)).Average();
+            if (difference > 3) throw new InvalidOperationException($"キャッシュと再描画した画像が一致しません（平均差 {difference:F3}）。");
+        }
+        finally { timeline.CacheMode = mode; }
+    }
     public void SetPlaybackPosition(TimeSpan position)
     {
         if (playheadDragging) return;

@@ -40,7 +40,7 @@ public partial class App : Application
                 {
                     var cache = await VideoQualityAnalyzer.Media.SsimTestCache.LoadAsync(path);
                     ShutdownMode = ShutdownMode.OnMainWindowClose;
-                    MainWindow = new GraphPlaybackTestWindow(cache, path, e.Args.Contains("--auto"));
+                    MainWindow = new GraphPlaybackTestWindow(cache, path, e.Args.Contains("--auto"), e.Args.Contains("--verify-operations"));
                     MainWindow.Show();
                 }
             }
