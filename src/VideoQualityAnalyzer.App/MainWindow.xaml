@@ -23,14 +23,40 @@
             <Border Name="SidebarPanel" Grid.Column="0" Background="{StaticResource PanelBrush}" CornerRadius="8" Padding="10">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top">
-                        <TextBlock Text="動画一覧" Style="{StaticResource UiSectionStyle}" Margin="3,2,0,8" />
                         <WrapPanel Margin="0,0,0,8">
                             <Button Name="AddVideoButton" Content="追加" Click="Add_Click" />
-                            <Button Name="SetReferenceButton" Content="元動画に設定" Click="SetReference_Click" MinWidth="100" />
                             <Button Name="RemoveVideoButton" Content="削除" Click="Remove_Click" />
                                                         <Button Content="グループ設定" Click="SetGroup_Click" />
                         </WrapPanel>
-                        <TextBlock Text="複数選択できます。ファイルのドラッグ＆ドロップにも対応。" TextWrapping="Wrap" Foreground="{StaticResource UiMutedBrush}" Margin="3,0,3,8" />
+                    <DataGrid Name="ReferenceList" Height="82" Margin="0,0,0,8" SelectionMode="Single" SelectionUnit="FullRow"
+                              SelectionChanged="ReferenceList_SelectionChanged" CanUserSortColumns="False"
+                              AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
+                              CanUserDeleteRows="False" CanUserReorderColumns="True" RowHeaderWidth="0"
+                              Background="#17202D" Foreground="{StaticResource TextBrush}" RowBackground="#17202D" AlternatingRowBackground="#202837"
+                              BorderThickness="0" HeadersVisibility="Column">
+                        <DataGrid.ColumnHeaderStyle>
+                            <Style TargetType="DataGridColumnHeader">
+                                <Setter Property="Foreground" Value="{StaticResource UiOnLightBrush}" />
+                                <Setter Property="Padding" Value="5,6" />
+                            </Style>
+                        </DataGrid.ColumnHeaderStyle>
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="ファイル名" Binding="{Binding DisplayName}" SortMemberPath="Name" Width="230" />
+                            <DataGridTextColumn Header="グループ" Binding="{Binding Source=--}" SortMemberPath="Group" Width="100" />
+                            <DataGridTextColumn Header="コーデック" Binding="{Binding Descriptor.Codec}" SortMemberPath="Codec" Width="SizeToCells" MinWidth="70" MaxWidth="100" />
+                            <DataGridTextColumn Header="kbps" Binding="{Binding AverageBitrateKbps, StringFormat=N0, TargetNullValue=--}" SortMemberPath="Bitrate" Width="SizeToCells" MinWidth="65" MaxWidth="100" />
+                            <DataGridTextColumn Header="VMAF" Binding="{Binding Source=--}" SortMemberPath="Vmaf" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn Header="SSIM" Binding="{Binding Source=--}" SortMemberPath="Ssim" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn Header="PSNR" Binding="{Binding Source=--}" SortMemberPath="Psnr" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn Header="解像度" Binding="{Binding Resolution}" SortMemberPath="Resolution" Width="SizeToCells" MinWidth="80" MaxWidth="110" />
+                            <DataGridTextColumn Binding="{Binding FrameRateText}" SortMemberPath="FrameRate" Width="SizeToCells" MinWidth="65" MaxWidth="115">
+                                <DataGridTextColumn.Header>
+                                    <TextBlock Text="fps" ToolTip="可変表示は、公称fpsと平均fpsの差による推定です。全フレームの時刻による判定ではありません。" />
+                                </DataGridTextColumn.Header>
+                            </DataGridTextColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                        <Button Name="SetReferenceButton" Content="元動画に設定" Click="SetReference_Click" MinWidth="100" HorizontalAlignment="Left" Margin="0,0,0,8" />
                     </StackPanel>
                     <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
                         <TextBlock Text="評価設定" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,8" />

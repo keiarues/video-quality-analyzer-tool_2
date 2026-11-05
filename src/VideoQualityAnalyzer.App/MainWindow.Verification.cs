@@ -391,8 +391,10 @@ public partial class MainWindow
                     .Any(column => column.MaxWidth > 115))
                 throw new InvalidOperationException("列の省略名・幅またはソート選択欄の削除が不正です。");
             UpdateLayout();
-            if (VideoList.Columns.Sum(column => column.ActualWidth) > VideoList.ActualWidth - SystemParameters.VerticalScrollBarWidth)
-                throw new InvalidOperationException("初期幅で全列が収まりません。");
+            if (ReferenceList.Items.Count != 1 || ReferenceList.Items[0] != original[0] ||
+                VideoList.Items.Count != videos.Count - 1 || VideoList.Items.Contains(original[0]) ||
+                !ReferenceList.Columns.Select(column => column.SortMemberPath).SequenceEqual(VideoList.Columns.Select(column => column.SortMemberPath)))
+                throw new InvalidOperationException("元動画の専用一覧または列構成が不正です。");
             var bitrateColumn = (System.Windows.Controls.DataGridTextColumn)VideoList.Columns.Single(column => column.SortMemberPath == "Bitrate");
             if (bitrateColumn.Binding is not System.Windows.Data.Binding { StringFormat: "N0" })
                 throw new InvalidOperationException("ビットレートの3桁区切りが設定されていません。");
@@ -415,13 +417,16 @@ public partial class MainWindow
             if (qualityResults.Count != 0 || referenceId != original[1].Descriptor.Id ||
                 videos.Count(entry => entry.IsReference) != 1)
                 throw new InvalidOperationException("元動画変更時の結果破棄が不正です。");
+            if (ReferenceList.Items.Count != 1 || ReferenceList.Items[0] != original[1] ||
+                VideoList.Items.Contains(original[1]) || !VideoList.Items.Contains(original[0]))
+                throw new InvalidOperationException($"元動画変更時に上下の一覧が更新されません。上={ReferenceList.Items.Count} / {ReferenceList.Items.Cast<VideoEntry>().FirstOrDefault()?.Descriptor.Name} 下={string.Join(",", VideoList.Items.Cast<VideoEntry>().Select(item => item.Descriptor.Name))}");
             qualityResults[(original[0].Descriptor.Id, QualityMetric.Ssim)] = result;
             qualityResults[(original[2].Descriptor.Id, QualityMetric.Ssim)] = result;
             VideoList.SelectedItem = original[2];
             Remove_Click(this, new RoutedEventArgs());
             if (qualityResults.Count != 1 || !qualityResults.ContainsKey((original[0].Descriptor.Id, QualityMetric.Ssim)))
                 throw new InvalidOperationException("比較動画削除時の結果破棄が不正です。");
-            VideoList.SelectedItem = original[1];
+            ReferenceList.SelectedItem = original[1];
             Remove_Click(this, new RoutedEventArgs());
             if (qualityResults.Count != 0 || videos.Count(entry => entry.IsReference) != 1)
                 throw new InvalidOperationException("元動画削除時の結果破棄が不正です。");
