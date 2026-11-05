@@ -36,7 +36,7 @@ public sealed class QualityGraphPanel : UserControl
         IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results,
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
         VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null,
-        bool frameOnly = false, bool separatePlaybackLayer = false)
+        bool frameOnly = false, bool separatePlaybackLayer = false, bool cacheStaticGraph = false)
     {
         playbackResults = results;
         seekRequested = seek;
@@ -59,6 +59,8 @@ public sealed class QualityGraphPanel : UserControl
         var playbackCanvas = separatePlaybackLayer ? playbackOverlay : timeline;
         if (separatePlaybackLayer)
         {
+            // 静的な軸・折れ線だけを保持し、再生位置と評価値は毎回描画する。
+            if (cacheStaticGraph) timeline.CacheMode = new BitmapCache { EnableClearType = true };
             leftGraph.Children.Remove(timeline);
             var layers = new Grid();
             layers.Children.Add(timeline);
