@@ -125,6 +125,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
     private TimeSpan requestedPosition;
     public event Action? PlaybackEnded;
     public event Action? FrameShown;
+    public event Action<string, string>? SourcesRequested;
     public bool IsPlaying => playbackCancellation is not null && !playbackPaused;
     public bool IsReady => currentLeft is not null && currentRight is not null;
     public void SetFrameStatus(string left, string right)
@@ -153,6 +154,30 @@ public partial class ComparisonPanel : UserControl, IDisposable
         if (reader is not null) _ = reader.DisposeAsync();
         LeftImage.Source = RightImage.Source = HeatmapImage.Source = null;
         WipeLeftImage.Source = WipeRightImage.Source = null;
+    }
+
+    public void SelectPreviewSource(bool left, string path)
+    {
+        var selector = SelectedModeIndex == 1 ? (left ? WipeLeftPreviewSelect : WipeRightPreviewSelect)
+            : (left ? LeftPreviewSelect : RightPreviewSelect);
+        selector.SelectedItem = selector.Items.Cast<VideoChoice>().First(item => string.Equals(item.Path, path, StringComparison.OrdinalIgnoreCase));
+    }
+
+    public void SetVideoChoices(IEnumerable<string> paths)
+    {
+        configuring = true;
+        try
+        {
+            var allowed = paths.ToHashSet(StringComparer.OrdinalIgnoreCase);
+            foreach (var selector in new[] { LeftSelect, RightSelect })
+            {
+                foreach (var item in selector.Items.Cast<VideoChoice>().Where(item => !allowed.Contains(item.Path)).ToArray()) selector.Items.Remove(item);
+                foreach (var path in allowed)
+                    if (!selector.Items.Cast<VideoChoice>().Any(item => string.Equals(item.Path, path, StringComparison.OrdinalIgnoreCase)))
+                        selector.Items.Add(new VideoChoice(Path.GetFileName(path), path));
+            }
+        }
+        finally { configuring = false; }
     }
 
     public async Task SetSourcesAsync(VideoDescriptor left, VideoDescriptor right, TimeSpan position, bool resume)
@@ -219,6 +244,11 @@ public partial class ComparisonPanel : UserControl, IDisposable
     private async Task SwitchSelectedVideosAsync()
     {
         var generation = ++selectionGeneration;
+        if (embedded && SourcesRequested is not null)
+        {
+            SourcesRequested.Invoke(((VideoChoice)LeftSelect.SelectedItem).Path, ((VideoChoice)RightSelect.SelectedItem).Path);
+            return;
+        }
         var frameNumber = currentLeft?.FrameNumber ??
             (long.TryParse(FrameNumberBox.Text, out var requested) ? requested : 0);
         var resume = playbackCancellation is not null && !playbackPaused;

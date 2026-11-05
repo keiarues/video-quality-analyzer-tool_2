@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using VideoQualityAnalyzer.Core;
 using VideoQualityAnalyzer.GpuPreview;
 
@@ -44,6 +44,12 @@ public partial class MainWindow
             comparisonPanel = new ComparisonPanel(leftVideo!.Path, rightVideo!.Path, 0,
                 videoPaths: videos.Select(entry => entry.Descriptor.Path), showBlur: false, embedded: true);
             comparisonPanel.EnableZoom();
+            comparisonPanel.SourcesRequested += (leftPath, rightPath) =>
+            {
+                previewLeftOverride = videos.FirstOrDefault(entry => string.Equals(entry.Descriptor.Path, leftPath, StringComparison.OrdinalIgnoreCase))?.Descriptor.Id;
+                previewRightOverride = videos.FirstOrDefault(entry => string.Equals(entry.Descriptor.Path, rightPath, StringComparison.OrdinalIgnoreCase))?.Descriptor.Id;
+                UpdateSelection();
+            };
             ComparisonHost.Content = comparisonPanel;
             comparisonPanel.FrameShown += RequestPlaybackRefresh;
             comparisonPanel.PlaybackEnded += () =>
@@ -56,6 +62,7 @@ public partial class MainWindow
                 UpdateTimeDisplay();
             };
         }
+        comparisonPanel.SetVideoChoices(videos.Select(entry => entry.Descriptor.Path));
         if (!wasComparisonVisible) comparisonPanel.SelectMode(InitialPreviewTabs.SelectedIndex);
         if (comparisonLeftId == leftVideo!.Id && comparisonRightId == rightVideo!.Id) return;
         comparisonLeftId = leftVideo.Id;

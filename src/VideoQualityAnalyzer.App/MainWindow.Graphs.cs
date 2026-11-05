@@ -34,6 +34,34 @@ public partial class MainWindow
         QualityGraphHost.Content = qualityGraphPanel;
     }
 
+    private bool graphsCollapsed;
+    private System.Windows.GridLength savedGraphHeight;
+    private System.Windows.GridLength savedPreviewHeight;
+
+    private void GraphToggle_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (!graphsCollapsed)
+        {
+            savedGraphHeight = QualityGraphRow.Height;
+            savedPreviewHeight = PreviewRow.Height;
+            QualityGraphHost.Visibility = System.Windows.Visibility.Collapsed;
+            QualityGraphRow.MinHeight = 0;
+            QualityGraphRow.Height = new System.Windows.GridLength(0);
+            PreviewRow.Height = new System.Windows.GridLength(1, System.Windows.GridUnitType.Star);
+        }
+        else
+        {
+            QualityGraphRow.MinHeight = 200;
+            QualityGraphRow.Height = savedGraphHeight;
+            PreviewRow.Height = savedPreviewHeight;
+            QualityGraphHost.Visibility = System.Windows.Visibility.Visible;
+        }
+        graphsCollapsed = !graphsCollapsed;
+        QualityGraphResizeBar.IsEnabled = !graphsCollapsed;
+        GraphToggleButton.Content = graphsCollapsed ? "▲" : "▼";
+        GraphToggleButton.ToolTip = graphsCollapsed ? "グラフを復元" : "グラフを最小化";
+    }
+
     private void QualityGraphResize_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
     {
         if (e.Key is not (System.Windows.Input.Key.Up or System.Windows.Input.Key.Down)) return;
@@ -44,6 +72,7 @@ public partial class MainWindow
 
     private void QualityGraphResize_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
     {
+        if (graphsCollapsed) return;
         // 手動調整後も上下の比率を保持し、ウィンドウサイズに追従させる。
         var fixedHeight = PreviewLayout.RowDefinitions[1].ActualHeight +
             PreviewLayout.RowDefinitions[2].ActualHeight + PreviewLayout.RowDefinitions[3].ActualHeight;

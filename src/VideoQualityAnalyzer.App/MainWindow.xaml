@@ -116,7 +116,7 @@
                     <RowDefinition Name="PreviewRow" Height="1.2*" MinHeight="120" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="10" />
+                    <RowDefinition Height="20" />
                     <RowDefinition Name="QualityGraphRow" Height="*" MinHeight="200" />
                 </Grid.RowDefinitions>
                 <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0" Background="{StaticResource BackgroundBrush}">
@@ -136,7 +136,8 @@
                             <Image Name="LeftAv1Image" Stretch="Uniform" Visibility="Collapsed" />
                             <Border VerticalAlignment="Top" Background="#CC17202D" Padding="10,7">
                                 <StackPanel>
-                                    <TextBlock Name="LeftName" Text="左: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Name="LeftName" Text="左: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+                                    <ComboBox Name="PreviewLeftSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" />
                                     <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
                                     <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" />
                                     <TextBlock Name="LeftStatus" Text="待機中" Foreground="{StaticResource UiMutedBrush}" FontSize="{StaticResource UiFontSmall}" />
@@ -152,7 +153,8 @@
                             <Image Name="RightAv1Image" Stretch="Uniform" Visibility="Collapsed" />
                             <Border VerticalAlignment="Top" Background="#CC17202D" Padding="10,7">
                                 <StackPanel>
-                                    <TextBlock Name="RightName" Text="右: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                                    <TextBlock Name="RightName" Text="右: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+                                    <ComboBox Name="PreviewRightSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" />
                                     <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
                                     <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" />
                                     <TextBlock Name="RightStatus" Text="待機中" Foreground="{StaticResource UiMutedBrush}" FontSize="{StaticResource UiFontSmall}" />
@@ -209,9 +211,10 @@
                 <TextBlock Name="StatusText" FontSize="{StaticResource UiFontSmall}" Text="動画を追加してください。" Foreground="{StaticResource UiMutedBrush}" Margin="4,8,0,0" />
             </StackPanel>
         </Border>
-                <Thumb Name="QualityGraphResizeBar" Template="{StaticResource ResizeBarTemplate}" Focusable="True" KeyDown="QualityGraphResize_KeyDown" Grid.Row="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                <Thumb Margin="0,0,34,0" Name="QualityGraphResizeBar" Template="{StaticResource ResizeBarTemplate}" Focusable="True" KeyDown="QualityGraphResize_KeyDown" Grid.Row="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                        Cursor="SizeNS" ToolTip="品質グラフの高さを変更" DragDelta="QualityGraphResize_DragDelta"
                        AutomationProperties.Name="品質グラフの高さを変更" Background="#405066" />
+                <Button Name="GraphToggleButton" Grid.Row="3" HorizontalAlignment="Right" Width="30" Height="18" MinWidth="0" Padding="0" Content="▼" ToolTip="グラフを最小化" Click="GraphToggle_Click" />
                 <ContentControl Name="QualityGraphHost" Grid.Row="4" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
 
             </Grid>

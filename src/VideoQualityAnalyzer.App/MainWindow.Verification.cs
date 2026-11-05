@@ -6,6 +6,62 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
+    private async Task VerifyPreviewControlsAsync()
+    {
+        try
+        {
+            var reference = videos.First(entry => entry.Descriptor.Id == referenceId);
+            var candidate = videos.First(entry => entry != reference && CanCompare(reference.Descriptor, entry.Descriptor));
+            VideoList.SelectedItem = candidate;
+            await comparisonChangeTask;
+            PausePlayback();
+            var graphHeight = QualityGraphRow.Height;
+            GraphToggle_Click(this, new RoutedEventArgs());
+            UpdateLayout();
+            if (QualityGraphHost.IsVisible || QualityGraphRow.ActualHeight != 0) throw new InvalidOperationException("グラフを最小化できません。");
+            GraphToggle_Click(this, new RoutedEventArgs());
+            UpdateLayout();
+            if (!QualityGraphHost.IsVisible || QualityGraphRow.Height != graphHeight) throw new InvalidOperationException("グラフを復元できません。");
+            foreach (var mode in new[] { 0, 1, 2 })
+            foreach (var playing in new[] { false, true })
+            {
+                comparisonPanel!.SelectMode(mode);
+                ApplySeek(TimeSpan.FromSeconds(0.2));
+                await comparisonChangeTask;
+                if (playing) Play_Click(this, new RoutedEventArgs()); else PausePlayback();
+                comparisonPanel.SelectPreviewSource(true, candidate.Descriptor.Path);
+                await comparisonChangeTask;
+                comparisonPanel.SelectPreviewSource(false, reference.Descriptor.Path);
+                await comparisonChangeTask;
+                if (left.Video != candidate.Descriptor || right.Video != reference.Descriptor || referenceId != reference.Descriptor.Id || isPlaying != playing)
+                    throw new InvalidOperationException("プレビューの動画変更、元動画維持または再生状態が不正です。");
+                comparisonPanel.SelectPreviewSource(true, reference.Descriptor.Path);
+                await comparisonChangeTask;
+                comparisonPanel.SelectPreviewSource(false, candidate.Descriptor.Path);
+                await comparisonChangeTask;
+            }
+            PausePlayback();
+            PreviewLeftSelect.SelectedItem = candidate;
+            await comparisonChangeTask;
+            if (left.Video != candidate.Descriptor) throw new InvalidOperationException("通常画面の選択連動が不正です。");
+            var outputDirectory = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory, "../../../../../measurement-results"));
+            foreach (var mode in new[] { 0, 1, 2 })
+            {
+                comparisonPanel!.SelectMode(mode);
+                UpdateLayout();
+                var image = new System.Windows.Media.Imaging.RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+                image.Render((System.Windows.Media.Visual)Content);
+                var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+                encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image));
+                using var stream = System.IO.File.Create(System.IO.Path.Combine(outputDirectory, $"preview-controls-{mode}.png"));
+                encoder.Save(stream);
+            }
+            Console.WriteLine("プレビュー操作: グラフ最小化復元、3モードの左右選択、一時停止・再生状態・元動画設定の維持が合格");
+            Application.Current.Shutdown(0);
+        }
+        catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }
+    }
+
     private async Task VerifyPlaybackRefreshAsync()
     {
         try

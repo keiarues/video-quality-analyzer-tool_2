@@ -147,6 +147,7 @@ public partial class MainWindow : Window
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-comparison")) await VerifyEmbeddedComparisonAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-graphs")) await VerifyEmbeddedGraphsAsync();
+            else if (Environment.GetCommandLineArgs().Contains("--verify-preview-controls")) await VerifyPreviewControlsAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-refresh")) await VerifyPlaybackRefreshAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-seek")) await VerifySeekSliderAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-evaluation")) await VerifyMainEvaluationAsync();
@@ -334,9 +335,34 @@ public partial class MainWindow : Window
     {
         if (initialized && !suppressSelection)
         {
+            previewLeftOverride = previewRightOverride = null;
             if (VideoList.SelectedItems.Count > 0) ReferenceList.UnselectAll();
             UpdateSelection();
         }
+    }
+
+    private string? previewLeftOverride;
+    private string? previewRightOverride;
+    private bool syncingPreviewSelectors;
+
+    private void PreviewVideo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (syncingPreviewSelectors || !initialized || sender is not ComboBox { SelectedItem: VideoEntry entry } combo) return;
+        if (combo == PreviewLeftSelect) previewLeftOverride = entry.Descriptor.Id;
+        else previewRightOverride = entry.Descriptor.Id;
+        UpdateSelection();
+    }
+
+    private void SyncPreviewSelectors()
+    {
+        syncingPreviewSelectors = true;
+        try
+        {
+            PreviewLeftSelect.ItemsSource = PreviewRightSelect.ItemsSource = videos;
+            PreviewLeftSelect.SelectedItem = videos.FirstOrDefault(entry => entry.Descriptor.Id == left.Video?.Id);
+            PreviewRightSelect.SelectedItem = videos.FirstOrDefault(entry => entry.Descriptor.Id == right.Video?.Id);
+        }
+        finally { syncingPreviewSelectors = false; }
     }
 
     private void UpdateSelection()
@@ -349,6 +375,8 @@ public partial class MainWindow : Window
             item.IsReference = item.Descriptor.Id == referenceId;
         var selected = VideoList.SelectedItems.Cast<VideoEntry>().Select(item => item.Descriptor.Id).ToArray();
         var choice = SelectionService.Resolve(ordered, referenceId, selected, previousRightId, ++selectionGeneration);
+        if (videos.Any(entry => entry.Descriptor.Id == previewLeftOverride)) choice = choice with { LeftVideoId = previewLeftOverride };
+        if (videos.Any(entry => entry.Descriptor.Id == previewRightOverride)) choice = choice with { RightVideoId = previewRightOverride };
         log.Record("selection_requested", "both", choice.LeftVideoId, "requested",
             detail: $"right_video_id={choice.RightVideoId ?? "none"};generation={choice.Generation}");
         previousRightId = choice.RightVideoId;
@@ -363,6 +391,7 @@ public partial class MainWindow : Window
         UpdateEmbeddedComparison(leftVideo, rightVideo, position, resume);
         RightMedia.IsMuted = true;
         UpdateInfo();
+        SyncPreviewSelectors();
         RefreshEmbeddedGraphs();
         UpdateTimeDisplay();
     }
