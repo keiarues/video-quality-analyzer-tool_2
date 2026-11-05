@@ -10,6 +10,7 @@ namespace VideoQualityAnalyzer.App;
 public sealed class QualityGraphPanel : UserControl
 {
     private readonly Canvas timeline = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
+    private readonly Canvas playbackOverlay = new() { ClipToBounds = true, IsHitTestVisible = false };
     private readonly Canvas averages = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
     private readonly TabControl metric = new();
     private readonly TextBlock status = new() { FontSize = UiTheme.Small, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8) };
@@ -35,7 +36,7 @@ public sealed class QualityGraphPanel : UserControl
         IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results,
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
         VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null,
-        bool frameOnly = false)
+        bool frameOnly = false, bool separatePlaybackLayer = false)
     {
         playbackResults = results;
         seekRequested = seek;
@@ -55,6 +56,22 @@ public sealed class QualityGraphPanel : UserControl
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         var leftGraph = MakeGraph("フレームグラフ：時刻（秒）と品質", timeline);
+        var playbackCanvas = separatePlaybackLayer ? playbackOverlay : timeline;
+        if (separatePlaybackLayer)
+        {
+            leftGraph.Children.Remove(timeline);
+            var layers = new Grid();
+            layers.Children.Add(timeline);
+            layers.Children.Add(playbackOverlay);
+            leftGraph.Children.Add(layers);
+        }
+        void AttachPlaybackVisuals()
+        {
+            playbackCanvas.Children.Add(playhead);
+            playbackCanvas.Children.Add(leftPlaybackStatus);
+            playbackCanvas.Children.Add(rightPlaybackStatus);
+            playbackCanvas.Children.Add(playbackTimeLabel);
+        }
         var rightGraph = MakeGraph("ファイルグラフ：平均ビットレート（kbps）と平均品質", averages);
         var legend = new StackPanel();
         var legendScroll = new ScrollViewer { Content = legend, MaxHeight = 180,
@@ -172,6 +189,7 @@ public sealed class QualityGraphPanel : UserControl
             displayedVideoIds.Clear();
             videoColors.Clear();
             timeline.Children.Clear();
+            playbackOverlay.Children.Clear();
             averages.Children.Clear();
             legend.Children.Clear();
             if (metric.SelectedItem is not TabItem { Tag: QualityMetric selected }) return;
@@ -182,10 +200,7 @@ public sealed class QualityGraphPanel : UserControl
                     .Where(video => video.Duration > TimeSpan.Zero).Select(video => video.Duration.TotalSeconds).ToArray();
                 maximumTime = durations.Length > 0 ? durations.Min() : 0;
                 if (maximumTime > 0) DrawAxes(timeline, PlotArea(timeline), maximumTime, 0, 1, "秒");
-                timeline.Children.Add(playhead);
-                timeline.Children.Add(leftPlaybackStatus);
-                timeline.Children.Add(rightPlaybackStatus);
-                timeline.Children.Add(playbackTimeLabel);
+                AttachPlaybackVisuals();
                 UpdatePlayhead();
                 PlaceLegend();
                 status.Text = "この指標の完了結果はありません。動画の長さを基準にシークできます。";
@@ -249,10 +264,7 @@ public sealed class QualityGraphPanel : UserControl
                 legend.Children.Add(legendItem);
             }
             PlaceLegend();
-            timeline.Children.Add(playhead);
-            timeline.Children.Add(leftPlaybackStatus);
-            timeline.Children.Add(rightPlaybackStatus);
-            timeline.Children.Add(playbackTimeLabel);
+            AttachPlaybackVisuals();
             UpdatePlayhead();
             status.Text = "左の縦線をドラッグするとシーク、右の点をクリックするとその動画のフレーム評価を表示します。点にマウスを合わせると動画名と平均値を表示します。";
         }

@@ -17,6 +17,7 @@ internal sealed class GraphPlaybackTestWindow : Window
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap };
     private readonly ComboBox count = new() { Width = 70 };
     private readonly CheckBox dynamicGraph = new() { Content = "再生位置・評価値を更新", IsChecked = true };
+    private readonly CheckBox separateLayer = new() { Content = "再生位置を別レイヤー", IsChecked = true };
     private readonly Av1PreviewPlayer player;
     private QualityGraphPanel? graph;
     private bool running;
@@ -41,6 +42,7 @@ internal sealed class GraphPlaybackTestWindow : Window
         for (var i = 0; i <= cache.Entries.Length; i++) count.Items.Add(i);
         count.SelectedIndex = 1;
         toolbar.Children.Add(count); toolbar.Children.Add(dynamicGraph);
+        toolbar.Children.Add(separateLayer);
         var run = new Button { Content = "全条件を測定（各35秒）" };
         toolbar.Children.Add(run);
         var play = new Button { Content = "再生" }; toolbar.Children.Add(play);
@@ -59,6 +61,8 @@ internal sealed class GraphPlaybackTestWindow : Window
             if (running) graphMilliseconds += Stopwatch.GetElapsedTime(start).TotalMilliseconds;
         };
         count.SelectionChanged += (_, _) => BuildGraph();
+        separateLayer.Checked += (_, _) => BuildGraph();
+        separateLayer.Unchecked += (_, _) => BuildGraph();
         play.Click += (_, _) => { if (!running) player.Open(cache.Reference, TimeSpan.Zero, true); };
         pause.Click += (_, _) => { if (!running) player.Pause(); };
         run.Click += async (_, _) => await RunAsync(false);
@@ -80,7 +84,8 @@ internal sealed class GraphPlaybackTestWindow : Window
     {
         var results = cache.Entries.ToDictionary(e => (e.Video.Id, QualityMetric.Ssim), e => e.Result);
         graph = new QualityGraphPanel(cache.Entries.Take(count.SelectedIndex).Select(e => e.Video).ToArray(),
-            results, seek: position => { if (!running) player.Seek(position); }, frameOnly: true);
+            results, seek: position => { if (!running) player.Seek(position); }, frameOnly: true,
+            separatePlaybackLayer: separateLayer.IsChecked == true);
         graphHost.Content = graph;
         graph.SetPlaybackSources(cache.Reference, cache.Entries[0].Video, cache.Reference.Id);
     }
@@ -93,7 +98,7 @@ internal sealed class GraphPlaybackTestWindow : Window
         try
         {
             if (cache.Reference.Duration.TotalSeconds < 35) throw new InvalidOperationException("35秒以上の動画が必要です。");
-            count.IsEnabled = dynamicGraph.IsEnabled = false;
+            count.IsEnabled = dynamicGraph.IsEnabled = separateLayer.IsEnabled = false;
             foreach (var update in new[] { false, true })
             foreach (var n in new[] { 0, 1, 2, cache.Entries.Length }.Distinct().Where(n => n <= cache.Entries.Length))
             {
@@ -111,7 +116,8 @@ internal sealed class GraphPlaybackTestWindow : Window
                 var expected = (int)(Math.Ceiling(32 * cache.Reference.AverageFrameRate - .000001) -
                     Math.Ceiling(2 * cache.Reference.AverageFrameRate - .000001));
                 var intervals = measured.Zip(measured.Skip(1), (a, b) => b.Wall - a.Wall).Order().ToArray();
-                rows.Add(new { GraphCount = n, UpdatePlayhead = update, Expected = expected, Reflected = unique,
+                rows.Add(new { SeparatePlaybackLayer = separateLayer.IsChecked == true,
+                    GraphCount = n, UpdatePlayhead = update, Expected = expected, Reflected = unique,
                     MissingPercent = 100.0 * Math.Max(0, expected - unique) / expected,
                     MaxIntervalMs = intervals.LastOrDefault(), P95IntervalMs = intervals.Length == 0 ? 0 : intervals[(int)((intervals.Length - 1) * .95)],
                     GraphUpdateTotalMs = graphMilliseconds, CpuPercent = (process.TotalProcessorTime - cpu).TotalMilliseconds / clock.Elapsed.TotalMilliseconds / Environment.ProcessorCount * 100,
@@ -127,6 +133,6 @@ internal sealed class GraphPlaybackTestWindow : Window
             status.Text = $"測定失敗：{error.Message}";
             if (close) Application.Current.Shutdown(1);
         }
-        finally { running = false; count.IsEnabled = dynamicGraph.IsEnabled = true; }
+        finally { running = false; count.IsEnabled = dynamicGraph.IsEnabled = separateLayer.IsEnabled = true; }
     }
 }
