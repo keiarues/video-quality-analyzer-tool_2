@@ -14,7 +14,11 @@ public partial class MainWindow
             if (entry is null) return;
             VideoList.SelectedItems.Clear();
             VideoList.SelectedItem = entry;
-        }, separatePlaybackLayer: true, cacheStaticGraph: true);
+        }, separatePlaybackLayer: true, cacheStaticGraph: true, clearSelection: () =>
+        {
+            VideoList.UnselectAll();
+            RefreshEmbeddedGraphs();
+        });
         qualityGraphPanel.SeekPreviewed += position =>
         {
             seekSliderDragging = true;

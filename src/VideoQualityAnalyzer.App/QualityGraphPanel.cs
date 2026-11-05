@@ -36,7 +36,7 @@ public sealed class QualityGraphPanel : UserControl
         IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results,
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
         VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null,
-        bool frameOnly = false, bool separatePlaybackLayer = false, bool cacheStaticGraph = false)
+        bool frameOnly = false, bool separatePlaybackLayer = false, bool cacheStaticGraph = false, Action? clearSelection = null)
     {
         playbackResults = results;
         seekRequested = seek;
@@ -178,6 +178,45 @@ public sealed class QualityGraphPanel : UserControl
             grid.ColumnDefinitions[1].Width = new GridLength(0);
             metric.SelectedIndex = (int)QualityMetric.Ssim;
         }
+        Button AddMinimize(DockPanel graph, int column, string name)
+        {
+            var title = graph.Children[0];
+            var header = new DockPanel();
+            var toggle = new Button { Content = "−", MinWidth = 24, Padding = new Thickness(2), ToolTip = name + "を最小化" };
+            graph.Children.Remove(title);
+            DockPanel.SetDock(toggle, Dock.Right);
+            header.Children.Add(toggle);
+            header.Children.Add(title);
+            DockPanel.SetDock(header, Dock.Top);
+            graph.Children.Insert(0, header);
+            var minimized = false;
+            toggle.Click += (_, _) =>
+            {
+                minimized = !minimized;
+                title.Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
+                foreach (UIElement child in graph.Children)
+                    if (child != header) child.Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
+                grid.ColumnDefinitions[column].Width = minimized ? new GridLength(40) : new GridLength(1, GridUnitType.Star);
+                toggle.Content = minimized ? "＋" : "−";
+                toggle.ToolTip = name + (minimized ? "を復元" : "を最小化");
+            };
+            return toggle;
+        }
+        var minimizeFrame = AddMinimize(leftGraph, 0, "フレームグラフ");
+        var minimizeFile = AddMinimize(rightGraph, 1, "ファイルグラフ");
+        void ClearFileSelection()
+        {
+            selectedIds.Clear();
+            // 主画面では未選択を全動画表示として扱う。
+            clearSelection?.Invoke();
+            Draw();
+        }
+        averages.MouseLeftButtonDown += (_, e) =>
+        {
+            if (e.OriginalSource != averages) return;
+            ClearFileSelection();
+            e.Handled = true;
+        };
         ((TabItem)metric.SelectedItem).Content = grid;
         void SelectVideo(string id)
         {
@@ -263,6 +302,9 @@ public sealed class QualityGraphPanel : UserControl
                     Foreground = UiTheme.OnLight, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis });
                 legendItem.Children.Add(new TextBlock { Text = $"  {result.Average:F4} / {rates[index]:N0} kbps",
                     FontSize = UiTheme.Small, Foreground = UiTheme.OnLight });
+                legendItem.Background = Brushes.Transparent;
+                legendItem.Cursor = System.Windows.Input.Cursors.Hand;
+                legendItem.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); e.Handled = true; };
                 legend.Children.Add(legendItem);
             }
             PlaceLegend();
@@ -382,6 +424,18 @@ public sealed class QualityGraphPanel : UserControl
                 if (!Equals(rightPlaybackStatus.Foreground, videoColors[playbackVideo.Id]) ||
                     !Equals(leftPlaybackStatus.Foreground, UiTheme.OnLight) || !Equals(playbackTimeLabel.Foreground, UiTheme.OnLight))
                     throw new InvalidOperationException("再生ステータスの系列色または秒数の標準色が不正です。");
+                UpdateLayout();
+                var legendTarget = legend.Children.OfType<StackPanel>().First();
+                legendTarget.RaiseEvent(new System.Windows.Input.MouseButtonEventArgs(System.Windows.Input.Mouse.PrimaryDevice,
+                    Environment.TickCount, System.Windows.Input.MouseButton.Left) { RoutedEvent = MouseLeftButtonDownEvent });
+                if (selectedIds.Count != 1) throw new InvalidOperationException("凡例から動画を選択できません。");
+                ClearFileSelection();
+                if (clearSelection is null && selectedIds.Count != 0) throw new InvalidOperationException("グラフの選択を解除できません。");
+                foreach (var toggle in new[] { minimizeFrame, minimizeFile })
+                {
+                    toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                }
                 UpdateLayout();
                 var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap(
                     (int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
