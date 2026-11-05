@@ -6,6 +6,51 @@ public partial class App : Application
 {
     protected override async void OnStartup(StartupEventArgs e)
     {
+        if (e.Args.Length >= 2 && e.Args[0] is "--prepare-graph-test" or "--graph-playback-test")
+        {
+            base.OnStartup(e);
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+            try
+            {
+                var path = System.IO.Path.GetFullPath(e.Args[1]);
+                if (e.Args[0] == "--prepare-graph-test")
+                {
+                    var probePath = VideoQualityAnalyzer.Media.FfprobeService.FindExecutable()
+                        ?? throw new InvalidOperationException("FFprobeが見つかりません。");
+                    var probe = new VideoQualityAnalyzer.Media.FfprobeService(probePath);
+                    var reference = await probe.ProbeAsync(e.Args[2], CancellationToken.None);
+                    var referenceStamp = VideoQualityAnalyzer.Media.TestVideoStamp.Read(reference.Path);
+                    var entries = new List<VideoQualityAnalyzer.Media.SsimTestEntry>();
+                    var service = new VideoQualityAnalyzer.Media.QualityEvaluationService(
+                        System.IO.Path.Combine(System.IO.Path.GetDirectoryName(probePath)!, "ffmpeg.exe"));
+                    foreach (var videoPath in e.Args.Skip(3))
+                    {
+                        var video = await probe.ProbeAsync(videoPath, CancellationToken.None);
+                        var stamp = VideoQualityAnalyzer.Media.TestVideoStamp.Read(video.Path);
+                        var result = await service.EvaluateAsync(reference, video, VideoQualityAnalyzer.Media.QualityMetric.Ssim, null, CancellationToken.None);
+                        if (stamp != VideoQualityAnalyzer.Media.TestVideoStamp.Read(video.Path)) throw new InvalidOperationException("評価中に動画が変更されました。");
+                        entries.Add(new(video, stamp, result));
+                    }
+                    if (entries.Count == 0 || referenceStamp != VideoQualityAnalyzer.Media.TestVideoStamp.Read(reference.Path))
+                        throw new InvalidOperationException("比較動画がないか、基準動画が変更されました。");
+                    await new VideoQualityAnalyzer.Media.SsimTestCache(1, reference, referenceStamp, entries.ToArray()).SaveAsync(path);
+                    Shutdown(0);
+                }
+                else
+                {
+                    var cache = await VideoQualityAnalyzer.Media.SsimTestCache.LoadAsync(path);
+                    ShutdownMode = ShutdownMode.OnMainWindowClose;
+                    MainWindow = new GraphPlaybackTestWindow(cache, path, e.Args.Contains("--auto"));
+                    MainWindow.Show();
+                }
+            }
+            catch (Exception error)
+            {
+                System.IO.File.WriteAllText(System.IO.Path.GetFullPath(e.Args[1]) + ".error.txt", error.ToString());
+                Shutdown(1);
+            }
+            return;
+        }
         if (e.Args.Contains("--verify-groups"))
         {
             base.OnStartup(e);

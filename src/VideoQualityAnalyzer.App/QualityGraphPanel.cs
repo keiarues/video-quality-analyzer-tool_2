@@ -34,7 +34,8 @@ public sealed class QualityGraphPanel : UserControl
     public QualityGraphPanel(VideoDescriptor[] videos,
         IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results,
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
-        VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null)
+        VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null,
+        bool frameOnly = false)
     {
         playbackResults = results;
         seekRequested = seek;
@@ -152,6 +153,12 @@ public sealed class QualityGraphPanel : UserControl
         Grid.SetColumn(rightGraph, 1);
         grid.Children.Add(leftGraph);
         grid.Children.Add(rightGraph);
+        if (frameOnly)
+        {
+            rightGraph.Visibility = Visibility.Collapsed;
+            grid.ColumnDefinitions[1].Width = new GridLength(0);
+            metric.SelectedIndex = (int)QualityMetric.Ssim;
+        }
         ((TabItem)metric.SelectedItem).Content = grid;
         void SelectVideo(string id)
         {
