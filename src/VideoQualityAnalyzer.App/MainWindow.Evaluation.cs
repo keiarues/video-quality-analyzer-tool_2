@@ -20,6 +20,18 @@ public partial class MainWindow
         }
     }
 
+    private void ClearEvaluation_Click(object sender, RoutedEventArgs e)
+    {
+        if (evaluationCancellation is not null) return;
+        if (MessageBox.Show(this, "すべての動画の評価結果（VMAF・SSIM・PSNR）をクリアしますか？",
+            "評価クリア", MessageBoxButton.YesNo, MessageBoxImage.Question, MessageBoxResult.No) != MessageBoxResult.Yes)
+            return;
+        qualityResults.Clear();
+        RefreshQualityValues();
+        RefreshVideoOrder();
+        SetWindowStatus("すべての評価結果をクリアしました。");
+    }
+
     private void Evaluate_Click(object sender, RoutedEventArgs e)
     {
         if (evaluationCancellation is not null)
@@ -98,6 +110,7 @@ public partial class MainWindow
     private void SetEvaluationState(bool running)
     {
         if (running) WindowStatusText.Foreground = UiTheme.Emphasis;
+        EvaluationClearButton.IsEnabled = !running;
         EvaluationStartButton.Content = running ? "評価を中止" : "評価を開始";
         EvaluationStartButton.IsEnabled = true;
         VmafCheck.IsEnabled = SsimCheck.IsEnabled = PsnrCheck.IsEnabled = !running;
