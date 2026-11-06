@@ -45,7 +45,7 @@
                             <Button Name="AddVideoButton" Content="動画ファイルを追加" Click="Add_Click" />
                             <Button Name="RemoveVideoButton" Content="削除" Click="Remove_Click" />
                         </WrapPanel>
-                    <TextBlock Text="比較元動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
+                    <TextBlock Text="基準動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
                     <DataGrid Name="ReferenceList" Height="82" Margin="0,0,0,8" SelectionMode="Single" SelectionUnit="FullRow"
                               SelectionChanged="ReferenceList_SelectionChanged" CanUserSortColumns="False"
                               AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
@@ -76,7 +76,7 @@
                         </DataGrid.Columns>
                     </DataGrid>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
-                            <Button Name="SetReferenceButton" Content="▲元動画に設定" Click="SetReference_Click" MinWidth="100" />
+                            <Button Name="SetReferenceButton" Content="▲基準動画に設定" Click="SetReference_Click" MinWidth="100" />
                             <Button Content="グループ設定" Click="SetGroup_Click" />
                         </StackPanel>
                     </StackPanel>
@@ -101,7 +101,7 @@
                             <Button Name="EvaluationStartButton" Content="評価を開始" Click="Evaluate_Click" Width="220" />
                         </StackPanel>
                     </StackPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="比較対象動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
+                    <TextBlock DockPanel.Dock="Top" Text="評価対象動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
                     <DataGrid Name="VideoList" SelectionMode="Extended" SelectionUnit="FullRow"
                               PreviewMouseLeftButtonDown="VideoList_PreviewMouseLeftButtonDown" SelectionChanged="VideoList_SelectionChanged" Sorting="VideoList_Sorting"
                               AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
