@@ -19,14 +19,23 @@ public sealed class SettingsWindow : Window
         ResizeMode = ResizeMode.CanResize;
         var panel = new StackPanel { Margin = new Thickness(18) };
         Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-        panel.Children.Add(new TextBlock { Text = "FFmpegフォルダーパス" });
+        var pathRow = new Grid { Margin = new Thickness(0, 8, 0, 8) };
+        pathRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        pathRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        pathRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        panel.Children.Add(pathRow);
+        pathRow.Children.Add(new TextBlock { Text = "FFmpegフォルダーパス", VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) });
         var saved = FfmpegSettings.Load();
-        var status = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
-        panel.Children.Add(status);
+        var status = new TextBlock { TextWrapping = TextWrapping.Wrap, MaxWidth = 150, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(8, 0, 0, 0) };
+        Grid.SetColumn(status, 2);
+        pathRow.Children.Add(status);
         var version = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
         panel.Children.Add(version);
-        var path = new TextBox { Text = System.IO.File.Exists(saved) ? System.IO.Path.GetDirectoryName(saved) ?? "" : saved, Margin = new Thickness(0, 8, 0, 8) };
-        panel.Children.Add(path);
+        var path = new TextBox { Text = System.IO.File.Exists(saved) ? System.IO.Path.GetDirectoryName(saved) ?? "" : saved, VerticalContentAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(path, 1);
+        pathRow.Children.Add(path);
+        var automatic = string.IsNullOrWhiteSpace(saved);
+        var updatingPath = false;
         var generation = 0;
         CancellationTokenSource? versionCancellation = null;
         Closed += (_, _) => { generation++; versionCancellation?.Cancel(); };
@@ -37,19 +46,30 @@ public sealed class SettingsWindow : Window
             versionCancellation = new CancellationTokenSource();
             var token = versionCancellation.Token;
             var current = ++generation;
-            var input = path.Text ?? "";
+            var input = automatic ? "" : path.Text ?? "";
             status.Text = "検出中…";
             version.Text = "";
             var detected = await Task.Run(() => FfmpegSettings.Detect(input));
             if (current != generation) return;
-            status.Text = detected.Path is null ? detected.Source
-                : $"{detected.Source}：{System.IO.Path.GetDirectoryName(detected.Path)}";
+            status.Text = detected.Path is null ? "未検出" : detected.Source;
+            status.ToolTip = detected.Source;
             if (detected.Path is null) return;
+            if (automatic)
+            {
+                updatingPath = true;
+                path.Text = System.IO.Path.GetDirectoryName(detected.Path) ?? "";
+                updatingPath = false;
+            }
             version.Text = "バージョン取得中…";
             var result = await FfmpegSettings.GetVersionAsync(detected.Path, token);
             if (current == generation) version.Text = result;
         }
-        path.TextChanged += (_, _) => RefreshStatus();
+        path.TextChanged += (_, _) =>
+        {
+            if (updatingPath) return;
+            automatic = string.IsNullOrWhiteSpace(path.Text);
+            RefreshStatus();
+        };
         RefreshStatus();
         var browse = new StackPanel { Orientation = Orientation.Horizontal };
         panel.Children.Add(browse);
@@ -71,7 +91,7 @@ public sealed class SettingsWindow : Window
         buttons.Children.Add(new Button { Content = "キャンセル", IsCancel = true });
         save.Click += (_, _) =>
         {
-            try { FfmpegSettings.Save(path.Text ?? ""); DialogResult = true; }
+            try { FfmpegSettings.Save(automatic ? "" : path.Text ?? ""); DialogResult = true; }
             catch (Exception exception) when (exception is ArgumentException or System.IO.IOException or UnauthorizedAccessException or NotSupportedException) { error.Text = exception.Message; }
         };
     }
