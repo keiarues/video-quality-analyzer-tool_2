@@ -6,6 +6,16 @@ public partial class App : Application
 {
     protected override async void OnStartup(StartupEventArgs e)
     {
+        try
+        {
+            System.IO.Directory.CreateDirectory(System.IO.Path.Combine(AppContext.BaseDirectory, "tools"));
+        }
+        catch (Exception exception) when (exception is System.IO.IOException or UnauthorizedAccessException)
+        {
+            MessageBox.Show("アプリのフォルダーにtoolsフォルダーを作成できませんでした。\n" +
+                "書き込み可能な場所にアプリを配置するか、設定画面でFFmpegフォルダーを指定してください。\n\n" + exception.Message,
+                "toolsフォルダーの作成", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
         if (e.Args.Length >= 2 && e.Args[0] is "--prepare-graph-test" or "--graph-playback-test")
         {
             base.OnStartup(e);
