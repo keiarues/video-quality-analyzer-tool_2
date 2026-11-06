@@ -206,7 +206,9 @@
                             PreviewMouseLeftButtonDown="SeekSlider_MouseDown"
                             PreviewMouseLeftButtonUp="SeekSlider_MouseUp" />
                 </DockPanel>
-                <WrapPanel Name="PlaybackButtons" Margin="0,8,0,0">
+                <DockPanel Margin="0,8,0,0">
+                    <preview:ZoomControlBar x:Name="PreviewZoomControls" DockPanel.Dock="Right" Margin="16,0,0,0" VerticalAlignment="Center" HorizontalAlignment="Right" />
+                <WrapPanel Name="PlaybackButtons">
                     <WrapPanel.Resources>
                         <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                             <Setter Property="MinWidth" Value="32" />
@@ -228,8 +230,9 @@
                             VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" />
                     <CheckBox Name="MuteCheck" Content="ミュート" VerticalAlignment="Center" Margin="10,0,0,0"
                               Checked="MuteCheck_Changed" Unchecked="MuteCheck_Changed" />
-                    <preview:ZoomControlBar x:Name="PreviewZoomControls" Margin="16,0,0,0" VerticalAlignment="Center" />
+
                 </WrapPanel>
+                </DockPanel>
 
                 <TextBlock Name="StatusText" FontSize="{StaticResource UiFontSmall}" Text="動画を追加してください。" Foreground="{StaticResource UiMutedBrush}" Margin="4,8,0,0" />
             </StackPanel>
