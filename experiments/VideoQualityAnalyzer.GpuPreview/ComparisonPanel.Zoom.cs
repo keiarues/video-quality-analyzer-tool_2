@@ -185,7 +185,7 @@ public partial class ComparisonPanel
         }
         HeatmapTab.Visibility = Visibility.Visible;
         Loaded += (_, _) => CompositionTarget.Rendering += Refresh;
-        ZoomControls.Visibility = Visibility.Visible;
+        ZoomControls.Visibility = externalControls ? Visibility.Collapsed : Visibility.Visible;
         void Refresh(object? sender, EventArgs args) => Apply();
         Unloaded += (_, _) => CompositionTarget.Rendering -= Refresh;
         Apply();
