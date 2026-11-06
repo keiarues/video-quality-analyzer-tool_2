@@ -3,7 +3,6 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Style="{StaticResource {x:Type UserControl}}" Background="#141B26" Foreground="{StaticResource TextBrush}">
     <DockPanel Margin="12">
-        <TextBlock Name="ResultText" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" DockPanel.Dock="Bottom" Margin="0,10,0,0" TextWrapping="Wrap" />
         <StackPanel Name="CommonControls" DockPanel.Dock="Top" Margin="0,0,0,10">
           <StackPanel Orientation="Horizontal">
             <TextBlock Text="左" VerticalAlignment="Center" Margin="0,0,6,0" />

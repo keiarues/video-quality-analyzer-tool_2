@@ -12,6 +12,8 @@ namespace VideoQualityAnalyzer.GpuPreview;
 
 public partial class ComparisonPanel : UserControl, IDisposable
 {
+    private long lateDroppedFrames;
+    public long LateDroppedFrames => Interlocked.Read(ref lateDroppedFrames);
     private readonly FrameComparisonService comparison;
     private readonly string ffmpegPath;
     private readonly string ffprobePath;
@@ -94,7 +96,6 @@ public partial class ComparisonPanel : UserControl, IDisposable
         BlurSelect.SelectedIndex = 0;
         ViewSelect.SelectedIndex = showWipe ? 1 : (showBlur ? 2 : 0);
         UpdateWipeBoundary();
-        ResultText.Text = "左右に同じ元フレーム番号を指定して比較します。再生中も表示を切り替えられます。";
         LeftSelect.SelectionChanged += VideoSelectionChanged;
         RightSelect.SelectionChanged += VideoSelectionChanged;
         Loaded += (_, _) =>
@@ -148,6 +149,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
         StopPlayback();
         loadCancellation?.Cancel();
         currentLeft = currentRight = null;
+        Interlocked.Exchange(ref lateDroppedFrames, 0);
         requestedPosition = position;
         var reader = preparedReader;
         preparedReader = null;
@@ -214,6 +216,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
         requestedPosition = position;
         resumeRequested = resume;
         currentLeft = currentRight = null;
+        Interlocked.Exchange(ref lateDroppedFrames, 0);
         LeftImage.Source = RightImage.Source = HeatmapImage.Source = null;
         WipeLeftImage.Source = WipeRightImage.Source = null;
         FrameNumberBox.Text = Math.Max(0, (long)Math.Round(position.TotalSeconds * sourceFrameRate))
@@ -285,7 +288,6 @@ public partial class ComparisonPanel : UserControl, IDisposable
             RightSelect.SelectedItem is not VideoChoice right ||
             !long.TryParse(FrameNumberBox.Text, out var frameNumber) || frameNumber < 0)
         {
-            ResultText.Text = "0以上の元フレーム番号と左右の動画を指定してください。";
             return;
         }
         loadCancellation?.Cancel();
@@ -315,15 +317,13 @@ public partial class ComparisonPanel : UserControl, IDisposable
 
     private void StopPlayback(bool keepRequestedFrame = false)
     {
-        var wasPlaying = playbackCancellation is not null;
+
         playbackCancellation?.Cancel();
         playbackCancellation = null;
         playbackPaused = false;
         PlayPauseButton.Content = "再生";
         if (!keepRequestedFrame && currentLeft is not null)
             FrameNumberBox.Text = currentLeft.FrameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
-        if (wasPlaying && currentLeft is not null)
-            ResultText.Text = $"比較再生を停止しました。表示中の元フレーム #{currentLeft.FrameNumber}。";
     }
 
     private async Task PlayAsync(string leftPath, string rightPath, long firstFrameNumber,
@@ -331,7 +331,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
         (ComparisonFrame Left, ComparisonFrame Right)? firstPair = null)
     {
         var token = cancellation.Token;
-        ResultText.Text = "連続復号を準備中…";
+        Interlocked.Exchange(ref lateDroppedFrames, 0);
         try
         {
             await Task.Run(async () =>
@@ -378,6 +378,8 @@ public partial class ComparisonPanel : UserControl, IDisposable
                 if (clock.Elapsed - due > TimeSpan.FromMilliseconds(100))
                 {
                     skipped++;
+                    if (ReferenceEquals(playbackCancellation, cancellation))
+                        Interlocked.Exchange(ref lateDroppedFrames, skipped);
                     if (benchmarkMode && left.FrameNumber >= firstMeasured)
                         measuredLateDropped.Add(left.FrameNumber);
                     continue;
@@ -401,11 +403,6 @@ public partial class ComparisonPanel : UserControl, IDisposable
                     if (displayed % 6 == 0)
                     {
                         FrameNumberBox.Text = left.FrameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
-                        ResultText.Text = $"再生比較 #{left.FrameNumber} / 描画要求 {displayed / Math.Max(0.001, clock.Elapsed.TotalSeconds):F1} fps" +
-                            $" / 遅延破棄 {skipped}枚" +
-                            (difference is null ? "" :
-                                $" / {(blurRadius == 0 ? "平均RGB差" : "ぼかし後平均RGB差")} {difference.MeanAbsoluteRgbDifference:F2}") +
-                            "。実画面提示fpsは未測定。";
                     }
                 });
                 if (!presented && !token.IsCancellationRequested) pendingPair = pair;
@@ -423,17 +420,13 @@ public partial class ComparisonPanel : UserControl, IDisposable
                     appCpuSeconds, appPeakBytes, decoderCpuSeconds, decoderPeakBytes));
                 return;
             }
-            if (!token.IsCancellationRequested)
-                await Dispatcher.InvokeAsync(() => ResultText.Text =
-                    $"再生比較終了 / 描画要求 {displayed}枚 / 遅延破棄 {skipped}枚。実画面提示fpsは未測定。");
             });
         }
         catch (OperationCanceledException) { }
-        catch (Exception exception)
+        catch (Exception)
         {
             if (!token.IsCancellationRequested)
             {
-                ResultText.Text = $"再生比較に失敗しました（0x{exception.HResult:X8} {exception.Message}）。";
                 if (benchmarkMode) Application.Current.Shutdown(1);
             }
         }
@@ -884,7 +877,6 @@ public partial class ComparisonPanel : UserControl, IDisposable
             RightSelect.SelectedItem is not VideoChoice right ||
             !long.TryParse(FrameNumberBox.Text, out var frameNumber) || frameNumber < 0)
         {
-            ResultText.Text = "0以上の元フレーム番号と左右の動画を指定してください。";
             return;
         }
         loadCancellation?.Cancel();
@@ -894,7 +886,6 @@ public partial class ComparisonPanel : UserControl, IDisposable
         if (previousReader is not null) _ = previousReader.DisposeAsync();
         loadCancellation = new CancellationTokenSource();
         var token = loadCancellation.Token;
-        ResultText.Text = $"フレーム #{frameNumber} を復号中…";
         StreamingFramePairReader? candidate = null;
         try
         {
@@ -942,11 +933,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
             }
         }
         catch (OperationCanceledException) { }
-        catch (Exception exception)
-        {
-            if (!token.IsCancellationRequested)
-                ResultText.Text = $"比較画像を表示できませんでした（0x{exception.HResult:X8}）。";
-        }
+        catch (Exception) { }
         finally
         {
             if (candidate is not null) await candidate.DisposeAsync();
@@ -960,11 +947,6 @@ public partial class ComparisonPanel : UserControl, IDisposable
         var blurRadius = SelectedBlurRadius();
         var difference = FrameComparisonService.CreateHeatmap(currentLeft, currentRight, gain, blurRadius);
         HeatmapImage.Source = CreateBitmap(difference.Width, difference.Height, difference.Heatmap);
-        ResultText.Text = $"元フレーム #{currentLeft.FrameNumber} / " +
-            $"{(blurRadius == 0 ? "平均RGB差" : "ぼかし後平均RGB差")} " +
-            $"{difference.MeanAbsoluteRgbDifference:F2}（0～255） / 差分{gain}倍表示" +
-            $" / ぼかし: {((ComboBoxItem)BlurSelect.SelectedItem).Content}。" +
-            "色範囲や圧縮方式の差も含み、品質の優劣を示す値ではありません。";
     }
 
     private static BitmapSource CreateBitmap(int width, int height, byte[] pixels)

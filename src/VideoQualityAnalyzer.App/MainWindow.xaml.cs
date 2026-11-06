@@ -851,7 +851,7 @@ public partial class MainWindow : Window
     {
         if (!initialized) return;
         MeasurementText.Text = $"CPU {(cpuPercent.HasValue ? $"{cpuPercent.Value:F1}%" : "計測中")} / メモリ {memoryMb:F0} MiB / GPU 不明　｜　" +
-            $"再生位置からの換算fps: 左 {FormatPlaybackFps(left)} / 右 {FormatPlaybackFps(right)}　｜　実提示fps・左右PTS差: 未測定";
+            $"再生位置からの換算fps: 左 {FormatPlaybackFps(left)} / 右 {FormatPlaybackFps(right)}　｜　遅延破棄: {(comparisonActive && comparisonPanel is not null ? $"{comparisonPanel.LateDroppedFrames:N0}組" : "未測定")}　｜　実提示fps・左右PTS差: 未測定";
 
     }
 
