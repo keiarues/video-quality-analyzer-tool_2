@@ -12,11 +12,13 @@ public sealed class SettingsWindow : Window
         Style = (Style)Application.Current.FindResource(typeof(Window));
         Title = "設定";
         Width = 680;
-        SizeToContent = SizeToContent.Height;
+        Height = 400;
+        MinWidth = 420;
+        MinHeight = 280;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
-        ResizeMode = ResizeMode.NoResize;
+        ResizeMode = ResizeMode.CanResize;
         var panel = new StackPanel { Margin = new Thickness(18) };
-        Content = panel;
+        Content = new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         panel.Children.Add(new TextBlock { Text = "FFmpegフォルダーパス" });
         var saved = FfmpegSettings.Load();
         var status = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
