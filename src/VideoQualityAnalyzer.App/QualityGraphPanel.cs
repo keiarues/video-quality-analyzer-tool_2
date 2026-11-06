@@ -202,7 +202,7 @@ public sealed class QualityGraphPanel : UserControl
             graph.Children.Insert(0, header);
             toggle.Click += (_, _) =>
             {
-                var restore = minimizedColumn == column;
+                var restore = minimizedColumn != -1;
                 if (minimizedColumn == -1) { savedLeft = grid.ColumnDefinitions[0].Width; savedRight = grid.ColumnDefinitions[2].Width; }
                 minimizedColumn = restore ? -1 : column;
                 foreach (var (pane, paneColumn) in new[] { (leftGraph, 0), (rightGraph, 2) })
@@ -212,12 +212,19 @@ public sealed class QualityGraphPanel : UserControl
                     paneHeader.Children[1].Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
                     foreach (UIElement child in pane.Children)
                         if (child != paneHeader) child.Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
-                    grid.ColumnDefinitions[paneColumn].Width = minimized ? new GridLength(40) :
+                    grid.ColumnDefinitions[paneColumn].Width = minimized ? new GridLength(0) :
                         minimizedColumn == -1 ? (paneColumn == 0 ? savedLeft : savedRight) : new GridLength(1, GridUnitType.Star);
-                    graphToggles[paneColumn].Content = paneColumn == 0 ? (minimized ? "▶" : "◀") : (minimized ? "◀" : "▶");
-                    graphToggles[paneColumn].ToolTip = (paneColumn == 0 ? "フレームグラフ" : "ファイルグラフ") + (minimized ? "を復元" : "を最小化");
+                    graphToggles[paneColumn].Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
+                    graphToggles[paneColumn].Content = paneColumn == 0
+                        ? (minimizedColumn == 2 ? "▶" : "◀")
+                        : (minimizedColumn == 0 ? "◀" : "▶");
+                    graphToggles[paneColumn].ToolTip = minimizedColumn == -1
+                        ? (paneColumn == 0 ? "フレームグラフ" : "ファイルグラフ") + "を最小化"
+                        : (minimizedColumn == 0 ? "フレームグラフ" : "ファイルグラフ") + "を復元";
                 }
                 graphSplitter.IsEnabled = minimizedColumn == -1;
+                graphSplitter.Visibility = minimizedColumn == -1 && !frameOnly ? Visibility.Visible : Visibility.Collapsed;
+                grid.ColumnDefinitions[1].Width = new GridLength(minimizedColumn == -1 && !frameOnly ? 10 : 0);
             };
             return toggle;
         }
@@ -452,8 +459,14 @@ public sealed class QualityGraphPanel : UserControl
                 if (clearSelection is null && selectedIds.Count != 0) throw new InvalidOperationException("グラフの選択を解除できません。");
                 foreach (var toggle in new[] { minimizeFrame, minimizeFile })
                 {
+                    var other = toggle == minimizeFrame ? minimizeFile : minimizeFrame;
                     toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                    toggle.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    if (toggle.Visibility != Visibility.Collapsed || other.Visibility != Visibility.Visible)
+                        throw new InvalidOperationException("最小化したグラフのボタン表示が不正です。");
+                    other.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                    if (minimizedColumn != -1 || toggle.Visibility != Visibility.Visible || other.Visibility != Visibility.Visible ||
+                        grid.ColumnDefinitions[0].Width != savedLeft || grid.ColumnDefinitions[2].Width != savedRight)
+                        throw new InvalidOperationException("反対側のボタンでグラフのサイズを復元できません。");
                 }
                 UpdateLayout();
                 SetEvaluationProgress(playbackVideo, QualityMetric.Ssim, TimeSpan.FromSeconds(playbackVideo.Duration.TotalSeconds / 2));
