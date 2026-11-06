@@ -25,7 +25,7 @@ public static class FfmpegSettings
             var text = await output;
             await error;
             if (process.ExitCode != 0) return "バージョン取得失敗";
-            return text.Split('\n').Select(line => line.Trim()).FirstOrDefault(line => line.StartsWith("ffmpeg version ", StringComparison.Ordinal))
+            return text.Split('\n').Select(line => line.Trim()).FirstOrDefault(line => line.StartsWith(Path.GetFileNameWithoutExtension(executable) + " version ", StringComparison.Ordinal))
                 ?? "バージョン情報を確認できませんでした。";
         }
         catch (OperationCanceledException) { return "バージョン取得を中断しました。"; }

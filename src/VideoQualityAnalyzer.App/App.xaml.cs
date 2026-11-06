@@ -15,6 +15,20 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        if (e.Args.Contains("--verify-ffmpeg-settings"))
+        {
+            base.OnStartup(e);
+            MainWindow = new SettingsWindow(verifyDownload: true);
+            MainWindow.Show();
+            return;
+        }
+        if (e.Args.Contains("--test-ffmpeg-download"))
+        {
+            base.OnStartup(e);
+            MainWindow = new FfmpegDownloadTestWindow(e.Args.Contains("--auto"));
+            MainWindow.Show();
+            return;
+        }
         try
         {
             System.IO.Directory.CreateDirectory(System.IO.Path.Combine(AppContext.BaseDirectory, "tools"));

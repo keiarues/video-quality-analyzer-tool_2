@@ -24,9 +24,14 @@
                 </Grid.RowDefinitions>
                 <TextBlock Text="FFmpegフォルダーパス" VerticalAlignment="Center" Margin="0,0,8,0" />
                 <TextBox x:Name="FolderPathBox" Grid.Column="1" VerticalContentAlignment="Center" d:Text="C:\Tools\ffmpeg\bin" />
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
+                <StackPanel Grid.Column="2" Margin="8,0,0,0">
+                    <StackPanel Orientation="Horizontal">
                     <Button Content="フォルダーを選択" Click="SelectFolder_Click" />
                     <Button Content="再検出" Click="Detect_Click" />
+                    </StackPanel>
+                    <Button x:Name="DownloadButton" Content="FFmpegの最新安定版をダウンロード" Click="Download_Click" />
+                    <Button x:Name="CancelDownloadButton" Content="ダウンロードを中断" Click="CancelDownload_Click" Visibility="Collapsed" />
+                    <TextBlock x:Name="DownloadStatus" TextWrapping="Wrap" MaxWidth="300" />
                 </StackPanel>
                 <TextBlock x:Name="DetectionStatus" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2"
                            TextWrapping="Wrap" Margin="0,8,0,0" d:Text="toolsフォルダ内のffmpegを使用" />
@@ -41,7 +46,7 @@
                 <TextBlock x:Name="ErrorText" Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="2" TextWrapping="Wrap" Foreground="{StaticResource UiWarningBrush}" />
             </Grid>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                <Button Content="保存" IsDefault="True" Click="Save_Click" />
+                <Button x:Name="SaveButton" Content="保存" IsDefault="True" Click="Save_Click" />
                 <Button Content="キャンセル" IsCancel="True" />
             </StackPanel>
         </StackPanel>
