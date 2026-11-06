@@ -38,6 +38,8 @@ public partial class SettingsWindow : Window
         var token = versionCancellation.Token;
         var current = ++generation;
         var input = automatic ? "" : FolderPathBox.Text;
+        FolderPathBox.Foreground = (System.Windows.Media.Brush)FindResource(automatic ? "UiMutedBrush" : "UiOnLightBrush");
+        FolderPathBox.Background = (System.Windows.Media.Brush)FindResource(automatic ? "PanelBrush" : "UiControlBackgroundBrush");
         DetectionStatus.Text = "検出中…";
         VersionText.Text = "";
         var detected = await Task.Run(() => FfmpegSettings.Detect(input));

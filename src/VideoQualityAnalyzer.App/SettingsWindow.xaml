@@ -32,7 +32,8 @@
                            TextWrapping="Wrap" Margin="0,8,0,0" d:Text="tools内の自動検出" />
                 <TextBlock x:Name="VersionText" Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="2"
                            TextWrapping="Wrap" Margin="0,4,0,0" d:Text="ffmpeg version 9.0.2" />
-                <TextBlock Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="2" TextWrapping="Wrap" Margin="0,8,0,8"><Run Text="同じフォルダーのffprobe.exeも使用します。空欄の場合はtools配下、次にPATHから自動検出します。" /><LineBreak /><Run Text="保存した設定は次回起動時から反映されます。" /></TextBlock>
+                <TextBlock Grid.Row="2" Text="ffmpegのバージョン" VerticalAlignment="Top" Margin="0,4,8,0" />
+                <TextBlock Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="2" TextWrapping="Wrap" Margin="0,8,0,8"><Run Text="必要なファイル: ffmpeg.exe , ffprobe.exe（同じフォルダーに配置）" /><LineBreak /><Run Text="空欄の場合はtools配下、次にPATHから自動検出します。" /><LineBreak /><Run Text="保存した設定は次回起動時から反映されます。" /></TextBlock>
                 <TextBlock x:Name="ErrorText" Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="2" TextWrapping="Wrap" Foreground="{StaticResource UiWarningBrush}" />
             </Grid>
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
