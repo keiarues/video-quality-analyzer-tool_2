@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using VideoQualityAnalyzer.Core;
 using VideoQualityAnalyzer.Media;
@@ -34,15 +34,15 @@ public partial class MainWindow
 
     private async Task EvaluateMainSelectionAsync()
     {
-        if (pendingVideoLoads > 0) { EvaluationStatus.Text = "動画情報の取得が終わるまでお待ちください。"; return; }
+        if (pendingVideoLoads > 0) { SetWindowStatus("動画情報の取得が終わるまでお待ちください。", evaluation: true); return; }
         var reference = videos.FirstOrDefault(entry => entry.Descriptor.Id == referenceId)?.Descriptor;
         var candidates = SelectedOrAllVideoEntries().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray();
         var selected = new[] { (VmafCheck, QualityMetric.Vmaf), (SsimCheck, QualityMetric.Ssim), (PsnrCheck, QualityMetric.Psnr) }
             .Where(pair => pair.Item1.IsChecked == true).Select(pair => pair.Item2).ToArray();
         if (reference is null || candidates.Length == 0 || selected.Length == 0)
-        { EvaluationStatus.Text = "元動画、比較動画と評価指標を選択してください。"; return; }
+        { SetWindowStatus("元動画、比較動画と評価指標を選択してください。", evaluation: true); return; }
         var executable = FfmpegRgbReader.FindExecutable();
-        if (executable is null) { EvaluationStatus.Text = "FFmpegが見つかりません。"; return; }
+        if (executable is null) { SetWindowStatus("FFmpegが見つかりません。", evaluation: true); return; }
         PausePlayback();
         using var source = new CancellationTokenSource();
         evaluationCancellation = source;
@@ -60,7 +60,7 @@ public partial class MainWindow
                 if (qualityResults.ContainsKey(key)) continue;
                 var currentProgressGeneration = ++progressGeneration;
                 qualityGraphPanel?.SetEvaluationProgress(candidate, metric, TimeSpan.Zero);
-                EvaluationStatus.Text = $"{candidate.Name} / {metric.ToString().ToUpperInvariant()} を評価中…";
+                SetWindowStatus($"{candidate.Name} / {metric.ToString().ToUpperInvariant()} を評価中…", evaluation: true);
                 try
                 {
                     var progress = new Progress<TimeSpan>(position =>
@@ -68,7 +68,7 @@ public partial class MainWindow
                         if (ReferenceEquals(evaluationCancellation, source) && !source.IsCancellationRequested && currentProgressGeneration == progressGeneration)
                         {
                             qualityGraphPanel?.SetEvaluationProgress(candidate, metric, position);
-                            EvaluationStatus.Text = $"{candidate.Name} / {metric.ToString().ToUpperInvariant()}: {position.TotalSeconds:F1}秒を処理済み";
+                            SetWindowStatus($"{candidate.Name} / {metric.ToString().ToUpperInvariant()}: {position.TotalSeconds:F1}秒を処理済み", evaluation: true);
                         }
                     });
                     var result = await evaluator.EvaluateAsync(reference, candidate, metric, progress, source.Token);
@@ -80,10 +80,10 @@ public partial class MainWindow
                 catch (OperationCanceledException) { throw; }
                 catch (Exception exception) { failures.Add($"{candidate.Name} / {metric}: {exception.Message}"); }
             }
-            EvaluationStatus.Foreground = failures.Count == 0 ? UiTheme.Emphasis : UiTheme.Warning;
-            EvaluationStatus.Text = failures.Count == 0 ? "評価が完了しました。" : $"評価を終了しました。失敗{failures.Count}件。{failures[^1]}";
+            WindowStatusText.Foreground = failures.Count == 0 ? UiTheme.Emphasis : UiTheme.Warning;
+            SetWindowStatus(failures.Count == 0 ? "評価が完了しました。" : $"評価を終了しました。失敗{failures.Count}件。{failures[^1]}", evaluation: true);
         }
-        catch (OperationCanceledException) { EvaluationStatus.Foreground = UiTheme.Warning; EvaluationStatus.Text = "評価を中止しました。完了済みの結果は保持しています。"; }
+        catch (OperationCanceledException) { WindowStatusText.Foreground = UiTheme.Warning; SetWindowStatus("評価を中止しました。完了済みの結果は保持しています。", evaluation: true); }
         finally
         {
             qualityGraphPanel?.EndEvaluationProgress(CurrentPosition());
@@ -97,7 +97,7 @@ public partial class MainWindow
 
     private void SetEvaluationState(bool running)
     {
-        if (running) EvaluationStatus.Foreground = UiTheme.Emphasis;
+        if (running) WindowStatusText.Foreground = UiTheme.Emphasis;
         EvaluationStartButton.Content = running ? "評価を中止" : "評価を開始";
         EvaluationStartButton.IsEnabled = true;
         VmafCheck.IsEnabled = SsimCheck.IsEnabled = PsnrCheck.IsEnabled = !running;

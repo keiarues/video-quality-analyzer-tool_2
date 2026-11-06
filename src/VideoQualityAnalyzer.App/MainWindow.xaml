@@ -96,7 +96,6 @@
                             </StackPanel>
                         </Grid>
                         <Button HorizontalAlignment="Right" Margin="0,8,0,0" Name="EvaluationStartButton" Content="評価を開始" Click="Evaluate_Click" Width="220" />
-                        <TextBlock Name="EvaluationStatus" FontSize="{StaticResource UiFontSmall}" Text="" TextWrapping="Wrap" Margin="0,5,0,0" Foreground="{StaticResource UiMutedBrush}" />
                     </StackPanel>
                     <DataGrid Name="VideoList" SelectionMode="Extended" SelectionUnit="FullRow"
                               PreviewMouseLeftButtonDown="VideoList_PreviewMouseLeftButtonDown" SelectionChanged="VideoList_SelectionChanged" Sorting="VideoList_Sorting"
@@ -235,7 +234,6 @@
                     <preview:ZoomControlBar x:Name="PreviewZoomControls" ShowButtons="False" Margin="16,0,0,0" local:PriorityWrapPanel.Priority="3" />
                     <preview:ZoomControlBar x:Name="PreviewZoomButtons" ShowSlider="False" local:PriorityWrapPanel.Priority="0" />
                 </local:PriorityWrapPanel>
-                <TextBlock Name="StatusText" FontSize="{StaticResource UiFontSmall}" Text="動画を追加してください。" Foreground="{StaticResource UiMutedBrush}" Margin="4,8,0,0" />
             </StackPanel>
         </Border>
                 <Thumb Margin="0,0,34,0" Name="QualityGraphResizeBar" Template="{StaticResource ResizeBarTemplate}" Focusable="True" KeyDown="QualityGraphResize_KeyDown" Grid.Row="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Center"
@@ -254,6 +252,7 @@
                    AutomationProperties.Name="ステータスバー">
             <StatusBarItem HorizontalContentAlignment="Stretch">
                 <TextBlock x:Name="WindowStatusText" Text="待機中" Style="{StaticResource UiSmallTextStyle}"
+                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
                            TextTrimming="CharacterEllipsis" />
             </StatusBarItem>
         </StatusBar>

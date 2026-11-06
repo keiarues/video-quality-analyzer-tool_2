@@ -72,11 +72,11 @@ public partial class MainWindow : Window
         if (path is not null)
         {
             probe = new FfprobeService(path);
-            StatusText.Text = "動画を追加してください。FFprobeを検出しました。";
+            SetWindowStatus("動画を追加してください。FFprobeを検出しました。");
         }
         else
         {
-            StatusText.Text = "FFprobeが見つかりません。toolsフォルダーを確認してください。";
+            SetWindowStatus("FFprobeが見つかりません。toolsフォルダーを確認してください。");
         }
 
         displayTimer.Tick += DisplayTimer_Tick;
@@ -203,7 +203,7 @@ public partial class MainWindow : Window
             return;
         if (evaluationCancellation is not null)
         {
-            EvaluationStatus.Text = "評価中は動画を追加できません。";
+            SetWindowStatus("評価中は動画を追加できません。", evaluation: true);
             return;
         }
 
@@ -217,11 +217,11 @@ public partial class MainWindow : Window
                 continue;
             if (!File.Exists(path))
             {
-                StatusText.Text = "ファイルが見つかりません: " + System.IO.Path.GetFileName(path);
+                SetWindowStatus("ファイルが見つかりません: " + System.IO.Path.GetFileName(path));
                 continue;
             }
 
-            StatusText.Text = "動画情報を取得中: " + System.IO.Path.GetFileName(path);
+            SetWindowStatus("動画情報を取得中: " + System.IO.Path.GetFileName(path));
             try
             {
                 var descriptor = await probe.ProbeAsync(path, CancellationToken.None);
@@ -235,14 +235,14 @@ public partial class MainWindow : Window
             }
             catch (Exception exception)
             {
-                StatusText.Text = $"動画情報を取得できません: {System.IO.Path.GetFileName(path)} ({exception.GetType().Name})";
+                SetWindowStatus($"動画情報を取得できません: {System.IO.Path.GetFileName(path)} ({exception.GetType().Name})");
                 log.Record("probe_failed", "none", null, "failed", detail: exception.GetType().Name);
             }
         }
 
         UpdateSelection();
         if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
-        StatusText.Text = $"{videos.Count}本を登録しました。";
+        SetWindowStatus($"{videos.Count}本を登録しました。");
         }
         finally { pendingVideoLoads--; }
     }
@@ -568,7 +568,7 @@ public partial class MainWindow : Window
     private void SetGroup_Click(object sender, RoutedEventArgs e)
     {
         var selected = VideoList.SelectedItems.Cast<VideoEntry>().Where(entry => !entry.IsReference).ToArray();
-        if (selected.Length == 0) { StatusText.Text = "グループを設定する比較動画を選択してください。"; return; }
+        if (selected.Length == 0) { SetWindowStatus("グループを設定する比較動画を選択してください。"); return; }
         if (new GroupWindow(selected) { Owner = this }.ShowDialog() == true) RefreshVideoOrder();
     }
 
@@ -626,7 +626,7 @@ public partial class MainWindow : Window
         if (right.Av1.IsOpen) right.Av1.Seek(basePosition);
         log.Record("seek_requested", "both", left.Video.Id, "position_set_not_presented",
             detail: $"target_ms={basePosition.TotalMilliseconds:F0};presented_at=unmeasured");
-        StatusText.Text = "シークを要求しました。実際の提示完了時刻は未測定です。";
+        SetWindowStatus("シークを要求しました。実際の提示完了時刻は未測定です。");
         UpdateTimeDisplay();
     }
 
@@ -647,7 +647,7 @@ public partial class MainWindow : Window
         IReadOnlyList<TimeSpan>? times = null;
         if (probe is not null)
         {
-            StatusText.Text = "フレーム時刻を取得中...";
+            SetWindowStatus("フレーム時刻を取得中...");
             try
             {
                 using var timeout = CancellationTokenSource.CreateLinkedTokenSource(token);
@@ -660,11 +660,11 @@ public partial class MainWindow : Window
             {
                 if (token.IsCancellationRequested)
                     return;
-                StatusText.Text = "フレーム時刻の取得が時間切れになりました。";
+                SetWindowStatus("フレーム時刻の取得が時間切れになりました。");
             }
             catch (Exception exception)
             {
-                StatusText.Text = "フレーム時刻を取得できません: " + exception.GetType().Name;
+                SetWindowStatus("フレーム時刻を取得できません: " + exception.GetType().Name);
             }
         }
 
@@ -674,12 +674,12 @@ public partial class MainWindow : Window
         if (next is not null && (direction > 0 ? next.Value > current : next.Value < current))
         {
             ApplySeek(next.Value);
-            StatusText.Text = direction > 0 ? "次のソースPTSへ移動しました。" : "前のソースPTSへ移動しました。";
+            SetWindowStatus(direction > 0 ? "次のソースPTSへ移動しました。" : "前のソースPTSへ移動しました。");
         }
         else if (video.AverageFrameRate > 0)
         {
             ApplySeek(current + TimeSpan.FromSeconds(direction / video.AverageFrameRate));
-            StatusText.Text = "平均fpsから1コマ分を近似しました。";
+            SetWindowStatus("平均fpsから1コマ分を近似しました。");
         }
     }
 

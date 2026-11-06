@@ -89,6 +89,6 @@ public partial class MainWindow
             if (isPlaying && comparisonPanel.IsReady) comparisonPanel.Play();
             UpdateTimeDisplay();
         }
-        catch (Exception exception) { if (!closing) StatusText.Text = $"比較映像を準備できません: {exception.GetType().Name}"; }
+        catch (Exception exception) { if (!closing) SetWindowStatus($"比較映像を準備できません: {exception.GetType().Name}"); }
     }
 }
