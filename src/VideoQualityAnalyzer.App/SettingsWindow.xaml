@@ -15,16 +15,22 @@
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
                 <TextBlock Text="FFmpegフォルダーパス" VerticalAlignment="Center" Margin="0,0,8,0" />
                 <TextBox x:Name="FolderPathBox" Grid.Column="1" VerticalContentAlignment="Center" d:Text="C:\Tools\ffmpeg\bin" />
-                <TextBlock x:Name="DetectionStatus" Grid.Column="2" TextWrapping="Wrap" MaxWidth="150"
-                           VerticalAlignment="Center" Margin="8,0,0,0" d:Text="tools内の自動検出" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
+                    <Button Content="フォルダーを選択" Click="SelectFolder_Click" />
+                    <Button Content="再検出" Click="Detect_Click" />
+                </StackPanel>
+                <TextBlock x:Name="DetectionStatus" Grid.Column="1" Grid.Row="1" Grid.ColumnSpan="2"
+                           TextWrapping="Wrap" Margin="0,8,0,0" d:Text="tools内の自動検出" />
+                <TextBlock x:Name="VersionText" Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="2"
+                           TextWrapping="Wrap" Margin="0,4,0,0" d:Text="ffmpeg version 9.0.2" />
             </Grid>
-            <TextBlock x:Name="VersionText" TextWrapping="Wrap" Margin="0,4,0,0" d:Text="ffmpeg version 9.0.2" />
-            <StackPanel Orientation="Horizontal">
-                <Button Content="フォルダーを選択" Click="SelectFolder_Click" />
-                <Button Content="再検出" Click="Detect_Click" />
-            </StackPanel>
             <TextBlock TextWrapping="Wrap" Margin="0,8,0,8"><Run Text="同じフォルダーのffprobe.exeも使用します。空欄の場合はtools配下、次にPATHから自動検出します。" /><LineBreak /><Run Text="保存した設定は次回起動時から反映されます。" /></TextBlock>
             <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="{StaticResource UiWarningBrush}" />
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
