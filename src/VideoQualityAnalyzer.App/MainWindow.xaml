@@ -250,5 +250,14 @@
         </Grid>
 
 
+        <StatusBar x:Name="WindowStatusBar" Grid.Row="2" Margin="0,8,0,0"
+                   Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}"
+                   FontFamily="{StaticResource UiFontFamily}" FontSize="{StaticResource UiFontSmall}"
+                   AutomationProperties.Name="ステータスバー">
+            <StatusBarItem HorizontalContentAlignment="Stretch">
+                <TextBlock x:Name="WindowStatusText" Text="待機中" Style="{StaticResource UiSmallTextStyle}"
+                           TextTrimming="CharacterEllipsis" />
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>
