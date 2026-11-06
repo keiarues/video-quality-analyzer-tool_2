@@ -98,6 +98,8 @@ public partial class ComparisonPanel : UserControl, IDisposable
         UpdateWipeBoundary();
         LeftSelect.SelectionChanged += VideoSelectionChanged;
         RightSelect.SelectionChanged += VideoSelectionChanged;
+        Loaded += (_, _) => { CompositionTarget.Rendering -= ObservePlayback; CompositionTarget.Rendering += ObservePlayback; };
+        Unloaded += (_, _) => CompositionTarget.Rendering -= ObservePlayback;
         Loaded += (_, _) =>
         {
             if (captureBenchmark && Window.GetWindow(this) is { } host)
@@ -962,6 +964,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
         ++selectionGeneration;
         resumeRequested = false;
         CompositionTarget.Rendering -= ObserveComposition;
+        CompositionTarget.Rendering -= ObservePlayback;
         StopPlayback();
         loadCancellation?.Cancel();
         loadCancellation?.Dispose();

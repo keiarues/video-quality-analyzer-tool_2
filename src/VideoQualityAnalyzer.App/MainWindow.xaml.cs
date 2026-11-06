@@ -851,7 +851,9 @@ public partial class MainWindow : Window
     {
         if (!initialized) return;
         MeasurementText.Text = $"CPU {(cpuPercent.HasValue ? $"{cpuPercent.Value:F1}%" : "計測中")} / メモリ {memoryMb:F0} MiB / GPU 不明　｜　" +
-            $"再生位置からの換算fps: 左 {FormatPlaybackFps(left)} / 右 {FormatPlaybackFps(right)}　｜　遅延破棄: {(comparisonActive && comparisonPanel is not null ? $"{comparisonPanel.LateDroppedFrames:N0}組" : "未測定")}　｜　実提示fps・左右PTS差: 未測定";
+            $"実提示fps: 未測定（WPF観測: 左 {FormatObservedFps(comparisonPanel?.ObservedLeftFps)} / 右 {FormatObservedFps(comparisonPanel?.ObservedRightFps)}）　｜　" +
+            $"左右PTS差（CFR換算）: {(comparisonActive && comparisonPanel?.RelativePtsDifferenceMilliseconds is { } difference ? $"{difference:F1} ms" : "未測定")}　｜　" +
+            $"遅延破棄: {(comparisonActive && comparisonPanel is not null ? $"{comparisonPanel.LateDroppedFrames:N0}" : "未測定")}";
 
     }
 
@@ -883,8 +885,8 @@ public partial class MainWindow : Window
         if (comparisonActive) comparisonPanel?.SetFrameStatus(LeftFrameStatus.Text, RightFrameStatus.Text);
     }
 
-    private string FormatPlaybackFps(SlotState slot) =>
-        isPlaying && slot.PlaybackFps is { } fps ? $"{fps:F1}" : "—";
+    private string FormatObservedFps(double? fps) =>
+        comparisonActive && isPlaying && fps.HasValue ? $"{fps.Value:F1}" : "—";
 
     private string FormatFramePosition(SlotState slot)
     {
