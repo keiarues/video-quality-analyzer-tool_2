@@ -193,8 +193,6 @@
                     </TabItem>
                 </TabControl>
                 <ContentControl Grid.Row="0" Name="ComparisonHost" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
-                <TextBlock Grid.Row="1" Name="MeasurementText" FontSize="{StaticResource UiFontSmall}" Text="再生位置からの換算fps: 左 — / 右 —　｜　実提示fps: 未測定"
-                           Foreground="{StaticResource UiWarningBrush}" Margin="4,10,4,4" TextWrapping="Wrap" />
         <Border Name="PlaybackControls" Grid.Row="2" Background="{StaticResource PanelBrush}" CornerRadius="8" Padding="8" Margin="0,8,0,0">
             <StackPanel>
                 <DockPanel>
@@ -250,10 +248,24 @@
                    Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}"
                    FontFamily="{StaticResource UiFontFamily}" FontSize="{StaticResource UiFontSmall}"
                    AutomationProperties.Name="ステータスバー">
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate><Grid /></ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
             <StatusBarItem HorizontalContentAlignment="Stretch">
-                <TextBlock x:Name="WindowStatusText" Text="待機中" Style="{StaticResource UiSmallTextStyle}"
-                           ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}"
-                           TextTrimming="CharacterEllipsis" />
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="2*" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="WindowStatusText" Text="待機中" Style="{StaticResource UiSmallTextStyle}"
+                               VerticalAlignment="Center" Margin="0,0,12,0"
+                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="MeasurementText" Grid.Column="1" Style="{StaticResource UiSmallTextStyle}"
+                               Text="CPU 計測中 / メモリ 計測中 / GPU 不明"
+                               TextAlignment="Right" VerticalAlignment="Center"
+                               ToolTip="{Binding Text, RelativeSource={RelativeSource Self}}" TextTrimming="CharacterEllipsis"
+                               AutomationProperties.Name="性能情報" />
+                </Grid>
             </StatusBarItem>
         </StatusBar>
     </Grid>
