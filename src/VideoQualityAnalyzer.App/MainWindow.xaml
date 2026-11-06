@@ -41,9 +41,11 @@
                 <MenuItem Header="終了" Click="Exit_Click" />
             </MenuItem>
             <MenuItem Header="オプション">
-                <MenuItem Header="設定" IsEnabled="False" />
+                <MenuItem Header="設定" Click="Settings_Click" />
             </MenuItem>
-            <MenuItem Header="ヘルプ" />
+            <MenuItem Header="ヘルプ">
+                <MenuItem Header="バージョン情報" Click="About_Click" />
+            </MenuItem>
         </Menu>
     <Grid Margin="14">
         <Grid.RowDefinitions>

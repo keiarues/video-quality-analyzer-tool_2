@@ -16,6 +16,12 @@ public sealed class FfprobeService
 
     public static string? FindExecutable()
     {
+        var saved = FfmpegSettings.ActivePath;
+        if (!string.IsNullOrWhiteSpace(saved))
+        {
+            var probe = Path.Combine(Path.GetDirectoryName(saved)!, "ffprobe.exe");
+            return File.Exists(probe) ? probe : null;
+        }
         var configured = Environment.GetEnvironmentVariable("FFPROBE_PATH");
         if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured))
             return configured;
