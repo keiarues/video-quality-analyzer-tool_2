@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using VideoQualityAnalyzer.Core;
 using VideoQualityAnalyzer.GpuPreview;
 
@@ -20,7 +20,7 @@ public partial class MainWindow
 
     private void UpdateEmbeddedComparison(VideoDescriptor? leftVideo, VideoDescriptor? rightVideo, TimeSpan position, bool resume)
     {
-        PreviewZoomControls.Visibility = comparisonActive ? Visibility.Visible : Visibility.Collapsed;
+        PreviewZoomControls.Visibility = Visibility.Visible;
         var wasComparisonVisible = ComparisonHost.Visibility == Visibility.Visible;
         InitialPreviewTabs.Visibility = comparisonActive ? Visibility.Collapsed : Visibility.Visible;
         ComparisonHost.Visibility = comparisonActive ? Visibility.Visible : Visibility.Collapsed;
@@ -40,9 +40,22 @@ public partial class MainWindow
         left.Av1.Close();
         right.Av1.Close();
         left.LastShownPosition = right.LastShownPosition = null;
+        InitializePreviewZoomControls();
+        comparisonPanel.SetVideoChoices(videos.Select(entry => entry.Descriptor.Path));
+        if (!wasComparisonVisible) comparisonPanel.SelectMode(InitialPreviewTabs.SelectedIndex);
+        if (comparisonLeftId == leftVideo!.Id && comparisonRightId == rightVideo!.Id) return;
+        comparisonLeftId = leftVideo.Id;
+        comparisonRightId = rightVideo!.Id;
+        var generation = ++comparisonGeneration;
+        comparisonChangeTask = ConfigureComparisonAsync(generation, leftVideo, rightVideo, position);
+    }
+
+    [System.Diagnostics.CodeAnalysis.MemberNotNull(nameof(comparisonPanel))]
+    private void InitializePreviewZoomControls()
+    {
         if (comparisonPanel is null)
         {
-            comparisonPanel = new ComparisonPanel(leftVideo!.Path, rightVideo!.Path, 0,
+            comparisonPanel = new ComparisonPanel(string.Empty, string.Empty, 0,
                 videoPaths: videos.Select(entry => entry.Descriptor.Path), showBlur: false, embedded: true);
             comparisonPanel.EnableZoom();
             comparisonPanel.MoveZoomControlsTo(PreviewZoomControls);
@@ -64,13 +77,6 @@ public partial class MainWindow
                 UpdateTimeDisplay();
             };
         }
-        comparisonPanel.SetVideoChoices(videos.Select(entry => entry.Descriptor.Path));
-        if (!wasComparisonVisible) comparisonPanel.SelectMode(InitialPreviewTabs.SelectedIndex);
-        if (comparisonLeftId == leftVideo!.Id && comparisonRightId == rightVideo!.Id) return;
-        comparisonLeftId = leftVideo.Id;
-        comparisonRightId = rightVideo!.Id;
-        var generation = ++comparisonGeneration;
-        comparisonChangeTask = ConfigureComparisonAsync(generation, leftVideo, rightVideo, position);
     }
 
     private async Task ConfigureComparisonAsync(long generation, VideoDescriptor leftVideo, VideoDescriptor rightVideo, TimeSpan position)

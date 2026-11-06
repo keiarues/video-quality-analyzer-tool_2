@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Windows;
@@ -97,6 +97,7 @@ public partial class MainWindow : Window
         initialized = true;
         InitializeEmbeddedGraphs();
         InitializeEvaluationControls();
+        InitializePreviewZoomControls();
         log.Record("session_start", "none", null, "ready", detail: "presented_fps=unmeasured;decode_mode=unknown");
         Loaded += async (_, _) =>
         {
