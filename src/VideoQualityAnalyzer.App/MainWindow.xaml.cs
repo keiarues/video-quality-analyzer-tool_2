@@ -267,6 +267,19 @@ public partial class MainWindow : Window
     {
         if (evaluationCancellation is not null) return;
         var removed = VideoList.SelectedItems.Cast<VideoEntry>().Concat(ReferenceList.SelectedItems.Cast<VideoEntry>()).Distinct().ToArray();
+        RemoveVideos(removed);
+    }
+
+    private void RemoveAll_Click(object sender, RoutedEventArgs e)
+    {
+        if (evaluationCancellation is not null) return;
+        RemoveVideos(videos.ToArray());
+    }
+
+    private void Exit_Click(object sender, RoutedEventArgs e) => Close();
+
+    private void RemoveVideos(VideoEntry[] removed)
+    {
         suppressSelection = true;
         foreach (var item in removed)
         {

@@ -32,7 +32,18 @@
             <MenuItem Header="ファイル">
                 <MenuItem Header="動画を読み込む" Click="Add_Click"
                           IsEnabled="{Binding IsEnabled, ElementName=AddVideoButton}" />
+                <MenuItem Header="動画をすべて削除" Click="RemoveAll_Click"
+                          IsEnabled="{Binding IsEnabled, ElementName=RemoveVideoButton}" />
+                <Separator />
+                <MenuItem Header="フレームグラフの元データをCSV出力" IsEnabled="False" />
+                <MenuItem Header="ファイルグラフの元データをCSV出力" IsEnabled="False" />
+                <Separator />
+                <MenuItem Header="終了" Click="Exit_Click" />
             </MenuItem>
+            <MenuItem Header="オプション">
+                <MenuItem Header="設定" IsEnabled="False" />
+            </MenuItem>
+            <MenuItem Header="ヘルプ" />
         </Menu>
     <Grid Margin="14">
         <Grid.RowDefinitions>
