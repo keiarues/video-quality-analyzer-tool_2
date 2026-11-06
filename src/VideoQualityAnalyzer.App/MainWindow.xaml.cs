@@ -170,13 +170,13 @@ public partial class MainWindow : Window
             SidebarPanel.Visibility = SidebarSplitter.Visibility = Visibility.Collapsed;
             SidebarColumn.MinWidth = 0;
             SidebarColumn.Width = new GridLength(0);
-            SidebarSplitterColumn.Width = new GridLength(32);
+            SidebarSplitterColumn.Width = new GridLength(20);
         }
         else
         {
             SidebarColumn.MinWidth = 300;
             SidebarColumn.Width = new GridLength(Math.Max(300, expandedSidebarWidth));
-            SidebarSplitterColumn.Width = new GridLength(32);
+            SidebarSplitterColumn.Width = new GridLength(20);
             SidebarPanel.Visibility = SidebarSplitter.Visibility = Visibility.Visible;
         }
         sidebarCollapsed = !sidebarCollapsed;

@@ -34,7 +34,7 @@
         <Grid Grid.Row="1">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Name="SidebarColumn" Width="700" MinWidth="300" />
-                <ColumnDefinition Name="SidebarSplitterColumn" Width="32" />
+                <ColumnDefinition Name="SidebarSplitterColumn" Width="20" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
@@ -136,7 +136,7 @@
 
             <GridSplitter Name="SidebarSplitter" Template="{StaticResource ResizeBarTemplate}" Tag="Vertical" Cursor="SizeWE" ToolTip="動画一覧の幅を変更" AutomationProperties.Name="動画一覧の幅を変更" Grid.Column="1" Margin="0,36,0,0" Width="10" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#405066" />
             <Button Name="SidebarToggleButton" Grid.Column="1" Content="◀" ToolTip="一覧を最小化" AutomationProperties.Name="一覧を最小化"
-                    Click="SidebarToggle_Click" Width="28" Height="30" MinWidth="0" Padding="0" Margin="2,0,2,0" VerticalAlignment="Top" />
+                    Click="SidebarToggle_Click" Width="18" Height="30" MinWidth="0" Padding="0" Margin="1,0,1,0" VerticalAlignment="Top" />
             <Grid Grid.Column="2" Name="PreviewLayout">
                 <Grid.RowDefinitions>
                     <RowDefinition Name="PreviewRow" Height="1.2*" MinHeight="120" />
