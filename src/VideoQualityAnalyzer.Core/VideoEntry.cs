@@ -7,7 +7,7 @@ public sealed class VideoEntry(VideoDescriptor descriptor)
     public long RegistrationOrder { get; } = Interlocked.Increment(ref nextOrder);
     public bool IsReference { get; set; }
     public string Group { get; set; } = "";
-    public string DisplayName => (IsReference ? "【元動画】 " : "") + Descriptor.Name;
+    public string DisplayName => Descriptor.Name;
     public string Resolution => $"{Descriptor.Width}×{Descriptor.Height}";
     public string FrameRateText => $"{Descriptor.AverageFrameRate:F3}" + (Descriptor.IsVariableFrameRate ? "（可変）" : "");
     public double? AverageBitrateKbps => Descriptor.AverageBitrate / 1_000d;
@@ -15,8 +15,7 @@ public sealed class VideoEntry(VideoDescriptor descriptor)
     public double? VmafAverage { get; set; }
     public double? SsimAverage { get; set; }
     public double? PsnrAverage { get; set; }
-    public override string ToString() => (IsReference ? "【元動画】 " : "") + Descriptor.Name +
-        (Group.Length > 0 ? $" [{Group}]" : "");
+    public override string ToString() => Descriptor.Name;
 }
 
 public enum VideoSortOrder { Registration, Name, Group, Resolution, FrameRate, Codec, Bitrate, Vmaf, Ssim, Psnr }
