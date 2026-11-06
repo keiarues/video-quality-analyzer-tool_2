@@ -45,6 +45,7 @@
                             <Button Name="AddVideoButton" Content="動画ファイルを追加" Click="Add_Click" />
                             <Button Name="RemoveVideoButton" Content="削除" Click="Remove_Click" />
                         </WrapPanel>
+                    <TextBlock Text="比較元動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
                     <DataGrid Name="ReferenceList" Height="82" Margin="0,0,0,8" SelectionMode="Single" SelectionUnit="FullRow"
                               SelectionChanged="ReferenceList_SelectionChanged" CanUserSortColumns="False"
                               AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
@@ -96,10 +97,11 @@
                             </StackPanel>
                         </Grid>
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                            <Button Name="EvaluationClearButton" Content="評価クリア" Click="ClearEvaluation_Click" Margin="0,0,8,0" />
+                            <Button Name="EvaluationClearButton" Content="評価クリア" Click="ClearEvaluation_Click" Margin="0,3,8,3" />
                             <Button Name="EvaluationStartButton" Content="評価を開始" Click="Evaluate_Click" Width="220" />
                         </StackPanel>
                     </StackPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="比較対象動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
                     <DataGrid Name="VideoList" SelectionMode="Extended" SelectionUnit="FullRow"
                               PreviewMouseLeftButtonDown="VideoList_PreviewMouseLeftButtonDown" SelectionChanged="VideoList_SelectionChanged" Sorting="VideoList_Sorting"
                               AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"

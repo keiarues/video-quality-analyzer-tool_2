@@ -64,8 +64,8 @@ public partial class MainWindow
         try
         {
             var evaluator = new QualityEvaluationService(executable);
-            foreach (var candidate in candidates)
             foreach (var metric in selected)
+            foreach (var candidate in candidates)
             {
                 source.Token.ThrowIfCancellationRequested();
                 var key = (candidate.Id, metric);
