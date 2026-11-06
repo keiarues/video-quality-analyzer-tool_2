@@ -79,7 +79,7 @@ public partial class MainWindow : Window
         }
         else
         {
-            SetWindowStatus("FFprobeが見つかりません。toolsフォルダーを確認してください。");
+            SetWindowStatus("FFmpegまたはFFprobeが見つかりません。オプション → 設定でフォルダーを指定し、再起動してください。");
         }
 
         displayTimer.Tick += DisplayTimer_Tick;
@@ -98,7 +98,8 @@ public partial class MainWindow : Window
         initialized = true;
         InitializeEmbeddedGraphs();
         InitializeEvaluationControls();
-        InitializePreviewZoomControls();
+        // FFmpeg未配置でも本体と設定画面を開けるよう、比較画面の初期化を保留する。
+        if (probe is not null) InitializePreviewZoomControls();
         log.Record("session_start", "none", null, "ready", detail: "presented_fps=unmeasured;decode_mode=unknown");
         Loaded += async (_, _) =>
         {
@@ -203,7 +204,10 @@ public partial class MainWindow : Window
     private async Task AddFilesAsync(IEnumerable<string> paths)
     {
         if (probe is null)
+        {
+            SetWindowStatus("動画を読み込むにはFFmpegとFFprobeが必要です。オプション → 設定でフォルダーを指定し、再起動してください。");
             return;
+        }
         if (evaluationCancellation is not null)
         {
             SetWindowStatus("評価中は動画を追加できません。", evaluation: true);
