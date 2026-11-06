@@ -44,7 +44,12 @@ public partial class SettingsWindow : Window
         VersionText.Text = "";
         var detected = await Task.Run(() => FfmpegSettings.Detect(input));
         if (current != generation) return;
-        DetectionStatus.Text = detected.Path is null ? "未検出" : detected.Source;
+        DetectionStatus.Text = detected.Path is null ? "未検出" : detected.Source switch
+        {
+            "tools内の自動検出" => "toolsフォルダ内のffmpegを使用",
+            "PATHからの自動検出" => "pathに設定されたffmpegを使用",
+            _ => detected.Source
+        };
         DetectionStatus.ToolTip = detected.Source;
         if (detected.Path is null) return;
         if (automatic)
