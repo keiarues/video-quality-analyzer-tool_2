@@ -215,9 +215,7 @@ public sealed class QualityGraphPanel : UserControl
                     grid.ColumnDefinitions[paneColumn].Width = minimized ? new GridLength(0) :
                         minimizedColumn == -1 ? (paneColumn == 0 ? savedLeft : savedRight) : new GridLength(1, GridUnitType.Star);
                     graphToggles[paneColumn].Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
-                    graphToggles[paneColumn].Content = paneColumn == 0
-                        ? (minimizedColumn == 2 ? "▶" : "◀")
-                        : (minimizedColumn == 0 ? "◀" : "▶");
+                    graphToggles[paneColumn].Content = paneColumn == 0 ? "◀" : "▶";
                     graphToggles[paneColumn].ToolTip = minimizedColumn == -1
                         ? (paneColumn == 0 ? "フレームグラフ" : "ファイルグラフ") + "を最小化"
                         : (minimizedColumn == 0 ? "フレームグラフ" : "ファイルグラフ") + "を復元";
