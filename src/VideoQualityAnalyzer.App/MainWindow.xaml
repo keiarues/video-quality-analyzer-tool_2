@@ -25,6 +25,15 @@
             <Setter Property="HorizontalContentAlignment" Value="Right" />
         </Style>
     </Window.Resources>
+    <DockPanel>
+        <Menu DockPanel.Dock="Top" Background="{StaticResource UiControlBackgroundBrush}"
+              Foreground="{StaticResource UiOnLightBrush}"
+              FontFamily="{StaticResource UiFontFamily}" FontSize="{StaticResource UiFontMedium}">
+            <MenuItem Header="ファイル">
+                <MenuItem Header="動画を読み込む" Click="Add_Click"
+                          IsEnabled="{Binding IsEnabled, ElementName=AddVideoButton}" />
+            </MenuItem>
+        </Menu>
     <Grid Margin="14">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -274,4 +283,5 @@
             </StatusBarItem>
         </StatusBar>
     </Grid>
+    </DockPanel>
 </Window>
