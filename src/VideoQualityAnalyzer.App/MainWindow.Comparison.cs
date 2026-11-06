@@ -57,8 +57,8 @@ public partial class MainWindow
         {
             comparisonPanel = new ComparisonPanel(string.Empty, string.Empty, 0,
                 videoPaths: videos.Select(entry => entry.Descriptor.Path), showBlur: false, embedded: true);
-            comparisonPanel.EnableZoom();
-            comparisonPanel.MoveZoomControlsTo(PreviewZoomControls);
+            comparisonPanel.EnableZoom(controls: PreviewZoomControls);
+
             comparisonPanel.SourcesRequested += (leftPath, rightPath) =>
             {
                 previewLeftOverride = videos.FirstOrDefault(entry => string.Equals(entry.Descriptor.Path, leftPath, StringComparison.OrdinalIgnoreCase))?.Descriptor.Id;

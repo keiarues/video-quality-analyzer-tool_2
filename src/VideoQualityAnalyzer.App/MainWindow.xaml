@@ -1,5 +1,6 @@
 <Window x:Class="VideoQualityAnalyzer.App.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:preview="clr-namespace:VideoQualityAnalyzer.GpuPreview"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Style="{StaticResource {x:Type Window}}"
         Title="動画品質アナライザー"
@@ -228,7 +229,7 @@
                     <CheckBox Name="MuteCheck" Content="ミュート" VerticalAlignment="Center" Margin="10,0,0,0"
                               Checked="MuteCheck_Changed" Unchecked="MuteCheck_Changed" />
                 </WrapPanel>
-                <StackPanel Name="PreviewZoomControls" />
+                <preview:ZoomControlBar x:Name="PreviewZoomControls" />
                 <TextBlock Name="StatusText" FontSize="{StaticResource UiFontSmall}" Text="動画を追加してください。" Foreground="{StaticResource UiMutedBrush}" Margin="4,8,0,0" />
             </StackPanel>
         </Border>

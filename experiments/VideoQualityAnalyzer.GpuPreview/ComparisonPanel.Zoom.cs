@@ -17,7 +17,7 @@ public partial class ComparisonPanel
 
     public void EnableZoomTest() => EnableZoom(true);
 
-    public void EnableZoom(bool testMode = false)
+    public void EnableZoom(bool testMode = false, ZoomControlBar? controls = null)
     {
         {
             // Canvas上で配置し、拡大画像のレイアウト切り抜きが移動量に影響しないようにする。
@@ -38,8 +38,9 @@ public partial class ComparisonPanel
         var scale = 1.0;
         var x = 0.0;
         var y = 0.0;
-        var controls = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
-        var label = new TextBlock { VerticalAlignment = VerticalAlignment.Center, MinWidth = 54, Margin = new Thickness(6, 0, 0, 0) };
+        var externalControls = controls is not null;
+        controls ??= new ZoomControlBar();
+        var label = controls.ScaleLabel;
         void Apply()
         {
             updating = true;
@@ -143,21 +144,12 @@ public partial class ComparisonPanel
                 Apply();
             };
         }
-        var slider = new Slider { Minimum = 10, Maximum = 500, TickFrequency = 10, IsSnapToTickEnabled = true, Value = 100, Width = 260, VerticalAlignment = VerticalAlignment.Center };
+        var slider = controls.ScaleSlider;
         slider.ValueChanged += (_, _) => { fit = false; scale = slider.Value / 100; Apply(); };
-        controls.Children.Add(slider);
-        controls.Children.Add(label);
-        void AddButton(string text, Action action, string? toolTip = null)
-        {
-            var button = new Button { Content = text, Margin = new Thickness(4, 0, 0, 0), Padding = new Thickness(4, 4, 4, 4), MinWidth = 0, ToolTip = toolTip ?? text };
-            button.Click += (_, _) => action();
-            controls.Children.Add(button);
-        }
-        AddButton("⛶", () => { fit = true; x = y = 0; Apply(); }, "画面に合わせる");
-        foreach (var percent in new[] { 100, 125, 150, 200 })
-            AddButton($"{percent}%", () => { fit = false; slider.Value = Math.Round(percent / 10.0) * 10; scale = percent / 100.0; Apply(); });
-
-        ZoomControls.Children.Add(controls);
+        controls.FitButton.Click += (_, _) => { fit = true; x = y = 0; Apply(); };
+        foreach (var (button, percent) in new[] { (controls.Scale100Button, 100), (controls.Scale125Button, 125), (controls.Scale150Button, 150), (controls.Scale200Button, 200) })
+            button.Click += (_, _) => { fit = false; slider.Value = Math.Round(percent / 10.0) * 10; scale = percent / 100.0; Apply(); };
+        if (!externalControls) ZoomControls.Children.Add(controls);
         {
             WipeTab.Visibility = Visibility.Visible;
             Point? start = null;

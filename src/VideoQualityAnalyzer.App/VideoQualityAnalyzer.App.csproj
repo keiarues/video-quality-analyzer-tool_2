@@ -8,6 +8,8 @@
     <AssemblyName>VideoQualityAnalyzer.StageA</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
+    <Page Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ZoomControlBar.xaml" Link="ZoomControlBar.xaml" />
+    <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ZoomControlBar.xaml.cs" Link="ZoomControlBar.xaml.cs" />
     <Page Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonPanel.xaml" Link="ComparisonPanel.xaml" />
     <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonPanel.Zoom.cs" Link="ComparisonPanel.Zoom.cs" />
     <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonPanel.xaml.cs" Link="ComparisonPanel.xaml.cs" />

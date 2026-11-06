@@ -1,0 +1,21 @@
+<UserControl x:Class="VideoQualityAnalyzer.GpuPreview.ZoomControlBar"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ Style="{StaticResource {x:Type UserControl}}">
+ <StackPanel Orientation="Horizontal" Margin="0,4,0,0">
+  <StackPanel.Resources>
+   <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+    <Setter Property="Margin" Value="4,0,0,0"/>
+    <Setter Property="Padding" Value="4"/>
+    <Setter Property="MinWidth" Value="0"/>
+   </Style>
+  </StackPanel.Resources>
+  <Slider x:Name="ScaleSlider" Minimum="10" Maximum="500" TickFrequency="10" IsSnapToTickEnabled="True" Value="100" Width="260" VerticalAlignment="Center"/>
+  <TextBlock x:Name="ScaleLabel" Text="自動" VerticalAlignment="Center" MinWidth="54" Margin="6,0,0,0"/>
+  <Button x:Name="FitButton" Content="⛶" ToolTip="画面に合わせる"/>
+  <Button x:Name="Scale100Button" Content="100%"/>
+  <Button x:Name="Scale125Button" Content="125%"/>
+  <Button x:Name="Scale150Button" Content="150%"/>
+  <Button x:Name="Scale200Button" Content="200%"/>
+ </StackPanel>
+</UserControl>
