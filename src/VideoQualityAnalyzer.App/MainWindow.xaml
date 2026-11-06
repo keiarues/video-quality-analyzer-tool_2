@@ -11,6 +11,17 @@
         <Style x:Key="CenteredFileCellStyle" TargetType="TextBlock">
             <Setter Property="TextAlignment" Value="Center" />
         </Style>
+        <Style x:Key="RightFileCellStyle" TargetType="TextBlock">
+            <Setter Property="TextAlignment" Value="Right" />
+        </Style>
+        <Style x:Key="CenteredFileHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Foreground" Value="{StaticResource UiOnLightBrush}" />
+            <Setter Property="Padding" Value="5,6" />
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+        </Style>
+        <Style x:Key="RightFileHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource CenteredFileHeaderStyle}">
+            <Setter Property="HorizontalContentAlignment" Value="Right" />
+        </Style>
     </Window.Resources>
     <Grid Margin="14">
         <Grid.RowDefinitions>
@@ -42,18 +53,19 @@
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Foreground" Value="{StaticResource UiOnLightBrush}" />
                                 <Setter Property="Padding" Value="5,6" />
+                                <Setter Property="HorizontalContentAlignment" Value="Left" />
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ファイル名" Binding="{Binding DisplayName}" SortMemberPath="Name" Width="230" />
                             <DataGridTextColumn Header="グループ" Binding="{Binding Source=--}" SortMemberPath="Group" Width="100" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="コーデック" Binding="{Binding Descriptor.Codec}" SortMemberPath="Codec" Width="SizeToCells" MinWidth="70" MaxWidth="100" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="kbps" Binding="{Binding AverageBitrateKbps, StringFormat=N0, TargetNullValue=--}" SortMemberPath="Bitrate" Width="SizeToCells" MinWidth="65" MaxWidth="100" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="VMAF" Binding="{Binding Source=--}" SortMemberPath="Vmaf" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="SSIM" Binding="{Binding Source=--}" SortMemberPath="Ssim" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="PSNR" Binding="{Binding Source=--}" SortMemberPath="Psnr" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="解像度" Binding="{Binding Resolution}" SortMemberPath="Resolution" Width="SizeToCells" MinWidth="80" MaxWidth="110" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Binding="{Binding FrameRateText}" SortMemberPath="FrameRate" Width="SizeToCells" MinWidth="65" MaxWidth="115">
+                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" HeaderStyle="{StaticResource CenteredFileHeaderStyle}" Header="コーデック" Binding="{Binding Descriptor.Codec}" SortMemberPath="Codec" Width="SizeToCells" MinWidth="70" MaxWidth="100" />
+                            <DataGridTextColumn ElementStyle="{StaticResource RightFileCellStyle}" HeaderStyle="{StaticResource RightFileHeaderStyle}" Header="kbps" Binding="{Binding AverageBitrateKbps, StringFormat=N0, TargetNullValue=--}" SortMemberPath="Bitrate" Width="SizeToCells" MinWidth="65" MaxWidth="100" />
+                            <DataGridTextColumn ElementStyle="{StaticResource RightFileCellStyle}" HeaderStyle="{StaticResource RightFileHeaderStyle}" Header="VMAF" Binding="{Binding Source=--}" SortMemberPath="Vmaf" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn ElementStyle="{StaticResource RightFileCellStyle}" HeaderStyle="{StaticResource RightFileHeaderStyle}" Header="SSIM" Binding="{Binding Source=--}" SortMemberPath="Ssim" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn ElementStyle="{StaticResource RightFileCellStyle}" HeaderStyle="{StaticResource RightFileHeaderStyle}" Header="PSNR" Binding="{Binding Source=--}" SortMemberPath="Psnr" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" HeaderStyle="{StaticResource CenteredFileHeaderStyle}" Header="解像度" Binding="{Binding Resolution}" SortMemberPath="Resolution" Width="SizeToCells" MinWidth="80" MaxWidth="110" />
+                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" HeaderStyle="{StaticResource CenteredFileHeaderStyle}" Binding="{Binding FrameRateText}" SortMemberPath="FrameRate" Width="SizeToCells" MinWidth="65" MaxWidth="115">
                                 <DataGridTextColumn.Header>
                                     <TextBlock Text="fps" ToolTip="可変表示は、公称fpsと平均fpsの差による推定です。全フレームの時刻による判定ではありません。" />
                                 </DataGridTextColumn.Header>
@@ -94,18 +106,19 @@
                             <Style TargetType="DataGridColumnHeader">
                                 <Setter Property="Foreground" Value="{StaticResource UiOnLightBrush}" />
                                 <Setter Property="Padding" Value="5,6" />
+                                <Setter Property="HorizontalContentAlignment" Value="Left" />
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="ファイル名" Binding="{Binding DisplayName}" SortMemberPath="Name" Width="230" />
                             <DataGridTextColumn Header="グループ" Binding="{Binding Group}" SortMemberPath="Group" Width="100" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="コーデック" Binding="{Binding Descriptor.Codec}" SortMemberPath="Codec" Width="SizeToCells" MinWidth="70" MaxWidth="100" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="kbps" Binding="{Binding AverageBitrateKbps, StringFormat=N0}" SortMemberPath="Bitrate" Width="SizeToCells" MinWidth="65" MaxWidth="100" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="VMAF" Binding="{Binding VmafAverage, StringFormat=F4}" SortMemberPath="Vmaf" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="SSIM" Binding="{Binding SsimAverage, StringFormat=F4}" SortMemberPath="Ssim" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="PSNR" Binding="{Binding PsnrAverage, StringFormat=F4}" SortMemberPath="Psnr" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Header="解像度" Binding="{Binding Resolution}" SortMemberPath="Resolution" Width="SizeToCells" MinWidth="80" MaxWidth="110" />
-                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" Binding="{Binding FrameRateText}" SortMemberPath="FrameRate" Width="SizeToCells" MinWidth="65" MaxWidth="115">
+                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" HeaderStyle="{StaticResource CenteredFileHeaderStyle}" Header="コーデック" Binding="{Binding Descriptor.Codec}" SortMemberPath="Codec" Width="SizeToCells" MinWidth="70" MaxWidth="100" />
+                            <DataGridTextColumn ElementStyle="{StaticResource RightFileCellStyle}" HeaderStyle="{StaticResource RightFileHeaderStyle}" Header="kbps" Binding="{Binding AverageBitrateKbps, StringFormat=N0}" SortMemberPath="Bitrate" Width="SizeToCells" MinWidth="65" MaxWidth="100" />
+                            <DataGridTextColumn ElementStyle="{StaticResource RightFileCellStyle}" HeaderStyle="{StaticResource RightFileHeaderStyle}" Header="VMAF" Binding="{Binding VmafAverage, StringFormat=F4}" SortMemberPath="Vmaf" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn ElementStyle="{StaticResource RightFileCellStyle}" HeaderStyle="{StaticResource RightFileHeaderStyle}" Header="SSIM" Binding="{Binding SsimAverage, StringFormat=F4}" SortMemberPath="Ssim" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn ElementStyle="{StaticResource RightFileCellStyle}" HeaderStyle="{StaticResource RightFileHeaderStyle}" Header="PSNR" Binding="{Binding PsnrAverage, StringFormat=F4}" SortMemberPath="Psnr" Width="SizeToCells" MinWidth="65" MaxWidth="90" />
+                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" HeaderStyle="{StaticResource CenteredFileHeaderStyle}" Header="解像度" Binding="{Binding Resolution}" SortMemberPath="Resolution" Width="SizeToCells" MinWidth="80" MaxWidth="110" />
+                            <DataGridTextColumn ElementStyle="{StaticResource CenteredFileCellStyle}" HeaderStyle="{StaticResource CenteredFileHeaderStyle}" Binding="{Binding FrameRateText}" SortMemberPath="FrameRate" Width="SizeToCells" MinWidth="65" MaxWidth="115">
                                 <DataGridTextColumn.Header>
                                     <TextBlock Text="fps" ToolTip="可変表示は、公称fpsと平均fpsの差による推定です。全フレームの時刻による判定ではありません。" />
                                 </DataGridTextColumn.Header>
