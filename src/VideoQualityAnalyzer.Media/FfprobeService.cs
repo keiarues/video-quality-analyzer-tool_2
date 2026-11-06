@@ -14,36 +14,8 @@ public sealed class FfprobeService
         this.probePath = probePath;
     }
 
-    public static string? FindExecutable()
-    {
-        var saved = FfmpegSettings.ActivePath;
-        if (!string.IsNullOrWhiteSpace(saved))
-        {
-            var probe = Path.Combine(Path.GetDirectoryName(saved)!, "ffprobe.exe");
-            return File.Exists(probe) ? probe : null;
-        }
-        var configured = Environment.GetEnvironmentVariable("FFPROBE_PATH");
-        if (!string.IsNullOrWhiteSpace(configured) && File.Exists(configured))
-            return configured;
-
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            var candidate = Path.Combine(directory.FullName, "tools", "ffmpeg-9.0.2-essentials_build", "bin", "ffprobe.exe");
-            if (File.Exists(candidate))
-                return candidate;
-        }
-
-        var searchPath = Environment.GetEnvironmentVariable("PATH") ?? string.Empty;
-        foreach (var directory in searchPath.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-        {
-            var candidate = Path.Combine(directory, "ffprobe.exe");
-            if (File.Exists(candidate))
-                return candidate;
-        }
-
-        return null;
-    }
-
+    public static string? FindExecutable() => string.IsNullOrEmpty(FfmpegSettings.ActivePath)
+        ? null : Path.Combine(Path.GetDirectoryName(FfmpegSettings.ActivePath)!, "ffprobe.exe");
     public async Task<VideoDescriptor> ProbeAsync(string path, CancellationToken cancellationToken)
     {
         var output = await RunAsync(["-v", "error", "-show_entries",

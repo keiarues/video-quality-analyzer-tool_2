@@ -66,15 +66,5 @@ public sealed class FfmpegRgbReader : IDisposable
         process.Dispose();
     }
 
-    public static string? FindExecutable()
-    {
-        var configured = FfmpegSettings.ActivePath;
-        if (!string.IsNullOrWhiteSpace(configured)) return File.Exists(configured) ? configured : null;
-        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
-        {
-            var path = Path.Combine(directory.FullName, "tools", "ffmpeg-9.0.2-essentials_build", "bin", "ffmpeg.exe");
-            if (File.Exists(path)) return path;
-        }
-        return null;
-    }
+    public static string? FindExecutable() => string.IsNullOrEmpty(FfmpegSettings.ActivePath) ? null : FfmpegSettings.ActivePath;
 }
