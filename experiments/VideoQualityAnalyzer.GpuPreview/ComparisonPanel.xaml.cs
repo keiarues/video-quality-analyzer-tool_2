@@ -59,7 +59,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
         this.embedded = embedded;
         if (embedded) CommonControls.Visibility = Visibility.Collapsed;
         if (!showBlur)
-            BlurLabel.Visibility = BlurSelect.Visibility = BlurHint.Visibility = Visibility.Collapsed;
+            BlurLabel.Visibility = BlurSelect.Visibility = Visibility.Collapsed;
         wipeBoundaryController = new WipeBoundaryController(WipeViewport, WipeRightLayer,
             WipeBoundary, WipePositionText,
             () => currentLeft is null ? 4d / 3 : (double)currentLeft.Width / currentLeft.Height);
