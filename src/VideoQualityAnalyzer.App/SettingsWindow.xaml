@@ -1,0 +1,36 @@
+<Window x:Class="VideoQualityAnalyzer.App.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Style="{StaticResource {x:Type Window}}"
+        Title="設定" Width="680" Height="400" MinWidth="420" MinHeight="280"
+        WindowStartupLocation="CenterOwner" ResizeMode="CanResize">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="18">
+            <Grid Margin="0,8,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="FFmpegフォルダーパス" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBox x:Name="FolderPathBox" Grid.Column="1" VerticalContentAlignment="Center" d:Text="C:\Tools\ffmpeg\bin" />
+                <TextBlock x:Name="DetectionStatus" Grid.Column="2" TextWrapping="Wrap" MaxWidth="150"
+                           VerticalAlignment="Center" Margin="8,0,0,0" d:Text="tools内の自動検出" />
+            </Grid>
+            <TextBlock x:Name="VersionText" TextWrapping="Wrap" Margin="0,4,0,0" d:Text="ffmpeg version 9.0.2" />
+            <StackPanel Orientation="Horizontal">
+                <Button Content="フォルダーを選択" Click="SelectFolder_Click" />
+                <Button Content="再検出" Click="Detect_Click" />
+            </StackPanel>
+            <TextBlock TextWrapping="Wrap" Margin="0,8,0,8"><Run Text="同じフォルダーのffprobe.exeも使用します。空欄の場合はtools配下、次にPATHから自動検出します。" /><LineBreak /><Run Text="保存した設定は次回起動時から反映されます。" /></TextBlock>
+            <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="{StaticResource UiWarningBrush}" />
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="保存" IsDefault="True" Click="Save_Click" />
+                <Button Content="キャンセル" IsCancel="True" />
+            </StackPanel>
+        </StackPanel>
+    </ScrollViewer>
+</Window>
