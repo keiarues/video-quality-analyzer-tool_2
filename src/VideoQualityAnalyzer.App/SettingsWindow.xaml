@@ -8,14 +8,16 @@
         Title="設定" Width="680" Height="400" MinWidth="420" MinHeight="280"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="18">
+        <StackPanel Margin="18" Grid.IsSharedSizeScope="True">
             <Grid Margin="0,8,0,8">
                 <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="SettingNames" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
@@ -30,9 +32,9 @@
                            TextWrapping="Wrap" Margin="0,8,0,0" d:Text="tools内の自動検出" />
                 <TextBlock x:Name="VersionText" Grid.Column="1" Grid.Row="2" Grid.ColumnSpan="2"
                            TextWrapping="Wrap" Margin="0,4,0,0" d:Text="ffmpeg version 9.0.2" />
+                <TextBlock Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="2" TextWrapping="Wrap" Margin="0,8,0,8"><Run Text="同じフォルダーのffprobe.exeも使用します。空欄の場合はtools配下、次にPATHから自動検出します。" /><LineBreak /><Run Text="保存した設定は次回起動時から反映されます。" /></TextBlock>
+                <TextBlock x:Name="ErrorText" Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="2" TextWrapping="Wrap" Foreground="{StaticResource UiWarningBrush}" />
             </Grid>
-            <TextBlock TextWrapping="Wrap" Margin="0,8,0,8"><Run Text="同じフォルダーのffprobe.exeも使用します。空欄の場合はtools配下、次にPATHから自動検出します。" /><LineBreak /><Run Text="保存した設定は次回起動時から反映されます。" /></TextBlock>
-            <TextBlock x:Name="ErrorText" TextWrapping="Wrap" Foreground="{StaticResource UiWarningBrush}" />
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                 <Button Content="保存" IsDefault="True" Click="Save_Click" />
                 <Button Content="キャンセル" IsCancel="True" />
