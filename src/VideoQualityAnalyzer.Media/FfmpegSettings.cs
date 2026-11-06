@@ -4,6 +4,40 @@ namespace VideoQualityAnalyzer.Media;
 
 public static class FfmpegSettings
 {
+    public static async Task<string> GetVersionAsync(string executable, CancellationToken cancellationToken = default)
+    {
+        using var process = new System.Diagnostics.Process
+        {
+            StartInfo = new System.Diagnostics.ProcessStartInfo(executable)
+            {
+                Arguments = "-version", UseShellExecute = false, CreateNoWindow = true,
+                RedirectStandardOutput = true, RedirectStandardError = true
+            }
+        };
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(5));
+        try
+        {
+            process.Start();
+            var output = process.StandardOutput.ReadToEndAsync(timeout.Token);
+            var error = process.StandardError.ReadToEndAsync(timeout.Token);
+            await process.WaitForExitAsync(timeout.Token);
+            var text = await output;
+            await error;
+            if (process.ExitCode != 0) return "バージョン取得失敗";
+            return text.Split('\n').Select(line => line.Trim()).FirstOrDefault(line => line.StartsWith("ffmpeg version ", StringComparison.Ordinal))
+                ?? "バージョン情報を確認できませんでした。";
+        }
+        catch (OperationCanceledException) { return "バージョン取得を中断しました。"; }
+        catch (Exception error) when (error is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
+        { return "バージョン取得失敗：" + error.Message; }
+        finally
+        {
+            try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
+            catch (InvalidOperationException) { }
+            catch (System.ComponentModel.Win32Exception) { }
+        }
+    }
     public static string ActivePath { get; } = Detect(Load()).Path ?? "";
     private static string SettingsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoQualityAnalyzer", "ffmpeg-path.txt");
     public static string Load()

@@ -6,6 +6,15 @@ namespace VideoQualityAnalyzer.Tests;
 public sealed class FfmpegSettingsTests
 {
     [TestMethod]
+    public async Task DetectedExecutableReturnsActualVersion()
+    {
+        var detected = FfmpegSettings.Detect("");
+        Assert.IsNotNull(detected.Path);
+        var version = await FfmpegSettings.GetVersionAsync(detected.Path);
+        Assert.StartsWith("ffmpeg version ", version);
+    }
+
+    [TestMethod]
     public void EmptySettingFindsBundledToolsRecursively()
     {
         var result = FfmpegSettings.Detect("");
