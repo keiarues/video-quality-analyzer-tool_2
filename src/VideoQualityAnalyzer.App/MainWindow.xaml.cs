@@ -45,6 +45,7 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        App.RecordStartup("メイン画面XAMLの読み込み完了");
         left = new SlotState("left", LeftMedia, LeftAv1Image, LeftName);
         right = new SlotState("right", RightMedia, RightAv1Image, RightName);
         foreach (var slot in new[] { left, right })
@@ -68,7 +69,9 @@ public partial class MainWindow : Window
         }
         VideoList.ItemsSource = new System.Windows.Data.ListCollectionView(videos)
         { Filter = item => item is VideoEntry entry && entry.Descriptor.Id != referenceId };
+        App.RecordStartup("FFmpeg・FFprobeの探索開始");
         var path = FfprobeService.FindExecutable();
+        App.RecordStartup("FFmpeg・FFprobeの探索完了");
         if (path is not null)
         {
             probe = new FfprobeService(path);
