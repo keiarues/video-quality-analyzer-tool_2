@@ -17,7 +17,7 @@ public partial class ComparisonPanel
 
     public void EnableZoomTest() => EnableZoom(true);
 
-    public void EnableZoom(bool testMode = false, ZoomControlBar? controls = null)
+    public void EnableZoom(bool testMode = false, ZoomControlBar? controls = null, ZoomControlBar? buttonControls = null)
     {
         {
             // Canvas上で配置し、拡大画像のレイアウト切り抜きが移動量に影響しないようにする。
@@ -146,8 +146,9 @@ public partial class ComparisonPanel
         }
         var slider = controls.ScaleSlider;
         slider.ValueChanged += (_, _) => { fit = false; scale = slider.Value / 100; Apply(); };
-        controls.FitButton.Click += (_, _) => { fit = true; x = y = 0; Apply(); };
-        foreach (var (button, percent) in new[] { (controls.Scale100Button, 100), (controls.Scale125Button, 125), (controls.Scale150Button, 150), (controls.Scale200Button, 200) })
+        buttonControls ??= controls;
+        buttonControls.FitButton.Click += (_, _) => { fit = true; x = y = 0; Apply(); };
+        foreach (var (button, percent) in new[] { (buttonControls.Scale100Button, 100), (buttonControls.Scale125Button, 125), (buttonControls.Scale150Button, 150), (buttonControls.Scale200Button, 200) })
             button.Click += (_, _) => { fit = false; slider.Value = Math.Round(percent / 10.0) * 10; scale = percent / 100.0; Apply(); };
         if (!externalControls) ZoomControls.Children.Add(controls);
         {

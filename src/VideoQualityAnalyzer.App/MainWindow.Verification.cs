@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using VideoQualityAnalyzer.Media;
 using VideoQualityAnalyzer.Core;
 
@@ -389,7 +389,8 @@ public partial class MainWindow
                 PlaybackControls.TranslatePoint(new Point(0, 0), this).Y <
                 ComparisonHost.TranslatePoint(new Point(0, ComparisonHost.ActualHeight), this).Y)
                 throw new InvalidOperationException("再生制御がプレビュー直下にありません。");
-            var buttonLabels = PlaybackButtons.Children.OfType<System.Windows.Controls.Button>()
+            var buttonLabels = PlaybackButtons.Children.OfType<System.Windows.Controls.StackPanel>()
+                .SelectMany(group => group.Children.OfType<System.Windows.Controls.Button>())
                 .Select(button => (string)button.Content).ToArray();
             if (!buttonLabels.SequenceEqual(new[] { "■", "▶", "−5秒", "−1秒", "|◀", "▶|", "+1秒", "+5秒" }))
                 throw new InvalidOperationException("再生ボタンの順番が不正です。");

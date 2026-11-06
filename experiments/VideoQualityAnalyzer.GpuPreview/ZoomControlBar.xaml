@@ -10,12 +10,16 @@
     <Setter Property="MinWidth" Value="0"/>
    </Style>
   </StackPanel.Resources>
+  <StackPanel x:Name="SliderGroup" Orientation="Horizontal">
   <Slider x:Name="ScaleSlider" Minimum="10" Maximum="300" TickFrequency="10" IsSnapToTickEnabled="True" Value="100" Width="140" VerticalAlignment="Center"/>
   <TextBlock x:Name="ScaleLabel" Text="自動" VerticalAlignment="Center" MinWidth="54" Margin="6,0,0,0"/>
+  </StackPanel>
+  <StackPanel x:Name="ButtonGroup" Orientation="Horizontal">
   <Button x:Name="FitButton" Content="⛶" ToolTip="画面に合わせる"/>
   <Button x:Name="Scale100Button" Content="100%"/>
   <Button x:Name="Scale125Button" Content="125%"/>
   <Button x:Name="Scale150Button" Content="150%"/>
   <Button x:Name="Scale200Button" Content="200%"/>
+ </StackPanel>
  </StackPanel>
 </UserControl>
