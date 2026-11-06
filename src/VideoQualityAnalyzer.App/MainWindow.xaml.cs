@@ -45,8 +45,8 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        left = new SlotState("left", LeftMedia, LeftAv1Image, LeftName, LeftStatus);
-        right = new SlotState("right", RightMedia, RightAv1Image, RightName, RightStatus);
+        left = new SlotState("left", LeftMedia, LeftAv1Image, LeftName);
+        right = new SlotState("right", RightMedia, RightAv1Image, RightName);
         foreach (var slot in new[] { left, right })
         {
             slot.Av1.FrameShown = position =>
@@ -56,14 +56,12 @@ public partial class MainWindow : Window
                 RequestPlaybackRefresh();
                 if (slot.Ready) return;
                 slot.Ready = true;
-                UpdateSlotStatus();
                 log.Record("preview_frame_shown", slot.Side, slot.Video.Id, "ffmpeg_wpf_bitmap_copy",
                     detail: $"estimated_pts_ms={position.TotalMilliseconds:F0};gpu_presentation=unmeasured");
             };
             slot.Av1.Failed = exception =>
             {
                 slot.Ready = false;
-                slot.Status.Text = $"動画を表示できません（0x{exception.HResult:X8}）";
                 log.Record("preview_failed", slot.Side, slot.Video?.Id, "failed",
                     detail: $"{exception.GetType().Name};hresult=0x{exception.HResult:X8}");
             };
@@ -414,18 +412,15 @@ public partial class MainWindow : Window
         slot.OpenStarted = Stopwatch.GetTimestamp();
         slot.Name.Text = video is null ? (slot.Side == "left" ? "左: 未選択" : "右: 未選択") :
             (slot.Side == "left" ? "左: " : "右: ") + video.Name;
-        slot.Status.Text = video is null ? "待機中" : "読み込み中（提示時刻は未測定）";
         if (video is null)
             return;
         if (!File.Exists(video.Path))
         {
-            slot.Status.Text = "ファイルが見つかりません";
             log.Record("open_failed", slot.Side, video.Id, "missing");
             return;
         }
 
         log.Record("open_requested", slot.Side, video.Id, "started");
-        slot.Status.Text = "動画を読み込み中（FFmpeg共通表示）";
         if (!comparisonActive) slot.Av1.Open(video, CurrentPosition(), isPlaying);
         // 左音声は既存のMediaElementで再生する。映像は画像側だけを表示する。
         if (slot.Side == "left" && video.HasAudio && video.Codec != "av1")
@@ -448,7 +443,6 @@ public partial class MainWindow : Window
         slot.FpsSampleStamp = 0;
         slot.PlaybackFps = null;
         slot.Media.Position = ClampToVideo(CurrentPosition(), video);
-        slot.Status.Text = isPlaying ? "再生中（実提示fpsは未測定）" : "音声準備完了（映像提示待ち）";
         if (isPlaying)
             slot.Media.Play();
         else
@@ -468,7 +462,6 @@ public partial class MainWindow : Window
         if (slot.Av1.IsOpen) return;
         slot.Ready = false;
         slot.PlaybackFps = null;
-        slot.Status.Text = "再生できません（形式またはデコードを確認）";
         log.Record("media_failed", slot.Side, slot.Video?.Id, "failed",
             detail: e.ErrorException?.GetType().Name ?? "unknown");
     }
@@ -525,7 +518,6 @@ public partial class MainWindow : Window
         isPlaying = true;
         UpdatePlayPauseButton();
         ResetFpsSamples();
-        UpdateSlotStatus();
         log.Record("play", "both", left.Video?.Id, "requested", detail: "presented_fps=unmeasured");
     }
 
@@ -545,7 +537,6 @@ public partial class MainWindow : Window
         right.Media.Pause();
         left.Av1.Pause();
         right.Av1.Pause();
-        UpdateSlotStatus();
         log.Record("pause", "both", left.Video?.Id, "requested");
         UpdateTimeDisplay();
     }
@@ -568,7 +559,6 @@ public partial class MainWindow : Window
         right.Media.Pause();
         left.Av1.Pause();
         right.Av1.Pause();
-        UpdateSlotStatus();
         log.Record("stop", "both", left.Video?.Id, "requested");
         UpdateTimeDisplay();
     }
@@ -911,15 +901,6 @@ public partial class MainWindow : Window
             : $"{position:N0} / 不明";
     }
 
-    private void UpdateSlotStatus()
-    {
-        foreach (var slot in new[] { left, right })
-        {
-            if (slot.Ready)
-                slot.Status.Text = isPlaying ? "再生中（FFmpeg共通表示）" : "一時停止（FFmpeg共通表示）";
-        }
-    }
-
     private void UpdateInfo()
     {
         LeftDetails.Text = FormatVideoDetails(left.Video);
@@ -965,13 +946,12 @@ public partial class MainWindow : Window
         log.DisposeAsync().AsTask().GetAwaiter().GetResult();
     }
 
-    private sealed class SlotState(string side, MediaElement media, Image av1Image, TextBlock name, TextBlock status)
+    private sealed class SlotState(string side, MediaElement media, Image av1Image, TextBlock name)
     {
         public string Side { get; } = side;
         public MediaElement Media { get; } = media;
         public Av1PreviewPlayer Av1 { get; } = new(av1Image);
         public TextBlock Name { get; } = name;
-        public TextBlock Status { get; } = status;
         public VideoDescriptor? Video { get; set; }
         public long Generation { get; set; }
         public bool Ready { get; set; }

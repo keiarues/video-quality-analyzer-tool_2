@@ -1,4 +1,4 @@
-﻿using System.Windows;
+using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -13,7 +13,6 @@ public sealed class QualityGraphPanel : UserControl
     private readonly Canvas playbackOverlay = new() { ClipToBounds = true, IsHitTestVisible = false };
     private readonly Canvas averages = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
     private readonly TabControl metric = new();
-    private readonly TextBlock status = new() { FontSize = UiTheme.Small, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(8) };
     private readonly Dictionary<string, Brush> videoColors = new();
     private readonly TextBlock leftPlaybackStatus = MakePlaybackLabel(TextAlignment.Right);
     private readonly TextBlock rightPlaybackStatus = MakePlaybackLabel(TextAlignment.Left);
@@ -50,8 +49,6 @@ public sealed class QualityGraphPanel : UserControl
         foreach (var value in Enum.GetValues<QualityMetric>())
             metric.Items.Add(new TabItem { Header = value.ToString().ToUpperInvariant(), Tag = value });
         metric.SelectedIndex = 0;
-        DockPanel.SetDock(status, Dock.Bottom);
-        panel.Children.Add(status);
         panel.Children.Add(metric);
         var selectedIds = videos.Select(video => video.Id).ToHashSet();
         var grid = new Grid();
@@ -267,7 +264,6 @@ public sealed class QualityGraphPanel : UserControl
                 AttachPlaybackVisuals();
                 UpdatePlayhead();
                 PlaceLegend();
-                status.Text = "この指標の完了結果はありません。動画の長さを基準にシークできます。";
                 return;
             }
             var values = available.SelectMany(video => results[(video.Id, selected)].Frames.Select(frame => frame.Value)).ToArray();
@@ -300,7 +296,7 @@ public sealed class QualityGraphPanel : UserControl
                     Tag = video.Id, ToolTip = $"{video.Name}: {result.Average:F4} / {rates[index]:N0} kbps", Cursor = System.Windows.Input.Cursors.Hand };
                 Canvas.SetLeft(point, fileArea.Left + rates[index] / maxRate * fileArea.Width - 6);
                 Canvas.SetTop(point, fileArea.Top + (max - result.Average) / (max - min) * fileArea.Height - 6);
-                point.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); status.Text = video.Name; e.Handled = true; };
+                point.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); e.Handled = true; };
                 if (groups is not null && groups.TryGetValue(video.Id, out var group))
                 {
                     var center = new Point(Canvas.GetLeft(point) + 6, Canvas.GetTop(point) + 6);
@@ -334,7 +330,6 @@ public sealed class QualityGraphPanel : UserControl
             PlaceLegend();
             AttachPlaybackVisuals();
             UpdatePlayhead();
-            status.Text = "左の縦線をドラッグするとシーク、右の点をクリックするとその動画のフレーム評価を表示します。点にマウスを合わせると動画名と平均値を表示します。";
         }
         redrawPlaybackGraph = Draw;
         updateData = (selectedVideos, registeredVideos, groupNames) =>

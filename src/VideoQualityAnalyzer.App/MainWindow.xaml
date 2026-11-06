@@ -162,7 +162,6 @@
                                     <ComboBox Name="PreviewLeftSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" />
                                     <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
                                     <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" />
-                                    <TextBlock Name="LeftStatus" Text="待機中" Foreground="{StaticResource UiMutedBrush}" FontSize="{StaticResource UiFontSmall}" />
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -179,7 +178,6 @@
                                     <ComboBox Name="PreviewRightSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" />
                                     <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
                                     <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" />
-                                    <TextBlock Name="RightStatus" Text="待機中" Foreground="{StaticResource UiMutedBrush}" FontSize="{StaticResource UiFontSmall}" />
                                 </StackPanel>
                             </Border>
                         </Grid>
