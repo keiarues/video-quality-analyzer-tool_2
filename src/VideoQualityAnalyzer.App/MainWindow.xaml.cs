@@ -943,7 +943,22 @@ public partial class MainWindow : Window
     private async void Window_Drop(object sender, DragEventArgs e)
     {
         if (e.Data.GetData(DataFormats.FileDrop) is string[] paths)
-            await AddFilesAsync(paths.Where(File.Exists));
+            {
+            e.Handled = true;
+            try
+            {
+                var files = await Task.Run(() => VideoDropFiles.Expand(paths, () =>
+                    Dispatcher.Invoke(() => !closing && MessageBox.Show(this,
+                        "読み込む動画が100本以上あります。処理を続けますか？\n「いいえ」を選ぶと今回の登録を中止します。",
+                        "動画の一括登録", MessageBoxButton.YesNo, MessageBoxImage.Warning,
+                        MessageBoxResult.No) == MessageBoxResult.Yes)));
+                if (!closing && files.Length > 0) await AddFilesAsync(files);
+            }
+            catch (Exception exception)
+            {
+                SetWindowStatus($"フォルダーを読み込めません: {exception.GetType().Name}");
+            }
+        }
     }
 
     private void Window_Closing(object? sender, System.ComponentModel.CancelEventArgs e)
