@@ -61,6 +61,7 @@ public partial class MainWindow
             restore ? savedGraphHeight : new System.Windows.GridLength(1, System.Windows.GridUnitType.Star);
         InitialPreviewTabs.Visibility = !previewCollapsed && !comparisonActive ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
         ComparisonHost.Visibility = !previewCollapsed && comparisonActive ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        PlaybackControls.Visibility = previewCollapsed ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
         QualityGraphHost.Visibility = graphsCollapsed ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
         PreviewToggleButton.Visibility = previewCollapsed ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
         GraphToggleButton.Visibility = graphsCollapsed ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;

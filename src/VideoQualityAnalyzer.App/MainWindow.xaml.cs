@@ -110,10 +110,10 @@ public partial class MainWindow : Window
                     var previewHeight = PreviewRow.Height;
                     var graphHeight = QualityGraphRow.Height;
                     PreviewToggle_Click(this, new RoutedEventArgs());
-                    if (!previewCollapsed || PreviewToggleButton.Visibility != Visibility.Collapsed || PreviewRow.Height.Value != 0)
+                    if (!previewCollapsed || PreviewToggleButton.Visibility != Visibility.Collapsed || PreviewRow.Height.Value != 0 || PlaybackControls.Visibility != Visibility.Collapsed)
                         throw new InvalidOperationException("プレビューを最小化できません。");
                     GraphToggle_Click(this, new RoutedEventArgs());
-                    if (previewCollapsed || graphsCollapsed || PreviewRow.Height != previewHeight || QualityGraphRow.Height != graphHeight)
+                    if (previewCollapsed || graphsCollapsed || PreviewRow.Height != previewHeight || QualityGraphRow.Height != graphHeight || PlaybackControls.Visibility != Visibility.Visible)
                         throw new InvalidOperationException("グラフ側からサイズを復元できません。");
                     GraphToggle_Click(this, new RoutedEventArgs());
                     if (!graphsCollapsed || GraphToggleButton.Visibility != Visibility.Collapsed)
