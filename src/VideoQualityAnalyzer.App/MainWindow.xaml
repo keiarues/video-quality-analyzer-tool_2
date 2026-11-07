@@ -264,6 +264,7 @@
                 </local:PriorityWrapPanel>
             </StackPanel>
         </Border>
+                <Button Name="PreviewToggleButton" Grid.Row="1" HorizontalAlignment="Right" Width="30" Height="18" MinWidth="0" Padding="0" Content="▲" ToolTip="プレビューを最小化" Click="PreviewToggle_Click" />
                 <Thumb Margin="0,0,34,0" Name="QualityGraphResizeBar" Template="{StaticResource ResizeBarTemplate}" Focusable="True" KeyDown="QualityGraphResize_KeyDown" Grid.Row="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                        Cursor="SizeNS" ToolTip="品質グラフの高さを変更" DragDelta="QualityGraphResize_DragDelta"
                        AutomationProperties.Name="品質グラフの高さを変更" Background="#405066" />

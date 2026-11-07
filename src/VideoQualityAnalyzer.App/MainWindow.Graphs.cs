@@ -1,4 +1,4 @@
-﻿using VideoQualityAnalyzer.Core;
+using VideoQualityAnalyzer.Core;
 
 namespace VideoQualityAnalyzer.App;
 
@@ -38,28 +38,37 @@ public partial class MainWindow
     private System.Windows.GridLength savedGraphHeight;
     private System.Windows.GridLength savedPreviewHeight;
 
-    private void GraphToggle_Click(object sender, System.Windows.RoutedEventArgs e)
+    private bool previewCollapsed;
+
+    private void GraphToggle_Click(object sender, System.Windows.RoutedEventArgs e) => TogglePreviewArea(false);
+    private void PreviewToggle_Click(object sender, System.Windows.RoutedEventArgs e) => TogglePreviewArea(true);
+
+    private void TogglePreviewArea(bool collapsePreview)
     {
-        if (!graphsCollapsed)
+        var restore = previewCollapsed || graphsCollapsed;
+        if (!restore)
         {
             savedGraphHeight = QualityGraphRow.Height;
             savedPreviewHeight = PreviewRow.Height;
-            QualityGraphHost.Visibility = System.Windows.Visibility.Collapsed;
-            QualityGraphRow.MinHeight = 0;
-            QualityGraphRow.Height = new System.Windows.GridLength(0);
-            PreviewRow.Height = new System.Windows.GridLength(1, System.Windows.GridUnitType.Star);
         }
-        else
-        {
-            QualityGraphRow.MinHeight = 200;
-            QualityGraphRow.Height = savedGraphHeight;
-            PreviewRow.Height = savedPreviewHeight;
-            QualityGraphHost.Visibility = System.Windows.Visibility.Visible;
-        }
-        graphsCollapsed = !graphsCollapsed;
-        QualityGraphResizeBar.IsEnabled = !graphsCollapsed;
-        GraphToggleButton.Content = graphsCollapsed ? "▲" : "▼";
-        GraphToggleButton.ToolTip = graphsCollapsed ? "グラフを復元" : "グラフを最小化";
+        previewCollapsed = !restore && collapsePreview;
+        graphsCollapsed = !restore && !collapsePreview;
+        PreviewRow.MinHeight = previewCollapsed ? 0 : 120;
+        QualityGraphRow.MinHeight = graphsCollapsed ? 0 : 200;
+        PreviewRow.Height = previewCollapsed ? new System.Windows.GridLength(0) :
+            restore ? savedPreviewHeight : new System.Windows.GridLength(1, System.Windows.GridUnitType.Star);
+        QualityGraphRow.Height = graphsCollapsed ? new System.Windows.GridLength(0) :
+            restore ? savedGraphHeight : new System.Windows.GridLength(1, System.Windows.GridUnitType.Star);
+        InitialPreviewTabs.Visibility = !previewCollapsed && !comparisonActive ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        ComparisonHost.Visibility = !previewCollapsed && comparisonActive ? System.Windows.Visibility.Visible : System.Windows.Visibility.Collapsed;
+        QualityGraphHost.Visibility = graphsCollapsed ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+        PreviewToggleButton.Visibility = previewCollapsed ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+        GraphToggleButton.Visibility = graphsCollapsed ? System.Windows.Visibility.Collapsed : System.Windows.Visibility.Visible;
+        PreviewToggleButton.Content = "▲";
+        GraphToggleButton.Content = "▼";
+        PreviewToggleButton.ToolTip = graphsCollapsed ? "グラフを復元" : "プレビューを最小化";
+        GraphToggleButton.ToolTip = previewCollapsed ? "プレビューを復元" : "グラフを最小化";
+        QualityGraphResizeBar.IsEnabled = !previewCollapsed && !graphsCollapsed;
     }
 
     private void QualityGraphResize_KeyDown(object sender, System.Windows.Input.KeyEventArgs e)
@@ -72,7 +81,7 @@ public partial class MainWindow
 
     private void QualityGraphResize_DragDelta(object sender, System.Windows.Controls.Primitives.DragDeltaEventArgs e)
     {
-        if (graphsCollapsed) return;
+        if (graphsCollapsed || previewCollapsed) return;
         // 手動調整後も上下の比率を保持し、ウィンドウサイズに追従させる。
         var fixedHeight = PreviewLayout.RowDefinitions[1].ActualHeight +
             PreviewLayout.RowDefinitions[2].ActualHeight + PreviewLayout.RowDefinitions[3].ActualHeight;

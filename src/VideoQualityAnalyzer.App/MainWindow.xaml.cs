@@ -103,6 +103,30 @@ public partial class MainWindow : Window
         log.Record("session_start", "none", null, "ready", detail: "presented_fps=unmeasured;decode_mode=unknown");
         Loaded += async (_, _) =>
         {
+            if (Environment.GetCommandLineArgs().Contains("--verify-preview-collapse"))
+            {
+                try
+                {
+                    var previewHeight = PreviewRow.Height;
+                    var graphHeight = QualityGraphRow.Height;
+                    PreviewToggle_Click(this, new RoutedEventArgs());
+                    if (!previewCollapsed || PreviewToggleButton.Visibility != Visibility.Collapsed || PreviewRow.Height.Value != 0)
+                        throw new InvalidOperationException("プレビューを最小化できません。");
+                    GraphToggle_Click(this, new RoutedEventArgs());
+                    if (previewCollapsed || graphsCollapsed || PreviewRow.Height != previewHeight || QualityGraphRow.Height != graphHeight)
+                        throw new InvalidOperationException("グラフ側からサイズを復元できません。");
+                    GraphToggle_Click(this, new RoutedEventArgs());
+                    if (!graphsCollapsed || GraphToggleButton.Visibility != Visibility.Collapsed)
+                        throw new InvalidOperationException("グラフを最小化できません。");
+                    PreviewToggle_Click(this, new RoutedEventArgs());
+                    if (graphsCollapsed || previewCollapsed || PreviewRow.Height != previewHeight || QualityGraphRow.Height != graphHeight)
+                        throw new InvalidOperationException("プレビュー側からサイズを復元できません。");
+                    Console.WriteLine("プレビュー・グラフの最小化と反対側からの復元が合格");
+                    Application.Current.Shutdown(0);
+                }
+                catch (Exception exception) { Console.Error.WriteLine(exception); Application.Current.Shutdown(1); }
+                return;
+            }
             if (Environment.GetCommandLineArgs().Contains("--verify-initial-preview"))
             {
                 try

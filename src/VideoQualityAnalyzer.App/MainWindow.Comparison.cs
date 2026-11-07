@@ -22,8 +22,8 @@ public partial class MainWindow
     {
         PreviewZoomControls.Visibility = Visibility.Visible;
         var wasComparisonVisible = ComparisonHost.Visibility == Visibility.Visible;
-        InitialPreviewTabs.Visibility = comparisonActive ? Visibility.Collapsed : Visibility.Visible;
-        ComparisonHost.Visibility = comparisonActive ? Visibility.Visible : Visibility.Collapsed;
+        InitialPreviewTabs.Visibility = comparisonActive || previewCollapsed ? Visibility.Collapsed : Visibility.Visible;
+        ComparisonHost.Visibility = comparisonActive && !previewCollapsed ? Visibility.Visible : Visibility.Collapsed;
         LegacyPreviewGrid.Visibility = comparisonActive ? Visibility.Collapsed : Visibility.Visible;
         if (!comparisonActive)
         {
