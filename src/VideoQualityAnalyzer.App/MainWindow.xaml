@@ -97,10 +97,13 @@
                             </DataGridTextColumn>
                         </DataGrid.Columns>
                     </DataGrid>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,0,8">
-                            <Button Name="SetReferenceButton" Content="▲基準動画に設定" Click="SetReference_Click" MinWidth="100" />
-                            <Button Content="グループ設定" Click="SetGroup_Click" />
-                        </StackPanel>
+                        <DockPanel Margin="0,0,0,8">
+                            <Button Name="SetReferenceButton" DockPanel.Dock="Left" HorizontalAlignment="Left" Content="▲基準動画に設定" Click="SetReference_Click" MinWidth="100" />
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="グループ設定" Click="SetGroup_Click" />
+                                <Button Content="グループ解除" Click="ClearGroup_Click" ToolTip="選択した比較動画のグループ設定を解除します。" />
+                            </StackPanel>
+                        </DockPanel>
                     </StackPanel>
                     <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
                         <TextBlock Text="評価設定" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,8" />

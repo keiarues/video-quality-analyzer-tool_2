@@ -596,6 +596,15 @@ public partial class MainWindow : Window
         if (new GroupWindow(selected) { Owner = this }.ShowDialog() == true) RefreshVideoOrder();
     }
 
+    private void ClearGroup_Click(object sender, RoutedEventArgs e)
+    {
+        var selected = VideoList.SelectedItems.Cast<VideoEntry>().Where(entry => !entry.IsReference).ToArray();
+        if (selected.Length == 0) { SetWindowStatus("グループを解除する比較動画を選択してください。"); return; }
+        VideoLibrary.SetGroup(selected, "");
+        RefreshVideoOrder();
+        SetWindowStatus($"{selected.Length}本のグループ設定を解除しました。");
+    }
+
     private void VideoList_Sorting(object sender, DataGridSortingEventArgs e)
     {
         e.Handled = true;
