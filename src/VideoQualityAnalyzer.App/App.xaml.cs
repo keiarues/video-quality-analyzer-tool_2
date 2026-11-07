@@ -15,6 +15,15 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        if (e.Args.Contains("--test-folder-drop"))
+        {
+            base.OnStartup(e);
+            var index = Array.IndexOf(e.Args, "--test-folder-drop");
+            var folder = index + 1 < e.Args.Length ? e.Args[index + 1] : null;
+            MainWindow = new FolderDropTestWindow(folder, e.Args.Contains("--auto"));
+            MainWindow.Show();
+            return;
+        }
         if (e.Args.Contains("--verify-ffmpeg-settings"))
         {
             base.OnStartup(e);
