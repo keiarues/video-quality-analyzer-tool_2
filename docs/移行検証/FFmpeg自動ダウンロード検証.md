@@ -39,3 +39,10 @@ $env:NUGET_PACKAGES = Join-Path $PWD '.nuget-packages'
 ```
 
 実際に取得されたのは `ffmpeg-9.0.2-essentials_build`。リポジトリ直下の `tools/ffmpeg/release-<SHA256>/` 以下への格納、ffmpeg・ffprobeの起動、設定欄へのbinパス反映、完了後の保存ボタン再有効化を確認した。設定ファイルへの保存はこの自動確認では行わず、利用者の既存設定を維持した。結果は実行先の `ffmpeg-settings-verification.txt` に出力する。
+
+## 設定画面の配置調整（2026-11-07）
+
+- パス入力欄を折り返しなしの1行表示・中央配置に変更した。
+- 取得ボタンを取得方法・バージョンの行の右側へ移し、「ffmpegを取得」に短縮した。
+- 説明欄へ最新安定版のダウンロード元URLと保存先を追記した。
+- 上記のReleaseビルドコマンドで警告0・エラー0、`tests/Run-Tests.ps1 -NoRestore`で32件合格。最初のビルドはテストとの同時実行で出力ファイルが競合したが、単独で再実行して成功した。画面の目視確認は未実施。
