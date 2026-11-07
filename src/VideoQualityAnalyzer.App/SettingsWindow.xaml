@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Style="{StaticResource {x:Type Window}}"
-        Title="設定" Width="1000" Height="400" MinWidth="420" MinHeight="280"
+        Title="設定" Width="1000" Height="597" MinWidth="420" MinHeight="280"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize">
     <Grid>
         <Grid.RowDefinitions>
