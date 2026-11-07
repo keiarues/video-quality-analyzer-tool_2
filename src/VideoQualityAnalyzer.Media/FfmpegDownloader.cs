@@ -77,9 +77,15 @@ public sealed class FfmpegDownloader
             var probeVersion = await FfmpegSettings.GetVersionAsync(Path.Combine(Path.GetDirectoryName(executable)!, "ffprobe.exe"), cancellationToken);
             if (!probeVersion.StartsWith("ffprobe version ", StringComparison.Ordinal)) throw new InvalidDataException(probeVersion);
             cancellationToken.ThrowIfCancellationRequested();
-            var destination = Path.Combine(installRoot, "release-" + expected.ToLowerInvariant());
-            if (!Directory.Exists(destination)) Directory.Move(unpacked, destination);
-            return Path.GetDirectoryName(Directory.GetFiles(destination, "ffmpeg.exe", SearchOption.AllDirectories).Single())!;
+            var packageDirectories = Directory.GetDirectories(unpacked);
+            if (packageDirectories.Length != 1 || Directory.GetFiles(unpacked).Length != 0)
+                throw new InvalidDataException("配布ZIPのフォルダー構成を確認できませんでした。");
+            var package = packageDirectories[0];
+            var destination = Path.Combine(installRoot, Path.GetFileName(package));
+            if (!Directory.Exists(destination)) Directory.Move(package, destination);
+            var installedExecutable = Path.Combine(destination, Path.GetRelativePath(package, executable));
+            FfmpegSettings.Resolve(installedExecutable);
+            return Path.GetDirectoryName(installedExecutable)!;
         }
         finally
         {
