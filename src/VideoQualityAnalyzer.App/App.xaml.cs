@@ -101,7 +101,10 @@ public partial class App : Application
                 "ffv1", 30, 30, TimeSpan.FromSeconds(1), false, 30, 1));
             var dialog = new GroupWindow([entry], true);
             var applied = dialog.ShowDialog();
-            Shutdown(applied == true && entry.Group == "検証グループ" ? 0 : 1);
+            var newNameApplied = applied == true && entry.Group == "検証グループ";
+            var existingDialog = new GroupWindow([entry], true, ["既存グループ", "既存グループ", ""], true);
+            var existingApplied = existingDialog.ShowDialog();
+            Shutdown(newNameApplied && existingApplied == true && entry.Group == "既存グループ" ? 0 : 1);
             return;
         }
         if (e.Args.Contains("--verify-evaluation"))

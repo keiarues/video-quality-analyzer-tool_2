@@ -6,7 +6,7 @@ namespace VideoQualityAnalyzer.App;
 
 public sealed class GroupWindow : Window
 {
-    public GroupWindow(VideoEntry[] selected, bool verify = false)
+    public GroupWindow(VideoEntry[] selected, bool verify = false, IEnumerable<string>? existingGroups = null, bool verifyExisting = false)
     {
         Style = (Style)Application.Current.FindResource(typeof(Window));
         Title = "グループ設定";
@@ -17,7 +17,16 @@ public sealed class GroupWindow : Window
         var panel = new StackPanel { Margin = new Thickness(16) };
         Content = panel;
         panel.Children.Add(new TextBlock { Text = "グループ名（空欄で解除）", Margin = new Thickness(0, 0, 0, 8) });
-        var name = new TextBox { Text = selected.Select(entry => entry.Group).Distinct().Count() == 1 ? selected[0].Group : "" };
+        var groups = (existingGroups ?? selected.Select(entry => entry.Group))
+            .Select(group => group.Trim()).Where(group => group.Length > 0)
+            .Distinct().OrderBy(group => group, StringComparer.CurrentCultureIgnoreCase).ToArray();
+        var name = new ComboBox
+        {
+            IsEditable = true,
+            IsTextSearchEnabled = false,
+            ItemsSource = groups,
+            Text = selected.Length > 0 && selected.Select(entry => entry.Group).Distinct().Count() == 1 ? selected[0].Group : ""
+        };
         panel.Children.Add(name);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         panel.Children.Add(buttons);
@@ -29,9 +38,10 @@ public sealed class GroupWindow : Window
         Loaded += (_, _) =>
         {
             name.Focus();
-            name.SelectAll();
+            if (name.Template.FindName("PART_EditableTextBox", name) is TextBox editor) editor.SelectAll();
             if (!verify) return;
-            name.Text = "検証グループ";
+            if (verifyExisting) name.SelectedItem = groups.First();
+            else name.Text = "検証グループ";
             apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
         };
     }

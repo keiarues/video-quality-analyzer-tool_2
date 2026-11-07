@@ -593,7 +593,7 @@ public partial class MainWindow : Window
     {
         var selected = VideoList.SelectedItems.Cast<VideoEntry>().Where(entry => !entry.IsReference).ToArray();
         if (selected.Length == 0) { SetWindowStatus("グループを設定する比較動画を選択してください。"); return; }
-        if (new GroupWindow(selected) { Owner = this }.ShowDialog() == true) RefreshVideoOrder();
+        if (new GroupWindow(selected, existingGroups: videos.Where(entry => !entry.IsReference).Select(entry => entry.Group)) { Owner = this }.ShowDialog() == true) RefreshVideoOrder();
     }
 
     private void ClearGroup_Click(object sender, RoutedEventArgs e)
