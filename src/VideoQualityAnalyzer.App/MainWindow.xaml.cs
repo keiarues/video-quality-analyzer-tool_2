@@ -201,7 +201,7 @@ public partial class MainWindow : Window
             await AddFilesAsync(dialog.FileNames);
     }
 
-    private async Task AddFilesAsync(IEnumerable<string> paths)
+    private async Task AddFilesAsync(IEnumerable<string> paths, string[]? droppedFolders = null)
     {
         if (probe is null)
         {
@@ -236,6 +236,8 @@ public partial class MainWindow : Window
                 videos.Add(entry);
                 referenceId ??= descriptor.Id;
                 entry.IsReference = referenceId == descriptor.Id;
+                if (!entry.IsReference && droppedFolders is not null)
+                    entry.Group = VideoDropFiles.GetGroup(path, droppedFolders);
                 VideoList.Items.Refresh();
                 log.Record("file_added", "none", descriptor.Id, "ok",
                     detail: $"codec={descriptor.Codec};resolution={descriptor.Width}x{descriptor.Height};fps={descriptor.AverageFrameRate:F3}");
@@ -947,12 +949,13 @@ public partial class MainWindow : Window
             e.Handled = true;
             try
             {
+                var folders = paths.Where(Directory.Exists).ToArray();
                 var files = await Task.Run(() => VideoDropFiles.Expand(paths, () =>
                     Dispatcher.Invoke(() => !closing && MessageBox.Show(this,
                         "読み込む動画が100本以上あります。処理を続けますか？\n「いいえ」を選ぶと今回の登録を中止します。",
                         "動画の一括登録", MessageBoxButton.YesNo, MessageBoxImage.Warning,
                         MessageBoxResult.No) == MessageBoxResult.Yes)));
-                if (!closing && files.Length > 0) await AddFilesAsync(files);
+                if (!closing && files.Length > 0) await AddFilesAsync(files, folders);
             }
             catch (Exception exception)
             {

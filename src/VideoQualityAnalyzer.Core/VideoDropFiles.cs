@@ -5,6 +5,15 @@ public static class VideoDropFiles
     private static readonly HashSet<string> Extensions = new(StringComparer.OrdinalIgnoreCase)
         { ".mkv", ".mp4", ".mov", ".avi", ".webm", ".m4v" };
 
+    public static string GetGroup(string file, IEnumerable<string> droppedFolders)
+    {
+        var fullPath = Path.GetFullPath(file);
+        return droppedFolders.Any(folder => fullPath.StartsWith(
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)) + Path.DirectorySeparatorChar,
+            StringComparison.OrdinalIgnoreCase))
+            ? new DirectoryInfo(Path.GetDirectoryName(fullPath)!).Name : "";
+    }
+
     public static string[] Expand(IEnumerable<string> paths, Func<bool>? confirmLargeImport = null)
     {
         var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

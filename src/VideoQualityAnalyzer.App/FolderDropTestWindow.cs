@@ -93,10 +93,8 @@ public sealed class FolderDropTestWindow : Window
             foreach (var file in files)
             {
                 if (entries.ContainsKey(file)) continue;
-                var fromFolder = paths.Any(path => Directory.Exists(path) &&
-                    file.StartsWith(System.IO.Path.TrimEndingDirectorySeparator(System.IO.Path.GetFullPath(path)) + System.IO.Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase));
                 entries.Add(file, new TestEntry(System.IO.Path.GetFileName(file),
-                    fromFolder ? new DirectoryInfo(System.IO.Path.GetDirectoryName(file)!).Name : "", file));
+                    VideoDropFiles.GetGroup(file, paths.Where(Directory.Exists)), file));
             }
             Refresh();
             if (canceled) status.Text = $"今回の登録を中止しました（登録済み {entries.Count}本）。";
