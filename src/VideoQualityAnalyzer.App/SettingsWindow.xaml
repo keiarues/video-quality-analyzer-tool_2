@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d"
         Style="{StaticResource {x:Type Window}}"
-        Title="設定" Width="1360" Height="400" MinWidth="420" MinHeight="280"
+        Title="設定" Width="1000" Height="400" MinWidth="420" MinHeight="280"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize">
     <Grid>
         <Grid.RowDefinitions>
@@ -27,7 +27,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <TextBlock Text="FFmpegフォルダーパス" VerticalAlignment="Center" Margin="0,0,8,0" />
+                <TextBlock Text="FFmpegフォルダーパス" VerticalAlignment="Center" Margin="0,0,8,0" HorizontalAlignment="Right" />
                 <TextBox x:Name="FolderPathBox" Grid.Column="1" VerticalAlignment="Center" VerticalContentAlignment="Center" AcceptsReturn="False" TextWrapping="NoWrap" d:Text="C:\Tools\ffmpeg\bin" />
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
                     <Button Content="フォルダーを選択" Click="SelectFolder_Click" />
@@ -40,20 +40,20 @@
                 </StackPanel>
                 <TextBlock x:Name="DetectionStatus" Grid.Column="1" Grid.Row="1"
                            TextWrapping="Wrap" Margin="0,8,0,0" d:Text="toolsフォルダ内のffmpegを使用" />
-                <TextBlock Grid.Row="1" Text="ffmpegの取得方法" VerticalAlignment="Top" Margin="0,8,8,0" />
+                <TextBlock Grid.Row="1" Text="使用するffmpeg" VerticalAlignment="Top" Margin="0,8,8,0" HorizontalAlignment="Right" />
                 <TextBlock x:Name="VersionText" Grid.Column="1" Grid.Row="2"
                            TextWrapping="Wrap" Margin="0,4,0,0" d:Text="ffmpeg version 9.0.2" />
-                <TextBlock Grid.Row="2" Text="ffmpegのバージョン" VerticalAlignment="Top" Margin="0,4,8,0" />
+                <TextBlock Grid.Row="2" Text="バージョン" VerticalAlignment="Top" Margin="0,4,8,0" HorizontalAlignment="Right" />
                 <Border Grid.Column="1" Grid.Row="3" Grid.ColumnSpan="2" BorderBrush="{StaticResource UiMutedBrush}"
                         BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,8,0,8">
-                    <TextBlock TextWrapping="Wrap"><Run Text="必要なファイル: ffmpeg.exe , ffprobe.exe（同じフォルダーに配置）" /><LineBreak /><Run Text="空欄の場合はtools配下、次にPATHから自動検出します。" /><LineBreak /><Run Text="「ffmpegを取得」はGyanの配布URLから最新安定版をダウンロードし、tools\ffmpeg\以下へ保存します。" /><LineBreak /><Run Text="ダウンロード元: https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip" /><LineBreak /><Run Text="保存した設定は次回起動時から反映されます。" /></TextBlock>
+                    <TextBlock TextWrapping="Wrap"><Run Text="必要なファイル: ffmpeg.exe , ffprobe.exe"/><LineBreak/><Run Language="ja-jp" Text="見つからない場合は"/><Run Text="tool"/><Run Language="ja-jp" Text="フォルダ"/><Run Text="配下、次にPATHから自動検出します。"/><LineBreak/><Run Text="「ffmpegを取得」はGyanの配布URLから最新安定版をダウンロードし、tools\ffmpeg\以下へ保存します。"/><LineBreak/><Run Text="ダウンロード元: https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"/><LineBreak/><Run Text="保存した設定は次回起動時から反映されます。"/></TextBlock>
                 </Border>
                 <TextBlock x:Name="ErrorText" Grid.Column="1" Grid.Row="4" Grid.ColumnSpan="2" TextWrapping="Wrap" Foreground="{StaticResource UiWarningBrush}" />
             </Grid>
         </StackPanel>
         </ScrollViewer>
             <StackPanel Grid.Row="1" Margin="18,0,18,18" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
-                <Button x:Name="SaveButton" Content="保存" IsDefault="True" Click="Save_Click" />
+                <Button x:Name="SaveButton" Content="保存" IsDefault="True" Click="Save_Click" VerticalAlignment="Bottom" />
                 <Button Content="キャンセル" IsCancel="True" />
             </StackPanel>
     </Grid>
