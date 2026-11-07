@@ -125,6 +125,18 @@ public partial class SettingsWindow : Window
         if (dialog.ShowDialog(this) == true) FolderPathBox.Text = dialog.FolderName;
     }
 
+    private void Website_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+    {
+        e.Handled = true;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri)
+            { UseShellExecute = true });
+        }
+        catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
+        { ErrorText.Text = "ブラウザーを開けませんでした：" + error.Message; }
+    }
+
     private void Detect_Click(object sender, RoutedEventArgs e) => RefreshStatus();
 
     private void Save_Click(object sender, RoutedEventArgs e)
