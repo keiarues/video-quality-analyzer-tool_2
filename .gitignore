@@ -14,3 +14,9 @@
 /tools/dotnet-home/
 /measurement-results/
 /tools/ffmpeg/
+
+# 配布用の生成物
+/artifacts/
+
+# Visual Studioの個人設定・発行履歴
+*.user
