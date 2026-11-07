@@ -4,7 +4,7 @@
         xmlns:preview="clr-namespace:VideoQualityAnalyzer.GpuPreview"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Style="{StaticResource {x:Type Window}}"
-        Title="動画品質アナライザー"
+        Title="VideoQualityAnalyzer"
         Width="1800" Height="900" MinWidth="980" MinHeight="620"
         Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource TextBrush}"
         AllowDrop="True" Drop="Window_Drop" DragOver="Window_DragOver"
