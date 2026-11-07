@@ -251,7 +251,9 @@ public partial class MainWindow : Window
 
         UpdateSelection();
         if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
-        SetWindowStatus($"{videos.Count}本を登録しました。");
+        var groupCount = videos.Where(entry => !entry.IsReference && !string.IsNullOrWhiteSpace(entry.Group))
+            .Select(entry => entry.Group).Distinct().Count();
+        SetWindowStatus($"読み込み済み：{videos.Count}ファイル／{groupCount}グループ");
         }
         finally { pendingVideoLoads--; }
     }
