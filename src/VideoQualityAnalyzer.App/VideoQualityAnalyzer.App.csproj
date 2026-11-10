@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>VideoQualityAnalyzer</AssemblyName>
+    <!-- 公開バージョンはリリース時に手動で更新する。 -->
+    <Version>1.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonPanel.Telemetry.cs" Link="ComparisonPanel.Telemetry.cs" />
@@ -20,4 +22,18 @@
     <ProjectReference Include="..\VideoQualityAnalyzer.Media\VideoQualityAnalyzer.Media.csproj" />
     <ProjectReference Include="..\VideoQualityAnalyzer.Diagnostics\VideoQualityAnalyzer.Diagnostics.csproj" />
   </ItemGroup>
+  <Target Name="SetGitBuildNumber" BeforeTargets="GetAssemblyVersion" Condition="'$(DesignTimeBuild)' != 'true'">
+    <Exec Command="git rev-parse --is-shallow-repository" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true" StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitShallowRepository" />
+    </Exec>
+    <Error Condition="'$(GitShallowRepository)' != 'false'" Text="ビルド番号にはGitの全履歴が必要です。浅いクローンではなく、全履歴を取得してください。" />
+    <Exec Command="git rev-list --count HEAD" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true" StandardOutputImportance="Low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitBuildNumber" />
+    </Exec>
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('$(Version)', '^\d+\.\d+\.\d+$'))" Text="公開バージョンは 1.0.0 のように3つの数値で指定してください。" />
+    <Error Condition="$(GitBuildNumber) &gt; 65534" Text="コミット数がファイルバージョンの上限を超えました。採番方式を見直してください。" />
+    <PropertyGroup>
+      <FileVersion>$(Version).$(GitBuildNumber)</FileVersion>
+    </PropertyGroup>
+  </Target>
 </Project>
