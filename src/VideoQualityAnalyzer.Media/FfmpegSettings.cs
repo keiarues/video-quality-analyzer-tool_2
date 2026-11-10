@@ -39,10 +39,16 @@ public static class FfmpegSettings
         }
     }
     public static string ActivePath { get; } = Detect(Load()).Path ?? "";
-    private static string SettingsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoQualityAnalyzer", "ffmpeg-path.txt");
+    private static string SettingsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoQualityAnalyzer", "settings.txt");
+    private static string LegacySettingsPath => Path.Combine(Path.GetDirectoryName(SettingsPath)!, "ffmpeg-path.txt");
     public static string Load()
     {
-        try { return File.Exists(SettingsPath) ? File.ReadAllText(SettingsPath).Trim() : ""; }
+        try
+        {
+            // 新しい設定ファイルがない場合は従来の設定を引き継ぐ。
+            var path = File.Exists(SettingsPath) ? SettingsPath : LegacySettingsPath;
+            return File.Exists(path) ? File.ReadAllText(path).Trim() : "";
+        }
         catch (IOException) { return ""; }
         catch (UnauthorizedAccessException) { return ""; }
     }
