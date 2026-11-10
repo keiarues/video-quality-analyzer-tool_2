@@ -36,12 +36,13 @@
       <FileVersion>$(Version).$(GitBuildNumber)</FileVersion>
     </PropertyGroup>
   </Target>
-  <!-- Visual Studioが渡す発行先も、取得済みのビルド番号で確定する。 -->
-  <Target Name="SetReleasePublishDirectory" BeforeTargets="PrepareForBuild;PrepareForPublish" DependsOnTargets="SetGitBuildNumber"
-          Condition="'$(DesignTimeBuild)' != 'true' And ('$(PublishProfileName)' == 'ReleaseProfile' Or '$(PublishProfile)' == 'ReleaseProfile' Or ('$(WebPublishProfileFile)' != '' And $([System.IO.Path]::GetFileNameWithoutExtension('$(WebPublishProfileFile)')) == 'ReleaseProfile'))">
+  <!-- 発行時はプロファイル名の引き継ぎに依存せず、コピー前に出力先を確定する。 -->
+  <Target Name="SetReleasePublishDirectory" BeforeTargets="PrepareForPublish" DependsOnTargets="SetGitBuildNumber"
+          Condition="'$(DesignTimeBuild)' != 'true'">
     <PropertyGroup>
       <PublishDir>$(MSBuildProjectDirectory)\bin\$(Configuration)\$(TargetFramework)\publish\$(AssemblyName)-v$(Version)-build$(GitBuildNumber)-$(RuntimeIdentifier)\</PublishDir>
       <PublishUrl>$(PublishDir)</PublishUrl>
     </PropertyGroup>
+    <Message Importance="High" Text="配布ファイルの出力先: $(PublishDir)" />
   </Target>
 </Project>
