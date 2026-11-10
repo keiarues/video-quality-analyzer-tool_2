@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk" TreatAsLocalProperty="PublishDir;PublishUrl">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net10.0-windows</TargetFramework>
@@ -34,6 +34,14 @@
     <Error Condition="$(GitBuildNumber) &gt; 65534" Text="コミット数がファイルバージョンの上限を超えました。採番方式を見直してください。" />
     <PropertyGroup>
       <FileVersion>$(Version).$(GitBuildNumber)</FileVersion>
+    </PropertyGroup>
+  </Target>
+  <!-- Visual Studioが渡す発行先も、取得済みのビルド番号で確定する。 -->
+  <Target Name="SetReleasePublishDirectory" BeforeTargets="PrepareForBuild;PrepareForPublish" DependsOnTargets="SetGitBuildNumber"
+          Condition="'$(DesignTimeBuild)' != 'true' And ('$(PublishProfileName)' == 'ReleaseProfile' Or '$(PublishProfile)' == 'ReleaseProfile' Or ('$(WebPublishProfileFile)' != '' And $([System.IO.Path]::GetFileNameWithoutExtension('$(WebPublishProfileFile)')) == 'ReleaseProfile'))">
+    <PropertyGroup>
+      <PublishDir>$(MSBuildProjectDirectory)\bin\$(Configuration)\$(TargetFramework)\publish\$(AssemblyName)-v$(Version)-build$(GitBuildNumber)-$(RuntimeIdentifier)\</PublishDir>
+      <PublishUrl>$(PublishDir)</PublishUrl>
     </PropertyGroup>
   </Target>
 </Project>
