@@ -147,6 +147,12 @@ public partial class App : Application
         RecordStartup("メイン画面の表示開始");
         MainWindow.Show();
         RecordStartup("メイン画面の表示完了");
+        if (VideoQualityAnalyzer.Media.FfmpegSettings.Detect(
+            VideoQualityAnalyzer.Media.FfmpegSettings.Load()).Path is null)
+        {
+            RecordStartup("FFmpeg未検出のため設定画面を表示");
+            new SettingsWindow { Owner = MainWindow }.ShowDialog();
+        }
     }
 
     private static string StartupLogPath => System.IO.Path.Combine(
