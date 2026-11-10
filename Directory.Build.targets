@@ -1,0 +1,8 @@
+<Project>
+  <!-- 参照DLLに付随するPDBも、発行ファイルの収集後に除外する。 -->
+  <Target Name="ExcludeReleasePublishSymbols" AfterTargets="ComputeFilesToPublish" Condition="'$(Configuration)' == 'Release'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(ResolvedFileToPublish.Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
+</Project>

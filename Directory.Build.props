@@ -1,0 +1,11 @@
+<Project>
+  <!-- Release成果物のDLL・PDBに開発PCの絶対パスを残さない。 -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <EnableSourceLink>false</EnableSourceLink>
+    <!-- PDBはビルド先に保管し、参照プロジェクトも含めて発行対象から外す。 -->
+    <CopyOutputSymbolsToPublishDirectory>false</CopyOutputSymbolsToPublishDirectory>
+  </PropertyGroup>
+</Project>
