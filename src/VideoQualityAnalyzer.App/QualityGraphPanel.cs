@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
@@ -271,10 +271,11 @@ public sealed class QualityGraphPanel : UserControl
                 PlaceLegend();
                 return;
             }
-            var values = available.SelectMany(video => results[(video.Id, selected)].Frames.Select(frame => frame.Value)).ToArray();
-            var min = values.Min();
-            var max = values.Max();
-            if (max - min < 0.000001) { min -= 0.5; max += 0.5; }
+            // フレーム値とファイル平均値は変動幅が異なるため、表示対象ごとに軸を求める。
+            var frameVideos = available.Where(video => selectedIds.Contains(video.Id)).ToArray();
+            var (min, max) = VerticalRange(frameVideos.SelectMany(video =>
+                results[(video.Id, selected)].Frames.Select(frame => frame.Value)));
+            var (fileMin, fileMax) = VerticalRange(available.Select(video => results[(video.Id, selected)].Average));
             maximumTime = available.Max(video => results[(video.Id, selected)].Frames.Max(frame => frame.Number) / video.AverageFrameRate);
             if (evaluationVideo is not null) maximumTime = evaluationVideo.Duration.TotalSeconds;
             var rates = available.Select(Bitrate).ToArray();
@@ -282,7 +283,7 @@ public sealed class QualityGraphPanel : UserControl
             var timeArea = PlotArea(timeline);
             var fileArea = PlotArea(averages);
             DrawAxes(timeline, timeArea, maximumTime, min, max, "秒");
-            DrawAxes(averages, fileArea, maxRate, min, max, "kbps");
+            DrawAxes(averages, fileArea, maxRate, fileMin, fileMax, "kbps");
             var previousPoints = new Dictionary<string, Point>();
             for (var index = 0; index < available.Length; index++)
             {
@@ -300,7 +301,7 @@ public sealed class QualityGraphPanel : UserControl
                     Stroke = isSelected ? Brushes.Black : null, StrokeThickness = 2,
                     Tag = video.Id, ToolTip = $"{video.Name}: {result.Average:F4} / {rates[index]:N0} kbps", Cursor = System.Windows.Input.Cursors.Hand };
                 Canvas.SetLeft(point, fileArea.Left + rates[index] / maxRate * fileArea.Width - 6);
-                Canvas.SetTop(point, fileArea.Top + (max - result.Average) / (max - min) * fileArea.Height - 6);
+                Canvas.SetTop(point, fileArea.Top + (fileMax - result.Average) / (fileMax - fileMin) * fileArea.Height - 6);
                 point.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); e.Handled = true; };
                 if (groups is not null && groups.TryGetValue(video.Id, out var group))
                 {
@@ -403,6 +404,14 @@ public sealed class QualityGraphPanel : UserControl
                     if (canvas.Children.OfType<Line>().Count(line => Equals(line.Tag, "グリッド")) != 12 ||
                         canvas.Children.OfType<TextBlock>().Count(label => Equals(label.Tag, "目盛り")) != 12)
                         throw new InvalidOperationException("軸の目盛りまたはグリッドが不足しています。");
+                // 外れたフレーム値に平均値の軸が引っ張られず、単一値でも描画できる。
+                var frameRange = VerticalRange([0.1, 0.99]);
+                var averageRange = VerticalRange([0.94, 0.95]);
+                var singleRange = VerticalRange([0.95]);
+                if (averageRange.Maximum - averageRange.Minimum >= frameRange.Maximum - frameRange.Minimum ||
+                    singleRange.Minimum >= 0.95 || singleRange.Maximum <= 0.95 ||
+                    VerticalRange([]) != (0d, 1d))
+                    throw new InvalidOperationException("グラフ別の縦軸範囲または単一値・空データの範囲が不正です。");
                 if (averages.Children.OfType<TextBlock>().Count(label => Equals(label.Tag, "点の評価値")) != FilePointCount ||
                     legend.Children.Count != FilePointCount)
                     throw new InvalidOperationException("点の評価値・ビットレート表示または凡例が不足しています。");
@@ -665,6 +674,18 @@ public sealed class QualityGraphPanel : UserControl
 
     private static double Bitrate(VideoDescriptor video) => video.AverageBitrate is > 0 ? video.AverageBitrate.Value / 1_000d : System.IO.File.Exists(video.Path) && video.Duration.TotalSeconds > 0
         ? new System.IO.FileInfo(video.Path).Length * 8d / video.Duration.TotalSeconds / 1_000_000 : 0;
+
+    private static (double Minimum, double Maximum) VerticalRange(IEnumerable<double> values)
+    {
+        var finite = values.Where(double.IsFinite).ToArray();
+        if (finite.Length == 0) return (0, 1);
+        var minimum = finite.Min();
+        var maximum = finite.Max();
+        // 点や折れ線が上下端に重ならないよう余白を付け、単一値でも範囲を確保する。
+        var padding = Math.Max((maximum - minimum) * 0.05,
+            Math.Max(Math.Max(Math.Abs(minimum), Math.Abs(maximum)) * 0.001, 0.000001));
+        return (minimum - padding, maximum + padding);
+    }
 
     // 軸・目盛りと描画データは同じ領域を基準に配置する。
     private static Rect PlotArea(Canvas canvas) => new(64, 18,
