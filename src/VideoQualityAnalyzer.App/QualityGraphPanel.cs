@@ -7,6 +7,8 @@ using VideoQualityAnalyzer.Media;
 
 namespace VideoQualityAnalyzer.App;
 
+public enum GraphImageTarget { Frames, Files }
+
 public sealed class QualityGraphPanel : UserControl
 {
     private readonly Canvas timeline = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
@@ -103,11 +105,92 @@ public sealed class QualityGraphPanel : UserControl
         fileLayers.Children.Add(averages);
         fileLayers.Children.Add(overlay);
         rightGraph.Children.Add(fileLayers);
+        (FrameworkElement Element, string Title)[] ExportSources(GraphImageTarget target) => target switch
+        {
+            GraphImageTarget.Frames => [(timeline, "フレームグラフ：時刻（秒）と品質")],
+            GraphImageTarget.Files => [(exportFontScale > 1 ? averages : fileLayers, "ファイルグラフ：平均ビットレート（kbps）と平均品質")],
+            _ => throw new ArgumentOutOfRangeException(nameof(target))
+        };
+        FormattedText ExportTitle(FrameworkElement source, string title) => new(
+            $"{((TabItem)metric.SelectedItem).Header}  {title}",
+            System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
+            new Typeface(FontFamily, FontStyles.Normal, FontWeights.Normal, FontStretches.Normal),
+            (double)FindResource("UiFontMedium") * exportFontScale, UiTheme.OnLight, 1)
+            { MaxTextWidth = source.ActualWidth };
+        getExportDisplaySize = target =>
+        {
+            UpdateLayout();
+            var sources = ExportSources(target);
+            if (sources.Any(source => source.Element.ActualWidth <= 0 || source.Element.ActualHeight <= 0))
+                throw new InvalidOperationException("保存するグラフを画面に表示してください。");
+            return new Size(24 + sources.Sum(source => source.Element.ActualWidth + 12),
+                12 + sources.Max(source => source.Element.ActualHeight + Math.Max(44, ExportTitle(source.Element, source.Title).Height + 20)) +
+                (target == GraphImageTarget.Files && exportFontScale > 1 ? legendBox.ActualHeight + 12 : 0));
+        };
+        createExportPanel = scale =>
+        {
+            var sourceVideos = allVideos ?? videos;
+            var copy = new QualityGraphPanel(sourceVideos.Where(video => selectedIds.Contains(video.Id)).ToArray(),
+                results, allVideos: sourceVideos, groups: groups, separatePlaybackLayer: true)
+                { exportFontScale = scale };
+            copy.SelectMetric((QualityMetric)((TabItem)metric.SelectedItem).Tag);
+            return copy;
+        };
+        createExportImage = (target, width, height, fontScale) =>
+        {
+            if (width < 1 || height < 1 || width > 16384 || height > 16384 || (long)width * height > 40_000_000)
+                throw new ArgumentOutOfRangeException(nameof(width), "画像サイズは各辺1～16384ピクセル、総画素数4000万以下で指定してください。");
+            if (!double.IsFinite(fontScale) || fontScale < 1 || fontScale > 3)
+                throw new ArgumentOutOfRangeException(nameof(fontScale));
+            UpdateLayout();
+            var hidden = new FrameworkElement[] { playhead, leftPlaybackStatus, rightPlaybackStatus, playbackTimeLabel, legendHeader };
+            var visibility = hidden.Select(element => element.Visibility).ToArray();
+            try
+            {
+                foreach (var element in hidden) element.Visibility = Visibility.Hidden;
+                var visual = new DrawingVisual();
+                using (var drawing = visual.RenderOpen())
+                {
+                    drawing.DrawRectangle(Brushes.White, null, new Rect(0, 0, width, height));
+                    var sources = ExportSources(target);
+                    var natural = getExportDisplaySize(target);
+                    var scale = Math.Min(width / natural.Width, height / natural.Height);
+                    drawing.PushTransform(new ScaleTransform(scale, scale));
+                    var x = 12d;
+                    foreach (var (source, title) in sources)
+                    {
+                        var text = ExportTitle(source, title);
+                        var graphTop = Math.Max(44, text.Height + 20);
+                        drawing.DrawText(text, new Point(x, 10));
+                        drawing.DrawRectangle(new VisualBrush(source) { Stretch = Stretch.Fill }, null,
+                            new Rect(x, graphTop, source.ActualWidth, source.ActualHeight));
+                        x += source.ActualWidth + 12;
+                    }
+                    if (target == GraphImageTarget.Files && exportFontScale > 1)
+                    {
+                        // 大きな凡例が系列を隠さないよう、出力時はグラフの下側へ分離する。
+                        drawing.DrawRectangle(new VisualBrush(legendBox) { Stretch = Stretch.Fill }, null,
+                            new Rect(12, sources[0].Element.ActualHeight + Math.Max(44, ExportTitle(sources[0].Element, sources[0].Title).Height + 20) + 12,
+                                legendBox.ActualWidth, legendBox.ActualHeight));
+                    }
+                    drawing.Pop();
+                }
+                var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(width, height, 96, 96, PixelFormats.Pbgra32);
+                bitmap.Render(visual);
+                bitmap.Freeze();
+                return bitmap;
+            }
+            finally
+            {
+                for (var index = 0; index < hidden.Length; index++) hidden[index].Visibility = visibility[index];
+            }
+        };
         var legendPositioned = false;
         void ClampLegend(double x, double y)
         {
-            legendBox.Width = Math.Min(350, Math.Max(1, overlay.ActualWidth - 12));
-            legendScroll.MaxHeight = Math.Min(180, Math.Max(0, overlay.ActualHeight - 50));
+            legendBox.Width = Math.Min(350 * exportFontScale, Math.Max(1, overlay.ActualWidth - 12));
+            legendScroll.MaxHeight = singleExport && exportFontScale > 1 ? double.PositiveInfinity :
+                Math.Min(180 * exportFontScale, Math.Max(0, overlay.ActualHeight - 50));
             legendBox.Measure(new Size(legendBox.Width, double.PositiveInfinity));
             Canvas.SetLeft(legendBox, Math.Clamp(x, 0, Math.Max(0, overlay.ActualWidth - legendBox.DesiredSize.Width)));
             Canvas.SetTop(legendBox, Math.Clamp(y, 0, Math.Max(0, overlay.ActualHeight - legendBox.DesiredSize.Height)));
@@ -229,6 +312,28 @@ public sealed class QualityGraphPanel : UserControl
         var minimizeFrame = AddMinimize(leftGraph, 0, "フレームグラフ");
         var minimizeFile = AddMinimize(rightGraph, 2, "ファイルグラフ");
         if (frameOnly) { graphSplitter.Visibility = Visibility.Collapsed; grid.ColumnDefinitions[1].Width = new GridLength(0); }
+        prepareSingleExport = target =>
+        {
+            singleExport = true;
+            // 出力専用コピーでは選択したグラフだけを領域全体へ配置する。
+            ((TabItem)metric.SelectedItem).Content = null;
+            panel.Children.Clear();
+            panel.Margin = new Thickness(0);
+            panel.Children.Add(grid);
+            var frames = target == GraphImageTarget.Frames;
+            leftGraph.Visibility = frames ? Visibility.Visible : Visibility.Collapsed;
+            rightGraph.Visibility = frames ? Visibility.Collapsed : Visibility.Visible;
+            foreach (var pane in new[] { leftGraph, rightGraph })
+            {
+                pane.Margin = new Thickness(0);
+                pane.Children[0].Visibility = Visibility.Collapsed;
+            }
+            grid.ColumnDefinitions[0].Width = frames ? new GridLength(1, GridUnitType.Star) : new GridLength(0);
+            grid.ColumnDefinitions[1].Width = new GridLength(0);
+            grid.ColumnDefinitions[2].Width = frames ? new GridLength(0) : new GridLength(1, GridUnitType.Star);
+            graphSplitter.Visibility = Visibility.Collapsed;
+        };
+
         void ClearFileSelection()
         {
             selectedIds.Clear();
@@ -313,7 +418,7 @@ public sealed class QualityGraphPanel : UserControl
                 }
                 averages.Children.Add(point);
                 var label = new TextBlock { Text = $"{result.Average:F4} / {rates[index]:N0} kbps",
-                    FontSize = UiTheme.Small, Foreground = UiTheme.OnLight, Background = Brushes.WhiteSmoke,
+                    FontSize = UiTheme.Small * exportFontScale, Foreground = UiTheme.OnLight, Background = Brushes.WhiteSmoke,
                     IsHitTestVisible = false, Tag = "点の評価値" };
                 label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
                 Canvas.SetLeft(label, Math.Clamp(Canvas.GetLeft(point) + 14, fileArea.Left,
@@ -321,13 +426,13 @@ public sealed class QualityGraphPanel : UserControl
                 Canvas.SetTop(label, Math.Clamp(Canvas.GetTop(point) - label.DesiredSize.Height,
                     0, Math.Max(0, averages.ActualHeight - label.DesiredSize.Height)));
                 averages.Children.Add(label);
-                var legendItem = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 2, 10, 2),
+                var legendItem = new StackPanel { Orientation = exportFontScale >= 2 ? Orientation.Vertical : Orientation.Horizontal, Margin = new Thickness(4, 2, 10, 2),
                     ToolTip = $"{video.Name} / {result.Average:F4} / {rates[index]:N0} kbps" };
                 legendItem.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = color, Margin = new Thickness(0, 0, 5, 0) });
-                legendItem.Children.Add(new TextBlock { Text = video.Name, FontSize = UiTheme.Small,
-                    Foreground = UiTheme.OnLight, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis });
+                legendItem.Children.Add(new TextBlock { Text = video.Name, FontSize = UiTheme.Small * exportFontScale,
+                    Foreground = UiTheme.OnLight, MaxWidth = 150 * exportFontScale, TextTrimming = TextTrimming.CharacterEllipsis });
                 legendItem.Children.Add(new TextBlock { Text = $"  {result.Average:F4} / {rates[index]:N0} kbps",
-                    FontSize = UiTheme.Small, Foreground = UiTheme.OnLight });
+                    FontSize = UiTheme.Small * exportFontScale, Foreground = UiTheme.OnLight });
                 legendItem.Background = Brushes.Transparent;
                 legendItem.Cursor = System.Windows.Input.Cursors.Hand;
                 legendItem.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); e.Handled = true; };
@@ -499,6 +604,61 @@ public sealed class QualityGraphPanel : UserControl
             }
             catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }
         };
+    }
+
+    private readonly Func<GraphImageTarget, Size> getExportDisplaySize;
+    public Size GetExportDisplaySize(GraphImageTarget target) => getExportDisplaySize(target);
+    private double exportFontScale = 1;
+    private bool singleExport;
+    private readonly Func<double, QualityGraphPanel> createExportPanel;
+    private readonly Action<GraphImageTarget> prepareSingleExport;
+    private readonly Func<GraphImageTarget, int, int, double, System.Windows.Media.Imaging.BitmapSource> createExportImage;
+    public System.Windows.Media.Imaging.BitmapSource CreateExportImage(GraphImageTarget target, int width, int height, double fontScale = 1, Size? layoutSize = null)
+    {
+        if (layoutSize is null && fontScale == exportFontScale) return createExportImage(target, width, height, fontScale);
+        if (!double.IsFinite(fontScale) || fontScale < 1 || fontScale > 3)
+            throw new ArgumentOutOfRangeException(nameof(fontScale));
+        // 非表示タブでもWPFが文字・系列を描画するよう、専用コピーを画面外で配置する。
+        // 操作中のグラフの文字サイズ・凡例位置は変更しない。
+        if (layoutSize is { } requested && (!double.IsFinite(requested.Width) || !double.IsFinite(requested.Height) ||
+            requested.Width < 200 || requested.Height < 200))
+            throw new ArgumentOutOfRangeException(nameof(layoutSize));
+        var copy = createExportPanel(fontScale);
+        if (layoutSize is not null) copy.prepareSingleExport(target);
+        var host = new Window
+        {
+            Style = (Style)Application.Current.FindResource(typeof(Window)),
+            Content = copy, Width = layoutSize?.Width ?? ActualWidth, Height = layoutSize?.Height ?? ActualHeight,
+            WindowStyle = WindowStyle.None, ResizeMode = ResizeMode.NoResize,
+            ShowInTaskbar = false, ShowActivated = false, Left = -30000, Top = -30000
+        };
+        try
+        {
+            host.Show();
+            copy.UpdateLayout();
+            if (layoutSize is { } desired)
+            {
+                // タイトル・凡例分を除いた残りをプロットへ割り当て、指定した縦横比で描き直す。
+                for (var pass = 0; pass < 3; pass++)
+                {
+                    var natural = copy.GetExportDisplaySize(target);
+                    host.Width = Math.Max(200, host.Width + desired.Width - natural.Width);
+                    host.Height = Math.Max(72 * fontScale + 180, host.Height + desired.Height - natural.Height);
+                    copy.UpdateLayout();
+                }
+            }
+            return copy.createExportImage(target, width, height, fontScale);
+        }
+        finally { host.Close(); }
+    }
+
+    public void ExportPng(string path, GraphImageTarget target, int width, int height, double fontScale = 1)
+    {
+        var bitmap = CreateExportImage(target, width, height, fontScale);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using var stream = System.IO.File.Create(path);
+        encoder.Save(stream);
     }
 
     private readonly HashSet<string> displayedVideoIds = [];
@@ -688,12 +848,12 @@ public sealed class QualityGraphPanel : UserControl
     }
 
     // 軸・目盛りと描画データは同じ領域を基準に配置する。
-    private static Rect PlotArea(Canvas canvas) => new(64, 18,
-        Math.Max(1, canvas.ActualWidth - 90), Math.Max(1, canvas.ActualHeight - 72));
+    private Rect PlotArea(Canvas canvas) => new(64 * exportFontScale, 18 * exportFontScale,
+        Math.Max(1, canvas.ActualWidth - 90 * exportFontScale), Math.Max(1, canvas.ActualHeight - 72 * exportFontScale));
 
-    private static void DrawAxes(Canvas canvas, Rect area, double maximumX, double minimumY, double maximumY, string unit)
+    private void DrawAxes(Canvas canvas, Rect area, double maximumX, double minimumY, double maximumY, string unit)
     {
-        const int divisions = 5;
+        var divisions = exportFontScale == 1 ? 5 : Math.Clamp((int)(area.Width / (100 * exportFontScale)), 2, 5);
         for (var index = 0; index <= divisions; index++)
         {
             var fraction = index / (double)divisions;
@@ -709,16 +869,16 @@ public sealed class QualityGraphPanel : UserControl
         canvas.Children.Add(new Polyline { Stroke = Brushes.DimGray, StrokeThickness = 1,
             IsHitTestVisible = false, Tag = "軸", Points = new PointCollection
                 { new(area.Left, area.Top), new(area.Left, area.Bottom), new(area.Right, area.Bottom) } });
-        var caption = new TextBlock { Text = unit, Foreground = UiTheme.OnLight, IsHitTestVisible = false };
+        var caption = new TextBlock { Text = unit, FontSize = (double)FindResource("UiFontMedium") * exportFontScale, Foreground = UiTheme.OnLight, IsHitTestVisible = false };
         caption.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(caption, area.Left + (area.Width - caption.DesiredSize.Width) / 2);
-        Canvas.SetTop(caption, area.Bottom + 28);
+        Canvas.SetTop(caption, area.Bottom + 28 * exportFontScale);
         canvas.Children.Add(caption);
     }
 
-    private static void AddTick(Canvas canvas, string text, double x, double y, bool horizontal)
+    private void AddTick(Canvas canvas, string text, double x, double y, bool horizontal)
     {
-        var label = new TextBlock { Text = text, Foreground = UiTheme.OnLight, FontSize = UiTheme.Small,
+        var label = new TextBlock { Text = text, Foreground = UiTheme.OnLight, FontSize = UiTheme.Small * exportFontScale,
             Tag = "目盛り", IsHitTestVisible = false };
         label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(label, horizontal ? Math.Clamp(x - label.DesiredSize.Width / 2, 0,

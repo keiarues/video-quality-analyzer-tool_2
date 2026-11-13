@@ -1,4 +1,4 @@
-using System.Windows;
+﻿using System.Windows;
 
 namespace VideoQualityAnalyzer.App;
 
@@ -15,6 +15,15 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        if (e.Args.Contains("--test-graph-image"))
+        {
+            base.OnStartup(e);
+            var output = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory,
+                "../../../../../measurement-results/graph-image"));
+            MainWindow = new GraphImageTestWindow(e.Args.Contains("--auto"), output);
+            MainWindow.Show();
+            return;
+        }
         if (e.Args.Contains("--test-folder-drop"))
         {
             base.OnStartup(e);

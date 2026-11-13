@@ -1,0 +1,316 @@
+﻿using System.IO;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Threading;
+using Microsoft.Win32;
+using VideoQualityAnalyzer.Core;
+using VideoQualityAnalyzer.Media;
+
+namespace VideoQualityAnalyzer.App;
+
+// 本画面への組み込み前に、画像の配置・保存・表示倍率を検証する。
+internal sealed class GraphImageTestWindow : Window
+{
+    private readonly ContentControl graphHost = new();
+    private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap, MinHeight = 22 };
+    private readonly ComboBox target = new() { Width = 150 };
+    private readonly ComboBox size = new() { Width = 170 };
+    private readonly TextBox dimension = new() { Width = 80, Text = "1920" };
+    private readonly TextBox heightDimension = new() { Width = 80, Text = "1080" };
+    private readonly ComboBox font = new() { Width = 90 };
+    private readonly Image preview = new() { Stretch = Stretch.Fill };
+    private readonly Grid viewport = new() { Background = Brushes.LightSlateGray };
+    private readonly ScrollViewer scroll = new() { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
+        VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
+    private readonly Border previewFrame;
+    private readonly TabControl tabs = new();
+    private readonly TabItem previewTab;
+    private readonly Slider zoom = new() { Minimum = 10, Maximum = 500, TickFrequency = 10,
+        SmallChange = 10, LargeChange = 10, IsSnapToTickEnabled = true, Width = 230, Value = 100 };
+    private readonly TextBlock zoomLabel = new() { Width = 65, VerticalAlignment = VerticalAlignment.Center };
+    private readonly DispatcherTimer resizeTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
+    private readonly (int Width, int Height)[] presets = [(800, 600), (1280, 720), (1920, 1080), (2560, 1440), (3840, 2160)];
+    private QualityGraphPanel graph = null!;
+    private bool fitToWindow = true;
+    private bool updatingZoom;
+    private bool updatingSizeInputs;
+    private double displayScale = 1;
+
+    public GraphImageTestWindow(bool automatic, string outputDirectory)
+    {
+        Style = (Style)Application.Current.FindResource(typeof(Window));
+        Title = "グラフ画像保存テスト";
+        Width = 1400; Height = 850; MinWidth = 900; MinHeight = 600;
+        var root = new DockPanel { Margin = new Thickness(8) }; Content = root;
+        var toolbar = new WrapPanel(); DockPanel.SetDock(toolbar, Dock.Top); root.Children.Add(toolbar);
+        toolbar.Children.Add(Label("保存対象："));
+        foreach (var text in new[] { "フレームグラフ", "ファイルグラフ" }) target.Items.Add(text);
+        target.SelectedIndex = 1; toolbar.Children.Add(target);
+        toolbar.Children.Add(Label("画像サイズ："));
+        foreach (var text in new[] { "現在の表示サイズ", "横幅を指定", "縦幅を指定", "幅と高さを指定" }) size.Items.Add(text);
+        foreach (var preset in presets) size.Items.Add($"{preset.Width} × {preset.Height}");
+        size.SelectedIndex = 0; toolbar.Children.Add(size);
+        toolbar.Children.Add(dimension); toolbar.Children.Add(Label("×"));
+        toolbar.Children.Add(heightDimension); toolbar.Children.Add(Label("px"));
+        toolbar.Children.Add(Label("フォント："));
+        foreach (var text in new[] { "1倍", "1.2倍", "1.5倍", "2倍", "3倍" }) font.Items.Add(text);
+        font.SelectedIndex = 0; toolbar.Children.Add(font);
+        var save = new Button { Content = "PNG画像を保存" }; toolbar.Children.Add(save);
+        var load = new Button { Content = "実データを読み込む" }; toolbar.Children.Add(load);
+        DockPanel.SetDock(status, Dock.Bottom); root.Children.Add(status);
+        tabs.Items.Add(new TabItem { Header = "グラフ操作", Content = graphHost });
+        previewFrame = new Border { BorderBrush = Brushes.DimGray, BorderThickness = new Thickness(2),
+            Background = Brushes.White, Margin = new Thickness(12), HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center, Child = preview };
+        scroll.Content = previewFrame; viewport.Children.Add(scroll);
+        var previewBody = new DockPanel();
+        var zoomBar = new WrapPanel(); DockPanel.SetDock(zoomBar, Dock.Top); previewBody.Children.Add(zoomBar);
+        zoomBar.Children.Add(Label("表示倍率：")); zoomBar.Children.Add(zoom); zoomBar.Children.Add(zoomLabel);
+        var fit = new Button { Content = "ウィンドウに合わせる" }; zoomBar.Children.Add(fit);
+        var actual = new Button { Content = "100%" }; zoomBar.Children.Add(actual);
+        previewBody.Children.Add(viewport);
+        previewTab = new TabItem { Header = "プレビュー", Content = previewBody }; tabs.Items.Add(previewTab);
+        root.Children.Add(tabs);
+        SetSample(); UpdateSizeInputs();
+        tabs.SelectionChanged += (_, e) =>
+        {
+            if (e.Source == tabs && tabs.SelectedItem == previewTab) QueueRefresh();
+        };
+        target.SelectionChanged += (_, _) => RefreshPreview();
+        size.SelectionChanged += (_, _) => { UpdateSizeInputs(); RefreshPreview(); };
+        dimension.TextChanged += (_, _) => { if (!updatingSizeInputs) RefreshPreview(); };
+        heightDimension.TextChanged += (_, _) => { if (!updatingSizeInputs) RefreshPreview(); };
+        font.SelectionChanged += (_, _) => RefreshPreview();
+        viewport.SizeChanged += (_, _) => { ApplyZoom(); QueueRefresh(); };
+        resizeTimer.Tick += (_, _) => { resizeTimer.Stop(); RefreshPreview(); };
+        Closed += (_, _) => resizeTimer.Stop();
+        zoom.ValueChanged += (_, _) =>
+        {
+            if (updatingZoom) return;
+            fitToWindow = false; ApplyZoom();
+        };
+        fit.Click += (_, _) => { fitToWindow = true; ApplyZoom(); };
+        actual.Click += (_, _) => { fitToWindow = false; zoom.Value = 100; ApplyZoom(); };
+        save.Click += (_, _) =>
+        {
+            var dialog = new SaveFileDialog { Filter = "PNG画像 (*.png)|*.png", DefaultExt = ".png",
+                FileName = "品質グラフ.png", AddExtension = true };
+            if (dialog.ShowDialog(this) != true) return;
+            try
+            {
+                // ズームは表示だけに使用し、保存には元の出力画像を使う。
+                if (tabs.SelectedItem == previewTab) RefreshPreview();
+                var bitmap = tabs.SelectedItem == previewTab && preview.Source is BitmapSource current ? current : CreateImage();
+                var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
+                using var stream = File.Create(dialog.FileName); encoder.Save(stream);
+                status.Text = $"保存しました：{dialog.FileName}（{bitmap.PixelWidth} × {bitmap.PixelHeight}）";
+            }
+            catch (Exception error) { MessageBox.Show(this, error.Message, "画像保存エラー", MessageBoxButton.OK, MessageBoxImage.Error); }
+        };
+        load.Click += async (_, _) =>
+        {
+            var dialog = new OpenFileDialog { Filter = "SSIM検証データ (*.json)|*.json" };
+            if (dialog.ShowDialog(this) != true) return;
+            try
+            {
+                var cache = await SsimTestCache.LoadAsync(dialog.FileName);
+                SetGraph(cache.Entries.Select(entry => entry.Video).ToArray(),
+                    cache.Entries.ToDictionary(entry => (entry.Video.Id, QualityMetric.Ssim), entry => entry.Result));
+                graph.SelectMetric(QualityMetric.Ssim); tabs.SelectedIndex = 0;
+                status.Text = "保存済みの実測SSIMデータを表示中です。";
+            }
+            catch (Exception error) { MessageBox.Show(this, error.Message, "読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error); }
+        };
+        Loaded += async (_, _) =>
+        {
+            if (!automatic) return;
+            try { Directory.CreateDirectory(outputDirectory); await VerifyAsync(outputDirectory); Application.Current.Shutdown(0); }
+            catch (Exception error)
+            {
+                File.WriteAllText(Path.Combine(outputDirectory, "error.txt"), error.ToString());
+                Console.Error.WriteLine(error); Application.Current.Shutdown(1);
+            }
+        };
+    }
+
+    private static TextBlock Label(string text) => new() { Text = text, VerticalAlignment = VerticalAlignment.Center };
+    private double FontScale() => new[] { 1d, 1.2, 1.5, 2, 3 }[font.SelectedIndex];
+    private void UpdateSizeInputs()
+    {
+        dimension.IsEnabled = size.SelectedIndex is 1 or 3;
+        heightDimension.IsEnabled = size.SelectedIndex is 2 or 3;
+    }
+    private void QueueRefresh()
+    {
+        if (tabs.SelectedItem != previewTab) return;
+        resizeTimer.Stop(); resizeTimer.Start();
+    }
+    private Size AvailableSize() => new(Math.Max(300, (viewport.ActualWidth > 0 ? viewport.ActualWidth : graphHost.ActualWidth) - 28),
+        Math.Max(300, (viewport.ActualHeight > 0 ? viewport.ActualHeight : graphHost.ActualHeight) - 28));
+    private (int Width, int Height) ImageSize()
+    {
+        var available = AvailableSize();
+        var dpi = VisualTreeHelper.GetDpi(this);
+        double width, height;
+        if (size.SelectedIndex >= 4) return presets[size.SelectedIndex - 4];
+        if (size.SelectedIndex == 0) { width = available.Width * dpi.DpiScaleX; height = available.Height * dpi.DpiScaleY; }
+        else
+        {
+            static int Parse(string text)
+            {
+                if (!int.TryParse(text, out var value) || value < 1 || value > 16384)
+                    throw new InvalidOperationException("幅と高さは1～16384ピクセルの整数で入力してください。");
+                return value;
+            }
+            width = size.SelectedIndex == 2 ? Parse(heightDimension.Text) * available.Width / available.Height : Parse(dimension.Text);
+            height = size.SelectedIndex == 1 ? width * available.Height / available.Width : Parse(heightDimension.Text);
+        }
+        if (width > 16384 || height > 16384 || width * height > 40_000_000)
+            throw new InvalidOperationException("画像は各辺16384ピクセル、総画素数4000万以下にしてください。");
+        return (Math.Max(1, (int)Math.Round(width)), Math.Max(1, (int)Math.Round(height)));
+    }
+    private BitmapSource CreateImage()
+    {
+        var (width, height) = ImageSize();
+        var available = AvailableSize();
+        var scale = Math.Max(width / available.Width, height / available.Height);
+        var layout = new Size(Math.Max(200, width / scale), Math.Max(200, height / scale));
+        return graph.CreateExportImage((GraphImageTarget)target.SelectedIndex, width, height, FontScale(), layout);
+    }
+    private void RefreshPreview()
+    {
+        if (tabs.SelectedItem != previewTab || viewport.ActualWidth <= 0 || viewport.ActualHeight <= 0) return;
+        try
+        {
+            preview.Source = CreateImage(); ApplyZoom();
+            var bitmap = (BitmapSource)preview.Source;
+            updatingSizeInputs = true;
+            if (!dimension.IsEnabled) dimension.Text = bitmap.PixelWidth.ToString();
+            if (!heightDimension.IsEnabled) heightDimension.Text = bitmap.PixelHeight.ToString();
+            updatingSizeInputs = false;
+            status.Text = $"出力予定の画像：{target.SelectedItem}（{bitmap.PixelWidth} × {bitmap.PixelHeight}）";
+        }
+        catch (Exception error) { preview.Source = null; status.Text = "プレビューを作成できませんでした：" + error.Message; }
+    }
+    private void ApplyZoom()
+    {
+        if (preview.Source is not BitmapSource bitmap) return;
+        var dpi = VisualTreeHelper.GetDpi(this);
+        var available = AvailableSize();
+        displayScale = fitToWindow ? Math.Min(available.Width * dpi.DpiScaleX / bitmap.PixelWidth,
+            available.Height * dpi.DpiScaleY / bitmap.PixelHeight) : zoom.Value / 100;
+        preview.Width = bitmap.PixelWidth * displayScale / dpi.DpiScaleX;
+        preview.Height = bitmap.PixelHeight * displayScale / dpi.DpiScaleY;
+        zoomLabel.Text = $"{displayScale * 100:0}%";
+        if (fitToWindow)
+        {
+            updatingZoom = true;
+            zoom.Value = Math.Clamp(Math.Round(displayScale * 10) * 10, zoom.Minimum, zoom.Maximum);
+            updatingZoom = false;
+        }
+    }
+
+    private async Task VerifyAsync(string directory)
+    {
+        tabs.SelectedItem = previewTab; UpdateLayout(); resizeTimer.Stop(); RefreshPreview();
+        if (size.Items.Count != 9 || size.SelectedIndex != 0) throw new InvalidOperationException("画像サイズの選択肢が不正です。");
+        foreach (var targetIndex in new[] { 0, 1 })
+        foreach (var metric in Enum.GetValues<QualityMetric>())
+        {
+            tabs.SelectedIndex = 0; graph.SelectMetric(metric); UpdateLayout();
+            tabs.SelectedItem = previewTab; UpdateLayout(); target.SelectedIndex = targetIndex; RefreshPreview();
+            if (preview.Source is not BitmapSource) throw new InvalidOperationException("プレビューがありません。");
+            var image = (BitmapSource)preview.Source;
+            var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
+            using var stream = File.Create(Path.Combine(directory, $"responsive-{metric}-{targetIndex}.png")); encoder.Save(stream);
+        }
+        foreach (var mode in Enumerable.Range(0, size.Items.Count))
+        {
+            size.SelectedIndex = mode; RefreshPreview();
+            var expected = ImageSize();
+            if (preview.Source is not BitmapSource image || image.PixelWidth != expected.Width || image.PixelHeight != expected.Height)
+                throw new InvalidOperationException("出力寸法が選択に一致しません。");
+            if (mode >= 4 && expected != presets[mode - 4]) throw new InvalidOperationException("プリセットが不正です。");
+        }
+        size.SelectedIndex = 0; RefreshPreview();
+        var before = (BitmapSource)preview.Source;
+        Width = 1000; Height = 720; UpdateLayout();
+        // 実際のリサイズ通知からの自動更新を待つ。明示的な再生成では代用しない。
+        await Task.Delay(350);
+        var after = (BitmapSource)preview.Source;
+        if (before.PixelWidth == after.PixelWidth || Math.Abs(before.PixelWidth / (double)before.PixelHeight -
+            after.PixelWidth / (double)after.PixelHeight) < 0.01) throw new InvalidOperationException("ウィンドウの縦横比に追従しません。");
+        size.SelectedIndex = 5; RefreshPreview();
+        for (var index = 0; index < font.Items.Count; index++)
+        {
+            font.SelectedIndex = index; RefreshPreview();
+            var image = (BitmapSource)preview.Source;
+            var expected = CreateImage();
+            var fontEncoder = new PngBitmapEncoder(); fontEncoder.Frames.Add(BitmapFrame.Create(image));
+            using (var stream = File.Create(Path.Combine(directory, $"responsive-font-{index}.png"))) fontEncoder.Save(stream);
+            var stride = image.PixelWidth * 4; var pixels = new byte[stride * image.PixelHeight];
+            var other = new byte[pixels.Length]; image.CopyPixels(pixels, stride, 0); expected.CopyPixels(other, stride, 0);
+            var colored = 0;
+            for (var pixel = 0; pixel < pixels.Length; pixel += 4)
+                if (Math.Max(pixels[pixel], Math.Max(pixels[pixel + 1], pixels[pixel + 2])) -
+                    Math.Min(pixels[pixel], Math.Min(pixels[pixel + 1], pixels[pixel + 2])) > 60) colored++;
+            if (colored < 100 || !pixels.SequenceEqual(other)) throw new InvalidOperationException("系列の描画または出力画像の一致が不正です。");
+        }
+        var original = preview.Source;
+        fitToWindow = false; zoom.Value = 200; ApplyZoom(); UpdateLayout();
+        var dpi = VisualTreeHelper.GetDpi(this); var bitmap = (BitmapSource)preview.Source;
+        if (Math.Abs(preview.Width - bitmap.PixelWidth * 2 / dpi.DpiScaleX) > 0.1 || !ReferenceEquals(original, preview.Source) ||
+            scroll.ExtentWidth <= scroll.ViewportWidth || scroll.ExtentHeight <= scroll.ViewportHeight)
+            throw new InvalidOperationException("拡大表示が画像サイズを変更しました。");
+        zoom.Value = 100; ApplyZoom(); UpdateLayout();
+        if (Math.Abs(preview.Width - bitmap.PixelWidth / dpi.DpiScaleX) > 0.1) throw new InvalidOperationException("100%表示が不正です。");
+        fitToWindow = true; ApplyZoom(); UpdateLayout();
+        if (preview.Width > AvailableSize().Width + 1 || preview.Height > AvailableSize().Height + 1)
+            throw new InvalidOperationException("ウィンドウに収まりません。");
+        font.SelectedIndex = 1; RefreshPreview(); UpdateLayout();
+        var screenshot = new RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
+        screenshot.Render(this); var shotEncoder = new PngBitmapEncoder(); shotEncoder.Frames.Add(BitmapFrame.Create(screenshot));
+        using (var stream = File.Create(Path.Combine(directory, "preview-window.png"))) shotEncoder.Save(stream);
+        size.SelectedIndex = 1;
+        dimension.Text = "入力エラー";
+        if (preview.Source is not null) throw new InvalidOperationException("不正な入力で古い画像が残っています。");
+        dimension.Text = "1280";
+        if (preview.Source is not BitmapSource { PixelWidth: 1280 }) throw new InvalidOperationException("入力修正後に画像が復元されません。");
+        graph.SelectFile("sample-1"); RefreshPreview();
+        if (!graph.DisplayedVideoIds.SequenceEqual(new[] { "sample-1" })) throw new InvalidOperationException("動画選択が反映されません。");
+        graph.UpdateData([], [], null); RefreshPreview();
+        if (preview.Source is null) throw new InvalidOperationException("空のデータを出力できません。");
+        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：3指標×2対象、9サイズ選択、ウィンドウ追従、5フォント倍率、出力画素一致、200%・100%・全体表示。サンプルは架空データ。");
+        resizeTimer.Stop(); Console.WriteLine("グラフ画像保存テスト：合格");
+    }
+
+    private void SetGraph(VideoDescriptor[] videos, Dictionary<(string, QualityMetric), QualityResult> results)
+    {
+        graph = new QualityGraphPanel(videos, results, allVideos: videos, separatePlaybackLayer: true);
+        graphHost.Content = graph;
+    }
+
+    private void SetSample()
+    {
+        var videos = Enumerable.Range(0, 4).Select(index => new VideoDescriptor($"sample-{index}",
+            $"サンプル動画{index + 1}.mkv", 1920, 1080, "av1", 30, 30, TimeSpan.FromSeconds(30), false, 900, 1,
+            1_000_000 + index * 800_000)).ToArray();
+        var results = new Dictionary<(string, QualityMetric), QualityResult>();
+        foreach (var metric in Enum.GetValues<QualityMetric>())
+        for (var index = 0; index < videos.Length; index++)
+        {
+            var frames = Enumerable.Range(0, 900).Select(number => new QualityFrame(number,
+                metric switch
+                {
+                    QualityMetric.Ssim => 0.94 + index * 0.012 + 0.01 * Math.Sin(number / 30d) - (number % 120 == 0 ? 0.08 : 0),
+                    QualityMetric.Vmaf => 80 + index * 4 + 3 * Math.Sin(number / 30d),
+                    _ => 34 + index * 3 + 2 * Math.Sin(number / 30d)
+                })).ToArray();
+            results[(videos[index].Id, metric)] = new(metric, frames.Average(frame => frame.Value), frames);
+        }
+        SetGraph(videos, results);
+        status.Text = "架空のサンプル値を表示中（実測品質ではありません）。実データはSSIM検証用JSONを読み込めます。凡例・選択・指標を変えて保存を確認してください。";
+    }
+}
