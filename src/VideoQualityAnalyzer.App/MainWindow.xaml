@@ -35,8 +35,8 @@
                 <MenuItem Header="動画をすべて削除" Click="RemoveAll_Click"
                           IsEnabled="{Binding IsEnabled, ElementName=RemoveVideoButton}" />
                 <Separator />
-                <MenuItem Header="フレームグラフの元データをCSV出力" IsEnabled="False" />
-                <MenuItem Header="ファイルグラフの元データをCSV出力" IsEnabled="False" />
+                <MenuItem Header="フレームグラフの元データをCSV出力" Click="ExportFrameCsv_Click" />
+                <MenuItem Header="ファイルグラフの元データをCSV出力" Click="ExportFileCsv_Click" />
                 <MenuItem x:Name="SaveGraphImageMenuItem" Header="グラフを画像にして保存" Click="SaveGraphImage_Click" />
                 <Separator />
                 <MenuItem Header="終了" Click="Exit_Click" />

@@ -117,11 +117,45 @@ public partial class MainWindow
         AddVideoButton.IsEnabled = SetReferenceButton.IsEnabled = RemoveVideoButton.IsEnabled = !running;
     }
 
-    // 今後のメニューから呼び出せるよう、CSV出力を画面ボタンから独立して保持する。
     private Task ExportQualityCsvAsync(string path, bool frames)
     {
-        var candidates = videos.Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray();
-        var text = frames ? QualityCsvExporter.Frames(candidates, qualityResults) : QualityCsvExporter.Summary(candidates, qualityResults);
-        return System.IO.File.WriteAllTextAsync(path, text, new System.Text.UTF8Encoding(true));
+        var reference = videos.FirstOrDefault(entry => entry.IsReference)?.Descriptor
+            ?? throw new InvalidOperationException("元動画がありません。");
+        var items = videos.Where(entry => !entry.IsReference)
+            .Select(entry => new QualityCsvItem(entry.Descriptor, entry.Group)).ToArray();
+        var results = new Dictionary<(string VideoId, QualityMetric Metric), QualityResult>(qualityResults);
+        if (!QualityCsvExporter.HasResults(items, results))
+            throw new InvalidOperationException("完了した評価結果がありません。");
+        var text = frames ? QualityCsvExporter.Frames(reference, items, results)
+            : QualityCsvExporter.Summary(reference, items, results);
+        return QualityCsvExporter.SaveAsync(path, text);
+    }
+
+    private async void ExportFrameCsv_Click(object sender, RoutedEventArgs e) => await ExportCsvFromMenuAsync(true);
+    private async void ExportFileCsv_Click(object sender, RoutedEventArgs e) => await ExportCsvFromMenuAsync(false);
+
+    private async Task ExportCsvFromMenuAsync(bool frames)
+    {
+        var items = videos.Where(entry => !entry.IsReference)
+            .Select(entry => new QualityCsvItem(entry.Descriptor, entry.Group)).ToArray();
+        if (!videos.Any(entry => entry.IsReference) || !QualityCsvExporter.HasResults(items, qualityResults))
+        { SetWindowStatus("CSVに出力できる完了済みの評価結果がありません。"); return; }
+        var dialog = new Microsoft.Win32.SaveFileDialog
+        {
+            Filter = "CSVファイル (*.csv)|*.csv",
+            DefaultExt = ".csv",
+            AddExtension = true,
+            FileName = frames ? "フレーム品質.csv" : "ファイル品質.csv"
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        try
+        {
+            await ExportQualityCsvAsync(dialog.FileName, frames);
+            SetWindowStatus(frames ? "フレームCSVを保存しました。" : "ファイルCSVを保存しました。");
+        }
+        catch (Exception exception)
+        {
+            SetWindowStatus("CSVを保存できません: " + exception.Message);
+        }
     }
 }

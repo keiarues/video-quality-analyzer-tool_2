@@ -703,8 +703,7 @@ public sealed class QualityGraphPanel : UserControl
         return panel;
     }
 
-    private static double Bitrate(VideoDescriptor video) => video.AverageBitrate is > 0 ? video.AverageBitrate.Value / 1_000d : System.IO.File.Exists(video.Path) && video.Duration.TotalSeconds > 0
-        ? new System.IO.FileInfo(video.Path).Length * 8d / video.Duration.TotalSeconds / 1_000_000 : 0;
+    private static double Bitrate(VideoDescriptor video) => video.AverageBitrateKbps ?? 0;
 
     private static (double Minimum, double Maximum) VerticalRange(IEnumerable<double> values)
     {

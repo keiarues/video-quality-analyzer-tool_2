@@ -15,6 +15,13 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        if (e.Args.Contains("--test-csv-export"))
+        {
+            base.OnStartup(e);
+            MainWindow = new CsvExportTestWindow(e.Args.Contains("--auto"));
+            MainWindow.Show();
+            return;
+        }
         if (e.Args.Contains("--test-graph-image"))
         {
             base.OnStartup(e);

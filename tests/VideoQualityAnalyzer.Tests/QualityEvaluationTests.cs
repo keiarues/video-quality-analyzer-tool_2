@@ -14,9 +14,10 @@ public sealed class QualityEvaluationTests
         {
             [("id", QualityMetric.Ssim)] = new(QualityMetric.Ssim, 0.5, [new QualityFrame(3, 0.5)])
         };
-        StringAssert.Contains(QualityCsvExporter.Summary([video], results), "\"a,b.mkv\"");
-        StringAssert.Contains(QualityCsvExporter.Summary([video], results), ",,0.5,");
-        StringAssert.Contains(QualityCsvExporter.Frames([video], results), "SSIM,3,0.1");
+        var item = new QualityCsvItem(video, "検証");
+        StringAssert.Contains(QualityCsvExporter.Summary(video, [item], results), "\"a,b.mkv\"");
+        StringAssert.Contains(QualityCsvExporter.Summary(video, [item], results), ",,0.5,");
+        StringAssert.Contains(QualityCsvExporter.Frames(video, [item], results), "SSIM,3,0.10000000000000001,0.5");
     }
 
     [TestMethod]

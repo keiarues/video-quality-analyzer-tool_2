@@ -71,9 +71,13 @@ public sealed class EvaluationWindow : Window
                 if (dialog.ShowDialog(this) != true) return;
                 try
                 {
-                    var text = frameCsv ? QualityCsvExporter.Frames(candidates, results)
-                        : QualityCsvExporter.Summary(candidates, results);
-                    await System.IO.File.WriteAllTextAsync(dialog.FileName, text, new System.Text.UTF8Encoding(true));
+                    var items = candidates.Select(video => new QualityCsvItem(video,
+                        groups is not null && groups.TryGetValue(video.Id, out var group) ? group : "")).ToArray();
+                    if (!QualityCsvExporter.HasResults(items, results))
+                    { status.Text = "完了した評価結果がありません。"; return; }
+                    var text = frameCsv ? QualityCsvExporter.Frames(reference, items, results)
+                        : QualityCsvExporter.Summary(reference, items, results);
+                    await QualityCsvExporter.SaveAsync(dialog.FileName, text);
                     status.Text = "CSVを保存しました。";
                 }
                 catch (Exception exception) { status.Text = $"CSVを保存できません: {exception.Message}"; }

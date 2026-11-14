@@ -32,9 +32,19 @@ public sealed class FfprobeService
         if (!double.TryParse(durationText, NumberStyles.Float, CultureInfo.InvariantCulture, out var durationSeconds))
             durationSeconds = 0;
 
-        var bitrateText = GetString(video, "bit_rate") ?? GetString(root.GetProperty("format"), "bit_rate");
-        long? bitrate = long.TryParse(bitrateText, out var parsedBitrate) && parsedBitrate > 0 ? parsedBitrate : null;
-        if (bitrate is null && durationSeconds > 0) bitrate = (long)(new FileInfo(path).Length * 8d / durationSeconds);
+        var bitrateSource = BitrateSource.Unknown;
+        long? bitrate = ParseBitrate(GetString(video, "bit_rate"));
+        if (bitrate is not null) bitrateSource = BitrateSource.VideoStream;
+        if (bitrate is null)
+        {
+            bitrate = ParseBitrate(GetString(root.GetProperty("format"), "bit_rate"));
+            if (bitrate is not null) bitrateSource = BitrateSource.Container;
+        }
+        if (bitrate is null && durationSeconds > 0)
+        {
+            bitrate = (long)(new FileInfo(path).Length * 8d / durationSeconds);
+            if (bitrate > 0) bitrateSource = BitrateSource.FileSizeEstimate;
+        }
 
         return new VideoDescriptor(
             Guid.NewGuid().ToString("N"),
@@ -47,7 +57,7 @@ public sealed class FfprobeService
             TimeSpan.FromSeconds(Math.Max(0, durationSeconds)),
             streams.Any(stream => GetString(stream, "codec_type") == "audio"),
             long.TryParse(GetString(video, "nb_frames"), out var totalFrames) && totalFrames > 0 ? totalFrames : null,
-            ParseAspectRatio(GetString(video, "sample_aspect_ratio")), bitrate);
+            ParseAspectRatio(GetString(video, "sample_aspect_ratio")), bitrate, bitrateSource);
     }
 
     public async Task<IReadOnlyList<TimeSpan>> ReadFrameTimesAsync(string path, TimeSpan position, CancellationToken cancellationToken)
@@ -111,6 +121,9 @@ public sealed class FfprobeService
 
     private static string? GetString(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) ? value.GetString() : null;
+
+    private static long? ParseBitrate(string? text) =>
+        long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value) && value > 0 ? value : null;
 
     private static double ParseRate(string? rate)
     {
