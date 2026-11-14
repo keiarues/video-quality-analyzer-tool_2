@@ -108,6 +108,10 @@
                     </StackPanel>
                     <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
                         <TextBlock Text="評価設定" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,8" />
+                        <DockPanel Margin="0,0,0,8">
+                            <Button Name="EvaluationRangeButton" DockPanel.Dock="Right" Content="評価範囲を設定" Click="EvaluationRange_Click" />
+                            <TextBlock Name="EvaluationRangeText" Text="全編評価" TextWrapping="Wrap" VerticalAlignment="Center" Margin="4" />
+                        </DockPanel>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />

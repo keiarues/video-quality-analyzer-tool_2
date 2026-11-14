@@ -11,7 +11,10 @@ public static class QualityCsvExporter
     public static string Summary(VideoDescriptor reference, IEnumerable<QualityCsvItem> videos,
         IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results)
     {
-        var builder = new StringBuilder("比較動画番号,元動画名,比較動画名,グループ,幅,高さ,fps,長さ秒,ビットレートkbps,ビットレート取得元,VMAF,SSIM,PSNR\r\n");
+        var partial = results.Values.Any(result => result.Selection.IsPartial);
+        var builder = new StringBuilder("比較動画番号,元動画名,比較動画名,グループ,幅,高さ,fps,長さ秒,ビットレートkbps,ビットレート取得元,VMAF,SSIM,PSNR");
+        if (partial) builder.Append(",VMAF評価条件,VMAF集計フレーム数,SSIM評価条件,SSIM集計フレーム数,PSNR評価条件,PSNR集計フレーム数");
+        builder.Append("\r\n");
         var number = 0;
         foreach (var item in videos.Where(item => HasResult(item.Video, results)))
         {
@@ -26,6 +29,13 @@ public static class QualityCsvExporter
             };
             foreach (var metric in Enum.GetValues<QualityMetric>())
                 values.Add(results.TryGetValue((video.Id, metric), out var result) ? Number(result.Average) : "");
+            if (partial)
+                foreach (var metric in Enum.GetValues<QualityMetric>())
+                {
+                    var found = results.TryGetValue((video.Id, metric), out var result);
+                    values.Add(found ? Escape(result!.Selection.Description + "（評価対象のみの平均）") : "");
+                    values.Add(found ? Integer(result!.Frames.Count) : "");
+                }
             AppendRow(builder, values);
         }
         return builder.ToString();
@@ -34,7 +44,8 @@ public static class QualityCsvExporter
     public static string Frames(VideoDescriptor reference, IEnumerable<QualityCsvItem> videos,
         IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results)
     {
-        var builder = new StringBuilder("比較動画番号,元動画名,比較動画名,グループ,指標,フレーム番号,時刻秒,評価値\r\n");
+        var partial = results.Values.Any(result => result.Selection.IsPartial);
+        var builder = new StringBuilder("比較動画番号,元動画名,比較動画名,グループ,指標,フレーム番号,時刻秒,評価値" + (partial ? ",評価条件" : "") + "\r\n");
         var number = 0;
         foreach (var item in videos.Where(item => HasResult(item.Video, results)))
         {
@@ -44,10 +55,14 @@ public static class QualityCsvExporter
             {
                 if (!results.TryGetValue((video.Id, metric), out var result)) continue;
                 foreach (var frame in result.Frames.OrderBy(frame => frame.Number))
-                    AppendRow(builder, [Integer(number), Escape(reference.Name), Escape(video.Name),
+                {
+                    var values = new List<string> { Integer(number), Escape(reference.Name), Escape(video.Name),
                         Escape(item.Group), metric.ToString().ToUpperInvariant(), Integer(frame.Number),
                         video.AverageFrameRate > 0 ? Number(frame.Number / video.AverageFrameRate) : "",
-                        Number(frame.Value)]);
+                        Number(frame.Value) };
+                    if (partial) values.Add(Escape(result.Selection.Description));
+                    AppendRow(builder, values);
+                }
             }
         }
         return builder.ToString();

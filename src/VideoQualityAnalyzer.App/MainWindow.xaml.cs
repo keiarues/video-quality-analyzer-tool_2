@@ -27,7 +27,8 @@ public partial class MainWindow : Window
     private VideoSortOrder activeSort;
     private bool sortDescending;
     private string? referenceId;
-    private readonly Dictionary<(string VideoId, QualityMetric Metric), QualityResult> qualityResults = [];
+    private readonly EvaluationResultStore evaluationResults = new();
+    private Dictionary<(string VideoId, QualityMetric Metric), QualityResult> qualityResults => evaluationResults.Results;
     private string? previousRightId;
     private long selectionGeneration;
     private TimeSpan basePosition;
@@ -179,6 +180,7 @@ public partial class MainWindow : Window
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-refresh")) await VerifyPlaybackRefreshAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-seek")) await VerifySeekSliderAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-evaluation")) await VerifyMainEvaluationAsync();
+            else if (Environment.GetCommandLineArgs().Contains("--verify-main-partial-evaluation")) await VerifyMainPartialEvaluationAsync();
         };
     }
 
@@ -288,7 +290,7 @@ public partial class MainWindow : Window
         if (evaluationCancellation is not null) return;
         if (VideoList.SelectedItem is not VideoEntry entry)
             return;
-        if (referenceId != entry.Descriptor.Id) qualityResults.Clear();
+        if (referenceId != entry.Descriptor.Id) evaluationResults.Clear();
         referenceId = entry.Descriptor.Id;
         foreach (var item in videos)
             item.IsReference = item.Descriptor.Id == referenceId;
@@ -326,11 +328,10 @@ public partial class MainWindow : Window
         }
         if (!videos.Any(item => item.Descriptor.Id == referenceId))
         {
-            qualityResults.Clear();
+            evaluationResults.Clear();
             referenceId = videos.FirstOrDefault()?.Descriptor.Id;
         }
-        foreach (var key in qualityResults.Keys.Where(key => removed.Any(item => item.Descriptor.Id == key.VideoId)).ToArray())
-            qualityResults.Remove(key);
+        foreach (var item in removed) evaluationResults.RemoveVideo(item.Descriptor.Id);
         foreach (var item in videos)
             item.IsReference = item.Descriptor.Id == referenceId;
         RefreshQualityValues();

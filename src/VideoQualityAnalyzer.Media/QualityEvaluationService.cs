@@ -8,7 +8,10 @@ namespace VideoQualityAnalyzer.Media;
 
 public enum QualityMetric { Vmaf, Ssim, Psnr }
 public sealed record QualityFrame(long Number, double Value);
-public sealed record QualityResult(QualityMetric Metric, double Average, IReadOnlyList<QualityFrame> Frames);
+public sealed record QualityResult(QualityMetric Metric, double Average, IReadOnlyList<QualityFrame> Frames)
+{
+    public EvaluationSelection Selection { get; init; } = EvaluationSelection.Full;
+}
 
 // 評価は外部FFmpegで行い、正常終了した結果だけを返す。
 public sealed class QualityEvaluationService(string executable)

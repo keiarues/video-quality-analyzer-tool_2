@@ -288,6 +288,8 @@ public sealed class QualityGraphPanel : UserControl
                 results[(video.Id, selected)].Frames.Select(frame => frame.Value)));
             var (fileMin, fileMax) = VerticalRange(available.Select(video => results[(video.Id, selected)].Average));
             maximumTime = available.Max(video => results[(video.Id, selected)].Frames.Max(frame => frame.Number) / video.AverageFrameRate);
+            if (available.Any(video => results[(video.Id, selected)].Selection.IsPartial))
+                maximumTime = available.Max(video => video.Duration.TotalSeconds);
             if (evaluationVideo is not null) maximumTime = evaluationVideo.Duration.TotalSeconds;
             var rates = available.Select(Bitrate).ToArray();
             var maxRate = Math.Max(1, rates.Max());
@@ -303,14 +305,24 @@ public sealed class QualityGraphPanel : UserControl
                 var color = colors[index % colors.Length];
                 videoColors[video.Id] = color;
                 var line = new Polyline { Stroke = color, StrokeThickness = 1, ToolTip = video.Name };
+                var isSelected = selectedIds.Contains(video.Id);
+                long? previousNumber = null;
                 foreach (var frame in result.Frames)
+                {
+                    if (result.Selection.IsPartial && previousNumber is { } previous && frame.Number != previous + 1)
+                    {
+                        if (isSelected) timeline.Children.Add(line);
+                        line = new Polyline { Stroke = color, StrokeThickness = 1, ToolTip = video.Name };
+                    }
                     line.Points.Add(new Point(timeArea.Left + frame.Number / video.AverageFrameRate / Math.Max(0.001, maximumTime) * timeArea.Width,
                         timeArea.Top + (max - frame.Value) / (max - min) * timeArea.Height));
-                var isSelected = selectedIds.Contains(video.Id);
+                    previousNumber = frame.Number;
+                }
                 if (isSelected) { timeline.Children.Add(line); displayedVideoIds.Add(video.Id); }
                 var point = new Ellipse { Width = 12, Height = 12, Fill = color,
                     Stroke = isSelected ? Brushes.Black : null, StrokeThickness = 2,
-                    Tag = video.Id, ToolTip = $"{video.Name}: {result.Average:F4} / {rates[index]:N0} kbps", Cursor = System.Windows.Input.Cursors.Hand };
+                    Tag = video.Id, ToolTip = $"{video.Name}: {result.Average:F4} / {rates[index]:N0} kbps\n{result.Selection.Description}" +
+                        (result.Selection.IsPartial ? "（評価対象のみの平均）" : ""), Cursor = System.Windows.Input.Cursors.Hand };
                 Canvas.SetLeft(point, fileArea.Left + rates[index] / maxRate * fileArea.Width - 6);
                 Canvas.SetTop(point, fileArea.Top + (fileMax - result.Average) / (fileMax - fileMin) * fileArea.Height - 6);
                 point.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); e.Handled = true; };
@@ -536,6 +548,7 @@ public sealed class QualityGraphPanel : UserControl
     private readonly Action<double> seekToFraction;
     public IReadOnlyCollection<string> DisplayedVideoIds => displayedVideoIds;
     public int FilePointCount => averages.Children.OfType<Ellipse>().Count();
+    internal int FrameSegmentCount => timeline.Children.OfType<Polyline>().Count(line => line.Tag is null);
     public void UpdateData(VideoDescriptor[] selected, VideoDescriptor[] all, IReadOnlyDictionary<string, string>? groups) => updateData(selected, all, groups);
     public void SetEvaluationProgress(VideoDescriptor video, QualityMetric value, TimeSpan position)
     {

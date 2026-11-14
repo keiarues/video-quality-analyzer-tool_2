@@ -43,7 +43,8 @@ internal static class QualityGraphImageRenderer
         const double margin = 12;
         if (width <= margin * 2) throw new InvalidOperationException("指定の文字サイズで描画するには画像の幅が不足しています。");
         var series = (target == GraphImageTarget.Frames ? allSeries.Where(item => item.Selected) : allSeries).ToArray();
-        var title = Text(metric.ToString().ToUpperInvariant() + (target == GraphImageTarget.Frames
+        var partial = series.Any(item => item.Result.Selection.IsPartial);
+        var title = Text((partial ? "部分評価（評価対象のみ） " : "") + metric.ToString().ToUpperInvariant() + (target == GraphImageTarget.Frames
             ? " フレームグラフ：時刻（秒）と品質" : " ファイルグラフ：平均ビットレート（kbps）と平均品質"), medium, width - margin * 2);
         var legendTexts = series.Select(item => Text(target == GraphImageTarget.Frames ? item.Video.Name :
             $"{item.Video.Name}  {item.Result.Average:F4} / {item.Bitrate:N0} kbps", small)).ToArray();
@@ -71,6 +72,8 @@ internal static class QualityGraphImageRenderer
         var maximumX = target == GraphImageTarget.Files ? Math.Max(1, series.Select(item => item.Bitrate).DefaultIfEmpty(0).Max()) :
             Math.Max(0.001, allSeries.SelectMany(item => item.Result.Frames.Select(frame => item.Video.AverageFrameRate > 0
                 ? frame.Number / item.Video.AverageFrameRate : 0)).DefaultIfEmpty(1).Max());
+        if (partial && target == GraphImageTarget.Frames)
+            maximumX = Math.Max(maximumX, allSeries.Select(item => item.Video.Duration.TotalSeconds).DefaultIfEmpty(1).Max());
         var unit = target == GraphImageTarget.Files ? "kbps" : "秒";
         string XLabel(double value) => unit == "kbps" ? $"{value:N0} kbps" : $"{value:0.##}秒";
         var widestX = Text(XLabel(maximumX), small).WidthIncludingTrailingWhitespace;
@@ -125,11 +128,14 @@ internal static class QualityGraphImageRenderer
                     using (var context = geometry.Open())
                     {
                         var first = true;
+                        long? previousNumber = null;
                         foreach (var frame in item.Result.Frames.Where(frame => double.IsFinite(frame.Value)))
                         {
                             var point = Position(frame.Number / item.Video.AverageFrameRate, frame.Value);
-                            if (first) { context.BeginFigure(point, false, false); first = false; }
+                            if (first || (item.Result.Selection.IsPartial && previousNumber is { } previous && frame.Number != previous + 1))
+                            { context.BeginFigure(point, false, false); first = false; }
                             else context.LineTo(point, true, false);
+                            previousNumber = frame.Number;
                         }
                     }
                     geometry.Freeze(); drawing.DrawGeometry(null, new Pen(item.Color, 1), geometry);
