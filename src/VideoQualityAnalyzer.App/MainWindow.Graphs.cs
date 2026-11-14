@@ -1,10 +1,40 @@
+using System.Windows;
 using VideoQualityAnalyzer.Core;
+using VideoQualityAnalyzer.Media;
 
 namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
     private QualityGraphPanel? qualityGraphPanel;
+
+    private void SaveGraphImage_Click(object sender, RoutedEventArgs e)
+    {
+        var reference = videos.FirstOrDefault(entry => entry.Descriptor.Id == referenceId)?.Descriptor;
+        if (reference is null)
+        {
+            MessageBox.Show(this, "基準動画を登録してください。", "グラフ画像の保存", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var allVideos = videos.Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray();
+        var selectedVideos = SelectedOrAllVideoEntries().Where(entry => !entry.IsReference)
+            .Select(entry => entry.Descriptor).ToArray();
+        var allIds = allVideos.Select(video => video.Id).ToHashSet();
+        var results = qualityResults.Where(entry => allIds.Contains(entry.Key.VideoId))
+            .ToDictionary(entry => entry.Key, entry => entry.Value);
+        if (results.Count == 0)
+        {
+            MessageBox.Show(this, "保存できる評価結果がありません。先に品質評価を実行してください。",
+                "グラフ画像の保存", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+        var selectedMetric = qualityGraphPanel?.SelectedMetric ?? QualityMetric.Vmaf;
+        if (!results.Keys.Any(key => key.Metric == selectedMetric))
+            selectedMetric = Enum.GetValues<QualityMetric>().First(value => results.Keys.Any(key => key.Metric == value));
+        var source = new GraphImageSaveSource(reference, selectedVideos, allVideos, results,
+            videos.ToDictionary(entry => entry.Descriptor.Id, entry => entry.Group), selectedMetric);
+        new GraphImageSaveWindow(source) { Owner = this }.ShowDialog();
+    }
 
     private void InitializeEmbeddedGraphs()
     {

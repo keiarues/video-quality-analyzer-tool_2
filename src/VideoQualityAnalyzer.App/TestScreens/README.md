@@ -7,6 +7,7 @@
 | FolderDropTestWindow.cs | フォルダー登録 | `--test-folder-drop` |
 | FfmpegDownloadTestWindow.cs | FFmpegの取得 | `--test-ffmpeg-download` |
 | GraphPlaybackTestWindow.cs | グラフ表示中の再生 | `--graph-playback-test` |
+| GraphImageSaveWindow.Verification.cs | グラフ画像保存画面のサンプル・画像出力 | `--test-graph-image --auto` |
 
 起動引数の詳細や入力ファイルは既存の `App.xaml.cs` と検証ツールを参照。名前空間と起動方法は変更していない。SDKの標準ファイル収集でビルドされるため、移動後も開発用引数で起動できる。この整理は配布物からテスト機能を除外するものではない。
 

@@ -171,6 +171,7 @@ public partial class MainWindow : Window
                 await AddFilesAsync(startupFiles);
             var graphPlaybackCheck = Environment.GetCommandLineArgs().FirstOrDefault(arg => arg.StartsWith("--verify-main-graph-playback="));
             if (graphPlaybackCheck is not null) await VerifyMainGraphPlaybackAsync(graphPlaybackCheck.Split('=', 2)[1]);
+            else if (Environment.GetCommandLineArgs().Contains("--verify-graph-image-save")) await VerifyGraphImageSaveAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-comparison")) await VerifyEmbeddedComparisonAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-graphs")) await VerifyEmbeddedGraphsAsync();

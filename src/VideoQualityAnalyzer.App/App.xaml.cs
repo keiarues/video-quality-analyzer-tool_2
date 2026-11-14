@@ -20,7 +20,7 @@ public partial class App : Application
             base.OnStartup(e);
             var output = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory,
                 "../../../../../measurement-results/graph-image"));
-            MainWindow = new GraphImageTestWindow(e.Args.Contains("--auto"), output);
+            MainWindow = new GraphImageSaveWindow(e.Args.Contains("--auto"), output);
             MainWindow.Show();
             return;
         }
