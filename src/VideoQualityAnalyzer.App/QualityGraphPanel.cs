@@ -555,6 +555,7 @@ public sealed class QualityGraphPanel : UserControl
         redrawPlaybackGraph();
     }
 
+    public QualityMetric SelectedMetric => (QualityMetric)((TabItem)metric.SelectedItem).Tag;
     public void SelectMetric(QualityMetric value) => metric.SelectedIndex = (int)value;
     public void SeekToFraction(double fraction) => seekToFraction(fraction);
     public void SelectFile(string id)

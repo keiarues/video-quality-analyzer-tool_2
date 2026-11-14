@@ -16,6 +16,7 @@ internal sealed class GraphImageTestWindow : Window
     private readonly ContentControl graphHost = new();
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap, MinHeight = 22 };
     private readonly ComboBox target = new() { Width = 145 };
+    private readonly ComboBox metricSelection = new() { Width = 85 };
     private readonly ComboBox size = new() { Width = 160 };
     private readonly TextBox dimension = new() { Width = 70, Text = "1280" };
     private readonly TextBox heightDimension = new() { Width = 70, Text = "960" };
@@ -46,7 +47,7 @@ internal sealed class GraphImageTestWindow : Window
         var root = new DockPanel { Margin = new Thickness(8) }; Content = root;
         var toolbar = new WrapPanel(); DockPanel.SetDock(toolbar, Dock.Top); root.Children.Add(toolbar);
         var saveOptions = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
-        foreach (Control input in new Control[] { target, size, dimension, heightDimension, font })
+        foreach (Control input in new Control[] { target, metricSelection, size, dimension, heightDimension, font })
         {
             input.Height = 32;
             input.Margin = new Thickness(3, 2, 3, 2);
@@ -55,6 +56,9 @@ internal sealed class GraphImageTestWindow : Window
         foreach (var text in new[] { "フレームグラフ", "ファイルグラフ" }) target.Items.Add(text);
         target.SelectedIndex = 1;
         saveOptions.Children.Add(Group(Label("保存対象："), target));
+        foreach (var value in Enum.GetValues<QualityMetric>()) metricSelection.Items.Add(value.ToString().ToUpperInvariant());
+        metricSelection.SelectedIndex = 0;
+        saveOptions.Children.Add(Group(Label("評価方式："), metricSelection));
         foreach (var text in new[] { "現在の表示サイズ", "幅と高さを指定" }) size.Items.Add(text);
         foreach (var preset in presets) size.Items.Add($"{preset.Width} × {preset.Height}");
         size.SelectedIndex = 3;
@@ -92,9 +96,17 @@ internal sealed class GraphImageTestWindow : Window
         SetSample(); UpdateSizeInputs();
         tabs.SelectionChanged += (_, e) =>
         {
-            if (e.Source == tabs && tabs.SelectedItem == previewTab) QueueRefresh();
+            if (e.Source != tabs || tabs.SelectedItem != previewTab) return;
+            metricSelection.SelectedIndex = (int)graph.SelectedMetric;
+            QueueRefresh();
         };
         target.SelectionChanged += (_, _) => RefreshPreview();
+        metricSelection.SelectionChanged += (_, _) =>
+        {
+            if (metricSelection.SelectedIndex < 0) return;
+            graph.SelectMetric((QualityMetric)metricSelection.SelectedIndex);
+            RefreshPreview();
+        };
         size.SelectionChanged += (_, _) => { UpdateSizeInputs(); RefreshPreview(); };
         dimension.TextChanged += (_, _) => { if (!updatingSizeInputs) RefreshPreview(); };
         heightDimension.TextChanged += (_, _) => { if (!updatingSizeInputs) RefreshPreview(); };
@@ -249,6 +261,7 @@ internal sealed class GraphImageTestWindow : Window
     {
         tabs.SelectedItem = previewTab; UpdateLayout(); resizeTimer.Stop(); RefreshPreview();
         if (size.Items.Count != 7 || size.SelectedIndex != 3 || presets[1] != (1280, 960) ||
+            metricSelection.Items.Count != 3 || metricSelection.SelectedIndex != 0 ||
             font.Items.Count != 6 || font.Items.Contains("3倍") ||
             fitToWindow || zoom.Value != 100 || zoomLabel.Text != "100%" ||
             RequirePreview() is not { PixelWidth: 1280, PixelHeight: 960 })
@@ -258,6 +271,8 @@ internal sealed class GraphImageTestWindow : Window
         {
             tabs.SelectedIndex = 0; graph.SelectMetric(metric); UpdateLayout();
             tabs.SelectedItem = previewTab; UpdateLayout(); target.SelectedIndex = targetIndex; RefreshPreview();
+            if (metricSelection.SelectedIndex != (int)metric)
+                throw new InvalidOperationException("グラフタブの評価方式がプレビュー選択に反映されません。");
             if (graph.FilePointCount != 30 || graph.DisplayedVideoIds.Count != 30)
                 throw new InvalidOperationException("サンプルの表示件数が30件ではありません。");
             if (preview.Source is not BitmapSource) throw new InvalidOperationException("プレビューがありません。");
@@ -265,6 +280,11 @@ internal sealed class GraphImageTestWindow : Window
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
             using var stream = File.Create(Path.Combine(directory, $"responsive-{metric}-{targetIndex}.png")); encoder.Save(stream);
         }
+        var previousMetricImage = preview.Source;
+        metricSelection.SelectedIndex = (int)QualityMetric.Vmaf;
+        if (graph.SelectedMetric != QualityMetric.Vmaf || preview.Source is null ||
+            ReferenceEquals(previousMetricImage, preview.Source))
+            throw new InvalidOperationException("プレビューの評価方式選択がグラフと画像に反映されません。");
         bool MatchesWindowRatio((int Width, int Height) image)
         {
             var available = AvailableSize();
@@ -394,7 +414,7 @@ internal sealed class GraphImageTestWindow : Window
         if (!graph.DisplayedVideoIds.SequenceEqual(new[] { "sample-1" })) throw new InvalidOperationException("動画選択が反映されません。");
         graph.UpdateData([], [], null); RefreshPreview();
         if (preview.Source is null) throw new InvalidOperationException("空のデータを出力できません。");
-        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：30件、3指標×2対象、7サイズ選択（固定プリセットは4:3）、初期値1280×960・表示100%、6フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、1280×960指定、200%・100%・全体表示。サンプルは架空データ。");
+        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：30件、3指標×2対象、評価方式の双方向切り替え、7サイズ選択（固定プリセットは4:3）、初期値1280×960・表示100%、6フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、1280×960指定、200%・100%・全体表示。サンプルは架空データ。");
         resizeTimer.Stop(); Console.WriteLine("グラフ画像保存テスト：合格");
     }
 
