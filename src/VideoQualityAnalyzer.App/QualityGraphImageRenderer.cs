@@ -60,8 +60,10 @@ internal static class QualityGraphImageRenderer
             : series.Select(item => item.Result.Average);
         var (minimum, maximum) = Range(values);
         var yLabels = Enumerable.Range(0, 6).Select(index => Text((minimum + (maximum - minimum) * index / 5).ToString("G4"), small)).ToArray();
-        var left = margin + yLabels.Max(text => text.WidthIncludingTrailingWhitespace) + 8;
-        var top = margin + title.Height + 12;
+        var axisName = Text(metric.ToString().ToUpperInvariant(), medium);
+        var qualityGuide = Text("↑ 高画質", small);
+        var left = margin + axisName.Height + 8 + yLabels.Max(text => text.WidthIncludingTrailingWhitespace) + 8;
+        var top = margin + title.Height + qualityGuide.Height + 12;
         var bottom = legendTop - rowHeight - Text("秒", medium).Height - 16;
         var plot = new Rect(left, top, Math.Max(0, width - margin - left), Math.Max(0, bottom - top));
         if (plot.Width < 80 || plot.Height < 60)
@@ -82,6 +84,7 @@ internal static class QualityGraphImageRenderer
         {
             drawing.DrawRectangle(Brushes.White, null, new Rect(0, 0, width, height));
             drawing.DrawText(title, new Point(margin, margin));
+            drawing.DrawText(qualityGuide, new Point(left + 4, top - qualityGuide.Height - 4));
             drawing.DrawRectangle(Brushes.WhiteSmoke, null, plot);
             var gridPen = new Pen(Brushes.LightGray, 1);
             for (var index = 0; index <= xDivisions; index++)
@@ -104,6 +107,11 @@ internal static class QualityGraphImageRenderer
             var axisPen = new Pen(Brushes.DimGray, 1);
             drawing.DrawLine(axisPen, plot.TopLeft, plot.BottomLeft);
             drawing.DrawLine(axisPen, plot.BottomLeft, plot.BottomRight);
+            // 指標名を通常の横書きで組んでから反時計回りに90度回す。
+            drawing.PushTransform(new MatrixTransform(0, -1, 1, 0, margin,
+                plot.Top + (plot.Height + axisName.WidthIncludingTrailingWhitespace) / 2));
+            drawing.DrawText(axisName, new Point(0, 0));
+            drawing.Pop();
             var caption = Text(unit, medium);
             drawing.DrawText(caption, new Point(plot.Left + (plot.Width - caption.Width) / 2, plot.Bottom + rowHeight + 6));
             Point Position(double x, double value) => new(plot.Left + x / maximumX * plot.Width,

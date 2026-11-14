@@ -276,7 +276,7 @@ public sealed class QualityGraphPanel : UserControl
                 var durations = new[] { playbackLeft, playbackRight }.OfType<VideoDescriptor>()
                     .Where(video => video.Duration > TimeSpan.Zero).Select(video => video.Duration.TotalSeconds).ToArray();
                 maximumTime = evaluationVideo?.Duration.TotalSeconds ?? (durations.Length > 0 ? durations.Min() : 0);
-                if (maximumTime > 0) DrawAxes(timeline, PlotArea(timeline), maximumTime, 0, 1, "秒");
+                if (maximumTime > 0) DrawAxes(timeline, PlotArea(timeline), maximumTime, 0, 1, "秒", selected);
                 AttachPlaybackVisuals();
                 UpdatePlayhead();
                 PlaceLegend();
@@ -293,8 +293,8 @@ public sealed class QualityGraphPanel : UserControl
             var maxRate = Math.Max(1, rates.Max());
             var timeArea = PlotArea(timeline);
             var fileArea = PlotArea(averages);
-            DrawAxes(timeline, timeArea, maximumTime, min, max, "秒");
-            DrawAxes(averages, fileArea, maxRate, fileMin, fileMax, "kbps");
+            DrawAxes(timeline, timeArea, maximumTime, min, max, "秒", selected);
+            DrawAxes(averages, fileArea, maxRate, fileMin, fileMax, "kbps", selected);
             var previousPoints = new Dictionary<string, Point>();
             for (var index = 0; index < available.Length; index++)
             {
@@ -412,9 +412,15 @@ public sealed class QualityGraphPanel : UserControl
                     !timeline.Children.OfType<Polyline>().Any(line => line.Tag is null) || !averages.Children.OfType<Ellipse>().Any())
                     throw new InvalidOperationException("グラフのタブまたは横並び表示が不正です。");
                 foreach (var canvas in new[] { timeline, averages })
+                {
                     if (canvas.Children.OfType<Line>().Count(line => Equals(line.Tag, "グリッド")) != 12 ||
                         canvas.Children.OfType<TextBlock>().Count(label => Equals(label.Tag, "目盛り")) != 12)
                         throw new InvalidOperationException("軸の目盛りまたはグリッドが不足しています。");
+                    if (!canvas.Children.OfType<TextBlock>().Any(label => Equals(label.Tag, "縦軸名") &&
+                            label.Text == "SSIM" && label.RenderTransform is RotateTransform { Angle: -90 }) ||
+                        !canvas.Children.OfType<TextBlock>().Any(label => Equals(label.Tag, "品質方向") && label.Text == "↑ 高画質"))
+                        throw new InvalidOperationException("縦軸名または品質方向の案内がありません。");
+                }
                 // 外れたフレーム値に平均値の軸が引っ張られず、単一値でも描画できる。
                 var frameRange = VerticalRange([0.1, 0.99]);
                 var averageRange = VerticalRange([0.94, 0.95]);
@@ -712,10 +718,11 @@ public sealed class QualityGraphPanel : UserControl
     }
 
     // 軸・目盛りと描画データは同じ領域を基準に配置する。
-    private Rect PlotArea(Canvas canvas) => new(64, 18,
-        Math.Max(1, canvas.ActualWidth - 90), Math.Max(1, canvas.ActualHeight - 72));
+    private Rect PlotArea(Canvas canvas) => new(88, 28,
+        Math.Max(1, canvas.ActualWidth - 114), Math.Max(1, canvas.ActualHeight - 82));
 
-    private void DrawAxes(Canvas canvas, Rect area, double maximumX, double minimumY, double maximumY, string unit)
+    private void DrawAxes(Canvas canvas, Rect area, double maximumX, double minimumY, double maximumY,
+        string unit, QualityMetric selected)
     {
         const int divisions = 5;
         for (var index = 0; index <= divisions; index++)
@@ -733,6 +740,18 @@ public sealed class QualityGraphPanel : UserControl
         canvas.Children.Add(new Polyline { Stroke = Brushes.DimGray, StrokeThickness = 1,
             IsHitTestVisible = false, Tag = "軸", Points = new PointCollection
                 { new(area.Left, area.Top), new(area.Left, area.Bottom), new(area.Right, area.Bottom) } });
+        var axisName = new TextBlock { Text = selected.ToString().ToUpperInvariant(),
+            FontSize = (double)FindResource("UiFontMedium"), Foreground = UiTheme.OnLight,
+            RenderTransform = new RotateTransform(-90), Tag = "縦軸名", IsHitTestVisible = false };
+        axisName.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+        Canvas.SetLeft(axisName, 6);
+        Canvas.SetTop(axisName, area.Top + (area.Height + axisName.DesiredSize.Width) / 2);
+        canvas.Children.Add(axisName);
+        var qualityGuide = new TextBlock { Text = "↑ 高画質", FontSize = UiTheme.Small,
+            Foreground = UiTheme.OnLight, Tag = "品質方向", IsHitTestVisible = false };
+        Canvas.SetLeft(qualityGuide, area.Left + 4);
+        Canvas.SetTop(qualityGuide, 2);
+        canvas.Children.Add(qualityGuide);
         var caption = new TextBlock { Text = unit, FontSize = (double)FindResource("UiFontMedium"), Foreground = UiTheme.OnLight, IsHitTestVisible = false };
         caption.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(caption, area.Left + (area.Width - caption.DesiredSize.Width) / 2);
