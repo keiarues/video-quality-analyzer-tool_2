@@ -8,6 +8,30 @@ var root = args.Length > 0 ? Path.GetFullPath(args[0]) :
 var probePath = FfprobeService.FindExecutable() ??
     throw new FileNotFoundException("FFprobeが見つかりません。");
 var service = new FfprobeService(probePath);
+if (args.Contains("--uniform-partial-test"))
+{
+    var paths = args.Skip(1).Where(File.Exists).ToArray();
+    Check(paths.Length == 2, "均等配置の検証には元動画と比較動画が必要です。");
+    var uniformReference = await service.ProbeAsync(paths[0], CancellationToken.None);
+    var candidate = await service.ProbeAsync(paths[1], CancellationToken.None);
+    var configured = new EvaluationSelection(PartialEvaluationMode.Uniform, LengthSeconds: 10, Count: 6);
+    var requested = configured.CreatePlan(uniformReference)!;
+    var evaluator = new QualityEvaluationService(FfmpegRgbReader.FindExecutable()!);
+    Check(requested[^1].End > EvaluationSelection.FrameCount(candidate), "修正前の末尾範囲外の再現条件");
+    try
+    {
+        await evaluator.EvaluatePartialAsync(uniformReference, candidate, QualityMetric.Ssim, requested, null, CancellationToken.None);
+        throw new InvalidOperationException("範囲外の検証が成立しません。");
+    }
+    catch (ArgumentException) { Console.WriteLine("修正前の均等配置：末尾の範囲外エラーを再現"); }
+    var selection = configured.WithComparisonTimeline(uniformReference, [candidate]);
+    var ranges = selection.CreatePlan(uniformReference)!;
+    var expected = ranges.SelectMany(range => Enumerable.Range(0, checked((int)(range.End - range.Start))).Select(offset => range.Start + offset)).ToArray();
+    var result = await evaluator.EvaluatePartialAsync(uniformReference, candidate, QualityMetric.Ssim, ranges, null, CancellationToken.None);
+    Check(result.Frames.Select(frame => frame.Number).SequenceEqual(expected) && double.IsFinite(result.Average), "共通範囲の実計算と元番号列");
+    Console.WriteLine($"均等配置：元動画 {EvaluationSelection.FrameCount(uniformReference)} / 比較動画 {EvaluationSelection.FrameCount(candidate)}フレーム、共通範囲 {selection.FrameLimit}、{ranges.Count}区間、SSIM {result.Frames.Count}フレーム、平均 {result.Average:F6}：合格");
+    return;
+}
 if (args.Contains("--quality-test"))
 {
     var executable = FfmpegRgbReader.FindExecutable()!;

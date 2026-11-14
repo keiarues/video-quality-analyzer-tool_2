@@ -23,6 +23,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
     internal readonly Dictionary<PartialEvaluationMode, IntervalPreviewBar> intervalBars = [];
     internal readonly Dictionary<PartialEvaluationMode, TextBlock> frameStatuses = [];
     internal VideoDescriptor? previewReference;
+    private VideoDescriptor[] comparisonVideos = [];
     private readonly RadioButton fullRange = new() { GroupName = "部分評価方式", Margin = new Thickness(4),
         HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
     private readonly IntervalPreviewBar fullBar;
@@ -70,19 +71,28 @@ public sealed class PartialEvaluationSettingsControl : UserControl
         UpdateCardPreviews();
     }
 
+    public void SetComparisonVideos(IEnumerable<VideoDescriptor> videos)
+    {
+        comparisonVideos = videos.ToArray();
+        UpdateCardPreviews();
+    }
+
     public EvaluationSelection GetSelection()
     {
         if (fullRange.IsChecked == true) return EvaluationSelection.Full;
         var mode = modes.Single(pair => pair.Value.IsChecked == true).Key;
         if (previewReference is null) throw new InvalidOperationException("元動画がありません。");
         CreatePlan(previewReference, mode);
-        return mode switch
+        return SelectionForMode(mode).WithComparisonTimeline(previewReference, comparisonVideos);
+    }
+
+    private EvaluationSelection SelectionForMode(PartialEvaluationMode mode) => mode switch
         {
             PartialEvaluationMode.TimeRange => new(mode, ReadNumber(startSeconds), ReadNumber(endSeconds)),
             PartialEvaluationMode.Periodic => new(mode, PeriodSeconds: ReadNumber(period), LengthSeconds: ReadNumber(periodicLength)),
-            _ => new(mode, LengthSeconds: ReadNumber(uniformLength), Count: int.Parse(count.Text))
+            _ => new(mode, LengthSeconds: ReadNumber(uniformLength), Count: int.TryParse(count.Text, out var number)
+                ? number : throw new ArgumentException("区間数には整数を入力してください。"))
         };
-    }
 
     public void SetSelection(EvaluationSelection selection)
     {
@@ -168,12 +178,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
         ? value : throw new ArgumentException("設定には有効な数値を入力してください。");
 
     internal IReadOnlyList<EvaluationFrameRange> CreatePlan(VideoDescriptor reference, PartialEvaluationMode mode) =>
-        PartialEvaluationPlan.Create(reference, mode,
-            mode == PartialEvaluationMode.TimeRange ? ReadNumber(startSeconds) : 0,
-            mode == PartialEvaluationMode.TimeRange ? ReadNumber(endSeconds) : 0,
-            mode == PartialEvaluationMode.Periodic ? ReadNumber(period) : 0,
-            mode == PartialEvaluationMode.Periodic ? ReadNumber(periodicLength) : mode == PartialEvaluationMode.Uniform ? ReadNumber(uniformLength) : 0,
-            mode == PartialEvaluationMode.Uniform ? int.TryParse(count.Text, out var n) ? n : throw new ArgumentException("区間数には整数を入力してください。") : 0);
+        SelectionForMode(mode).WithComparisonTimeline(reference, comparisonVideos).CreatePlan(reference)!;
 
     private static string FormatPosition(double seconds)
     {

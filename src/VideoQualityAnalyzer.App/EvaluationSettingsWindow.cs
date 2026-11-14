@@ -15,7 +15,8 @@ public sealed class EvaluationSettingsWindow : Window
     public EvaluationSelection Selection { get; private set; }
     public QualityMetric[] SelectedMetrics => metrics.Where(pair => pair.Value.IsChecked == true).Select(pair => pair.Key).ToArray();
 
-    public EvaluationSettingsWindow(VideoDescriptor reference, EvaluationSelection selection, IEnumerable<QualityMetric>? selectedMetrics = null)
+    public EvaluationSettingsWindow(VideoDescriptor reference, EvaluationSelection selection, IEnumerable<QualityMetric>? selectedMetrics = null,
+        IEnumerable<VideoDescriptor>? comparisonVideos = null)
     {
         Style = (Style)Application.Current.FindResource(typeof(Window));
         Title = "評価範囲の設定"; Width = 1060; Height = 620; MinWidth = 850; MinHeight = 540;
@@ -53,7 +54,12 @@ public sealed class EvaluationSettingsWindow : Window
             TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 12, 4, 4) });
         var error = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Warning, Margin = new Thickness(4) };
         panel.Children.Add(error);
-        ranges.SetReference(reference); ranges.SetSelection(selection);
+        var candidates = (comparisonVideos ?? []).ToArray();
+        ranges.SetReference(reference); ranges.SetComparisonVideos(candidates); ranges.SetSelection(selection);
+        var common = new EvaluationSelection(PartialEvaluationMode.Uniform).WithComparisonTimeline(reference, candidates);
+        if (common.FrameLimit is { } limit)
+            panel.Children.Add(new TextBlock { Text = $"部分評価は比較対象との共通範囲（先頭から{limit}フレーム）に配置します。",
+                TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4), Foreground = UiTheme.Warning });
         start.Click += (_, _) =>
         {
             try

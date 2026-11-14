@@ -43,6 +43,43 @@ public sealed class PartialEvaluationTests
     }
 
     [TestMethod]
+    public void UniformUsesSharedEndWhenCandidateIsShorter()
+    {
+        var reference = Video(300) with { AverageFrameRate = 30000d / 1001, NominalFrameRate = 30000d / 1001, TotalFrames = null };
+        var candidate = reference with { Duration = TimeSpan.FromSeconds(299.532567), TotalFrames = 8977 };
+        var settings = new EvaluationSelection(PartialEvaluationMode.Uniform, LengthSeconds: 10, Count: 6);
+        var original = settings.CreatePlan(reference)!;
+        Assert.IsGreaterThan(candidate.TotalFrames!.Value, original[^1].End);
+        var shared = settings.WithComparisonTimeline(reference, [candidate]);
+        var ranges = shared.CreatePlan(reference)!;
+        Assert.AreEqual(8977L, shared.FrameLimit);
+        Assert.HasCount(6, ranges);
+        Assert.AreEqual(8977L, ranges[^1].End);
+        Assert.IsTrue(ranges.All(range => range.End <= 8977));
+        StringAssert.Contains(shared.Description, "8977フレーム");
+    }
+
+    [TestMethod]
+    public void CommonLimitIsPartOfResultIdentityAndRecomputedForNewTargets()
+    {
+        var reference = Video(300);
+        var settings = new EvaluationSelection(PartialEvaluationMode.Uniform, LengthSeconds: 10, Count: 6);
+        var shortVideo = Video(299);
+        var shortestVideo = Video(298);
+        var first = settings.WithComparisonTimeline(reference, [shortVideo]);
+        var second = first.WithComparisonTimeline(reference, [shortestVideo, shortVideo]);
+        Assert.AreEqual(8940L, second.FrameLimit);
+        Assert.AreNotEqual(first, second);
+        Assert.IsNull(first.WithComparisonTimeline(reference, [reference]).FrameLimit);
+        var store = new EvaluationResultStore();
+        store.Switch(first);
+        store.Results[("id", QualityMetric.Ssim)] = new(QualityMetric.Ssim, 1, [new(0, 1)]) { Selection = first };
+        store.Switch(second);
+        Assert.IsEmpty(store.Results);
+        Assert.AreEqual(EvaluationSelection.Full, EvaluationSelection.Full.WithComparisonTimeline(reference, [shortestVideo]));
+    }
+
+    [TestMethod]
     public void ConditionsKeepIndependentResultsAndReuseTheSameInstances()
     {
         var store = new EvaluationResultStore();

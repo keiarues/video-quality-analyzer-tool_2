@@ -19,7 +19,8 @@ public partial class MainWindow
         if (reference is null) { SetWindowStatus("元動画を登録してください。"); return; }
         var metricChecks = new[] { (VmafCheck, QualityMetric.Vmaf), (SsimCheck, QualityMetric.Ssim), (PsnrCheck, QualityMetric.Psnr) };
         var dialog = new EvaluationSettingsWindow(reference, evaluationResults.Selection,
-            metricChecks.Where(pair => pair.Item1.IsChecked == true).Select(pair => pair.Item2)) { Owner = this };
+            metricChecks.Where(pair => pair.Item1.IsChecked == true).Select(pair => pair.Item2),
+            SelectedOrAllVideoEntries().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor)) { Owner = this };
         if (dialog.ShowDialog() != true) return;
         ApplyEvaluationSelection(dialog.Selection);
         foreach (var (check, metric) in metricChecks) check.IsChecked = dialog.SelectedMetrics.Contains(metric);
@@ -79,9 +80,14 @@ public partial class MainWindow
         { SetWindowStatus("元動画、比較動画と評価指標を選択してください。", evaluation: true); return; }
         var executable = FfmpegRgbReader.FindExecutable();
         if (executable is null) { SetWindowStatus("FFmpegが見つかりません。", evaluation: true); return; }
-        var selection = evaluationResults.Selection;
+        EvaluationSelection selection;
         IReadOnlyList<EvaluationFrameRange>? ranges;
-        try { ranges = selection.CreatePlan(reference); }
+        try
+        {
+            selection = evaluationResults.Selection.WithComparisonTimeline(reference, candidates);
+            ranges = selection.CreatePlan(reference);
+            if (selection != evaluationResults.Selection) ApplyEvaluationSelection(selection);
+        }
         catch (Exception exception) { SetWindowStatus(exception.Message, evaluation: true); return; }
         PausePlayback();
         using var source = new CancellationTokenSource();

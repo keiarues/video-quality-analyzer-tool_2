@@ -32,6 +32,7 @@ public partial class MainWindow
             }
             async Task Select(EvaluationSelection selection)
             {
+                selection = selection.WithComparisonTimeline(reference, [candidate.Descriptor]);
                 _ = Dispatcher.BeginInvoke(new Action(() =>
                 {
                     var dialog = Application.Current.Windows.OfType<EvaluationSettingsWindow>().Single();
@@ -57,13 +58,14 @@ public partial class MainWindow
             if (evaluationResults.Selection != EvaluationSelection.Full || !ReferenceEquals(full, qualityResults[key]))
                 throw new InvalidOperationException("設定のキャンセルで条件または結果が変わりました。");
             VmafCheck.IsChecked = true; SsimCheck.IsChecked = false;
-            foreach (var selection in new[]
+            foreach (var configuredSelection in new[]
             {
                 new EvaluationSelection(PartialEvaluationMode.TimeRange, 0.5, 1.5),
                 new EvaluationSelection(PartialEvaluationMode.Periodic, PeriodSeconds: 1, LengthSeconds: 0.25),
                 new EvaluationSelection(PartialEvaluationMode.Uniform, LengthSeconds: 0.25, Count: 2)
             })
             {
+                var selection = configuredSelection.WithComparisonTimeline(reference, [candidate.Descriptor]);
                 await Select(selection);
                 if (qualityResults.Count != 1 || !EvaluationRangeText.Text.Contains("対象部分のみ"))
                     throw new InvalidOperationException("異なる条件の結果が混在しています。");
