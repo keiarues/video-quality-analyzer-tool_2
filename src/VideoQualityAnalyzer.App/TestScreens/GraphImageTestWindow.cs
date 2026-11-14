@@ -15,11 +15,11 @@ internal sealed class GraphImageTestWindow : Window
 {
     private readonly ContentControl graphHost = new();
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap, MinHeight = 22 };
-    private readonly ComboBox target = new() { Width = 150 };
-    private readonly ComboBox size = new() { Width = 170 };
-    private readonly TextBox dimension = new() { Width = 80, Text = "1920" };
-    private readonly TextBox heightDimension = new() { Width = 80, Text = "1080" };
-    private readonly ComboBox font = new() { Width = 90 };
+    private readonly ComboBox target = new() { Width = 145 };
+    private readonly ComboBox size = new() { Width = 160 };
+    private readonly TextBox dimension = new() { Width = 70, Text = "1920" };
+    private readonly TextBox heightDimension = new() { Width = 70, Text = "1080" };
+    private readonly ComboBox font = new() { Width = 80 };
     private readonly Image preview = new() { Stretch = Stretch.Fill };
     private readonly Grid viewport = new() { Background = Brushes.LightSlateGray };
     private readonly ScrollViewer scroll = new() { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -46,22 +46,26 @@ internal sealed class GraphImageTestWindow : Window
         var root = new DockPanel { Margin = new Thickness(8) }; Content = root;
         var toolbar = new WrapPanel(); DockPanel.SetDock(toolbar, Dock.Top); root.Children.Add(toolbar);
         var saveOptions = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
-        saveOptions.Children.Add(Label("保存対象："));
+        foreach (Control input in new Control[] { target, size, dimension, heightDimension, font })
+        {
+            input.Height = 32;
+            input.Margin = new Thickness(3, 2, 3, 2);
+            input.VerticalContentAlignment = VerticalAlignment.Center;
+        }
         foreach (var text in new[] { "フレームグラフ", "ファイルグラフ" }) target.Items.Add(text);
-        target.SelectedIndex = 1; saveOptions.Children.Add(target);
-        saveOptions.Children.Add(Label("画像サイズ："));
+        target.SelectedIndex = 1;
+        saveOptions.Children.Add(Group(Label("保存対象："), target));
         foreach (var text in new[] { "現在の表示サイズ", "横幅を指定", "縦幅を指定", "幅と高さを指定" }) size.Items.Add(text);
         foreach (var preset in presets) size.Items.Add($"{preset.Width} × {preset.Height}");
-        size.SelectedIndex = 0; saveOptions.Children.Add(size);
-        saveOptions.Children.Add(dimension); saveOptions.Children.Add(Label("×"));
-        saveOptions.Children.Add(heightDimension); saveOptions.Children.Add(Label("px"));
-        saveOptions.Children.Add(Label("フォント："));
+        size.SelectedIndex = 0;
+        saveOptions.Children.Add(Group(Label("画像サイズ："), size));
+        saveOptions.Children.Add(Group(dimension, Label("×"), heightDimension, Label("px")));
         foreach (var text in new[] { "1倍", "1.2倍", "1.5倍", "2倍", "3倍" }) font.Items.Add(text);
         font.SelectedIndex = 0;
         font.ToolTip = "出力画像上の文字サイズ：目盛り・凡例は18px、見出し・単位は22pxに倍率を掛けます。";
-        saveOptions.Children.Add(font);
-        var save = new Button { Content = "PNG画像を保存" }; saveOptions.Children.Add(save);
-        var load = new Button { Content = "実データを読み込む" }; toolbar.Children.Add(load);
+        saveOptions.Children.Add(Group(Label("フォント："), font));
+        var save = BarButton("PNG画像を保存", 128); saveOptions.Children.Add(save);
+        var load = BarButton("実データを読み込む", 140); toolbar.Children.Add(load);
         DockPanel.SetDock(status, Dock.Bottom); root.Children.Add(status);
         tabs.Items.Add(new TabItem { Header = "グラフ操作", Content = graphHost });
         previewFrame = new Border { BorderBrush = Brushes.DimGray, BorderThickness = new Thickness(2),
@@ -73,12 +77,15 @@ internal sealed class GraphImageTestWindow : Window
         controls.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         controls.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         controls.Children.Add(saveOptions);
-        var zoomBar = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        var zoomBar = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right,
+            VerticalAlignment = VerticalAlignment.Top };
         Grid.SetColumn(zoomBar, 1); controls.Children.Add(zoomBar);
         DockPanel.SetDock(controls, Dock.Top); previewBody.Children.Add(controls);
+        zoom.Width = 170; zoom.Height = 32; zoom.Margin = new Thickness(3, 2, 3, 2);
+        zoomLabel.Width = 52; zoomLabel.Margin = new Thickness(3, 0, 3, 0);
         zoomBar.Children.Add(Label("表示倍率：")); zoomBar.Children.Add(zoom); zoomBar.Children.Add(zoomLabel);
-        var fit = new Button { Content = "⛶", ToolTip = "ウィンドウに合わせる" }; zoomBar.Children.Add(fit);
-        var actual = new Button { Content = "100%" }; zoomBar.Children.Add(actual);
+        var fit = BarButton("⛶", 36); fit.ToolTip = "ウィンドウに合わせる"; zoomBar.Children.Add(fit);
+        var actual = BarButton("100%", 60); zoomBar.Children.Add(actual);
         previewBody.Children.Add(viewport);
         previewTab = new TabItem { Header = "プレビュー", Content = previewBody }; tabs.Items.Add(previewTab);
         root.Children.Add(tabs);
@@ -144,7 +151,20 @@ internal sealed class GraphImageTestWindow : Window
         };
     }
 
-    private static TextBlock Label(string text) => new() { Text = text, VerticalAlignment = VerticalAlignment.Center };
+    private static TextBlock Label(string text) => new() { Text = text, VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(4, 0, 2, 0) };
+    private static StackPanel Group(params UIElement[] children)
+    {
+        var group = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        foreach (var child in children) group.Children.Add(child);
+        return group;
+    }
+    private static Button BarButton(string text, double width) => new()
+    {
+        Content = text, Width = width, MinWidth = width, Height = 32,
+        Padding = new Thickness(4, 0, 4, 0), Margin = new Thickness(3, 2, 3, 2),
+        VerticalContentAlignment = VerticalAlignment.Center
+    };
     private double FontScale() => new[] { 1d, 1.2, 1.5, 2, 3 }[font.SelectedIndex];
     private void UpdateSizeInputs()
     {
@@ -336,6 +356,11 @@ internal sealed class GraphImageTestWindow : Window
         var screenshot = new RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
         screenshot.Render(this); var shotEncoder = new PngBitmapEncoder(); shotEncoder.Frames.Add(BitmapFrame.Create(screenshot));
         using (var stream = File.Create(Path.Combine(directory, "preview-window.png"))) shotEncoder.Save(stream);
+        Width = MinWidth; UpdateLayout(); await Task.Delay(350);
+        var narrowScreenshot = new RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
+        narrowScreenshot.Render(this);
+        var narrowEncoder = new PngBitmapEncoder(); narrowEncoder.Frames.Add(BitmapFrame.Create(narrowScreenshot));
+        using (var stream = File.Create(Path.Combine(directory, "preview-window-narrow.png"))) narrowEncoder.Save(stream);
         size.SelectedIndex = 1;
         dimension.Text = "入力エラー";
         if (preview.Source is not null) throw new InvalidOperationException("不正な入力で古い画像が残っています。");
