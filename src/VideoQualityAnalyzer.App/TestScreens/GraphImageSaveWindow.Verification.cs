@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using VideoQualityAnalyzer.Core;
@@ -19,7 +20,10 @@ internal sealed partial class GraphImageSaveWindow
             PngFileName(savedAt, "基準動画.mp4", QualityMetric.Ssim, GraphImageTarget.Files) !=
                 "20261114-090807_基準動画.mp4_SSIM_ファイルグラフ.png")
             throw new InvalidOperationException("PNGの初期ファイル名が命名規則と一致しません。");
-        tabs.SelectedItem = previewTab; UpdateLayout(); resizeTimer.Stop(); RefreshPreview();
+        if (CreateSaveDialog(savedAt).InitialDirectory !=
+            Environment.GetFolderPath(Environment.SpecialFolder.MyPictures))
+            throw new InvalidOperationException("保存先の初期フォルダーがピクチャではありません。");
+        UpdateLayout(); resizeTimer.Stop(); RefreshPreview();
         if (size.Items.Count != 9 || size.SelectedIndex != 4 || presets[1] != (1024, 768) ||
             presets[2] != (1280, 960) || presets[3] != (1600, 1200) ||
             metricSelection.Items.Count != 3 || metricSelection.SelectedIndex != 0 ||
@@ -30,10 +34,10 @@ internal sealed partial class GraphImageSaveWindow
         foreach (var targetIndex in new[] { 0, 1 })
         foreach (var metric in Enum.GetValues<QualityMetric>())
         {
-            tabs.SelectedIndex = 0; graph.SelectMetric(metric); UpdateLayout();
-            tabs.SelectedItem = previewTab; UpdateLayout(); target.SelectedIndex = targetIndex; RefreshPreview();
+            metricSelection.SelectedIndex = (int)metric; UpdateLayout();
+            target.SelectedIndex = targetIndex; RefreshPreview();
             if (metricSelection.SelectedIndex != (int)metric)
-                throw new InvalidOperationException("グラフタブの評価方式がプレビュー選択に反映されません。");
+                throw new InvalidOperationException("評価方式の選択がプレビューに反映されません。");
             if (graph.FilePointCount != 30 || graph.DisplayedVideoIds.Count != 30)
                 throw new InvalidOperationException("サンプルの表示件数が30件ではありません。");
             if (preview.Source is not BitmapSource) throw new InvalidOperationException("プレビューがありません。");
@@ -180,7 +184,7 @@ internal sealed partial class GraphImageSaveWindow
         {
             production.Show(); production.UpdateLayout(); await Task.Delay(150);
             production.RefreshPreview(); production.UpdateLayout();
-            if (production.tabs.Items.Count != 1 || production.tabs.SelectedItem != production.previewTab ||
+            if (production.Content is not DockPanel { Children.Count: 3 } ||
                 production.preview.Source is not BitmapSource { PixelWidth: 1280, PixelHeight: 960 } ||
                 production.referenceFileName != "サンプル基準動画.mkv")
                 throw new InvalidOperationException("本体用の画像保存画面を開けません。");

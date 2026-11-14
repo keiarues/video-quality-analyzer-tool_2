@@ -31,8 +31,6 @@ internal sealed partial class GraphImageSaveWindow : Window
     private readonly ScrollViewer scroll = new() { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
         VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     private readonly Border previewFrame;
-    private readonly TabControl tabs = new();
-    private readonly TabItem previewTab;
     private readonly Slider zoom = new() { Minimum = 10, Maximum = 500, TickFrequency = 10,
         SmallChange = 10, LargeChange = 10, IsSnapToTickEnabled = true, Width = 230, Value = 100 };
     private readonly TextBlock zoomLabel = new() { Width = 65, VerticalAlignment = VerticalAlignment.Center };
@@ -89,7 +87,12 @@ internal sealed partial class GraphImageSaveWindow : Window
         var load = BarButton("実データを読み込む", 140);
         if (source is null) toolbar.Children.Add(load);
         DockPanel.SetDock(status, Dock.Bottom); root.Children.Add(status);
-        if (source is null) tabs.Items.Add(new TabItem { Header = "グラフ操作", Content = graphHost });
+        if (source is null)
+        {
+            var testGraph = new Expander { Header = "グラフ操作（テスト用）", IsExpanded = true,
+                Height = 250, Content = graphHost };
+            DockPanel.SetDock(testGraph, Dock.Top); root.Children.Add(testGraph);
+        }
         previewFrame = new Border { BorderBrush = Brushes.DimGray, BorderThickness = new Thickness(2),
             Background = Brushes.White, Margin = new Thickness(12), HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center, Child = preview };
@@ -109,23 +112,15 @@ internal sealed partial class GraphImageSaveWindow : Window
         var fit = BarButton("⛶", 36); fit.ToolTip = "ウィンドウに合わせる"; zoomBar.Children.Add(fit);
         var actual = BarButton("100%", 60); zoomBar.Children.Add(actual);
         previewBody.Children.Add(viewport);
-        previewTab = new TabItem { Header = "プレビュー", Content = previewBody }; tabs.Items.Add(previewTab);
-        root.Children.Add(tabs);
+        root.Children.Add(previewBody);
         if (source is null) SetSample();
         else
         {
             SetGraph(source.SelectedVideos, source.AllVideos, source.Results, source.Reference.Name, source.Groups);
             graph.SelectMetric(source.SelectedMetric);
             metricSelection.SelectedIndex = (int)source.SelectedMetric;
-            tabs.SelectedItem = previewTab;
         }
         UpdateSizeInputs();
-        tabs.SelectionChanged += (_, e) =>
-        {
-            if (e.Source != tabs || tabs.SelectedItem != previewTab) return;
-            metricSelection.SelectedIndex = (int)graph.SelectedMetric;
-            QueueRefresh();
-        };
         target.SelectionChanged += (_, _) => RefreshPreview();
         metricSelection.SelectionChanged += (_, _) =>
         {
@@ -149,9 +144,7 @@ internal sealed partial class GraphImageSaveWindow : Window
         actual.Click += (_, _) => { fitToWindow = false; zoom.Value = 100; ApplyZoom(); };
         save.Click += (_, _) =>
         {
-            var dialog = new SaveFileDialog { Filter = "PNG画像 (*.png)|*.png", DefaultExt = ".png",
-                FileName = PngFileName(DateTime.Now, referenceFileName, graph.SelectedMetric,
-                    (GraphImageTarget)target.SelectedIndex), AddExtension = true };
+            var dialog = CreateSaveDialog(DateTime.Now);
             if (dialog.ShowDialog(this) != true) return;
             try
             {
@@ -171,7 +164,7 @@ internal sealed partial class GraphImageSaveWindow : Window
                 SetGraph(loadedVideos, loadedVideos,
                     cache.Entries.ToDictionary(entry => (entry.Video.Id, QualityMetric.Ssim), entry => entry.Result),
                     cache.Reference.Name);
-                graph.SelectMetric(QualityMetric.Ssim); tabs.SelectedIndex = 0;
+                graph.SelectMetric(QualityMetric.Ssim); metricSelection.SelectedIndex = (int)QualityMetric.Ssim;
                 status.Text = "保存済みの実測SSIMデータを表示中です。";
             }
             catch (Exception error) { MessageBox.Show(this, error.Message, "読み込みエラー", MessageBoxButton.OK, MessageBoxImage.Error); }
@@ -208,6 +201,13 @@ internal sealed partial class GraphImageSaveWindow : Window
         return $"{savedAt.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}_{referenceName}_" +
             $"{metric.ToString().ToUpperInvariant()}_{graphType}.png";
     }
+    private SaveFileDialog CreateSaveDialog(DateTime savedAt) => new()
+    {
+        Filter = "PNG画像 (*.png)|*.png", DefaultExt = ".png", AddExtension = true,
+        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
+        FileName = PngFileName(savedAt, referenceFileName, graph.SelectedMetric,
+            (GraphImageTarget)target.SelectedIndex)
+    };
     private double FontScale() => new[] { 0.5, 0.8, 1, 1.2, 1.5, 2 }[font.SelectedIndex];
     private void UpdateSizeInputs()
     {
@@ -216,11 +216,10 @@ internal sealed partial class GraphImageSaveWindow : Window
     }
     private void QueueRefresh()
     {
-        if (tabs.SelectedItem != previewTab) return;
         resizeTimer.Stop(); resizeTimer.Start();
     }
-    private Size AvailableSize() => new(Math.Max(300, (viewport.ActualWidth > 0 ? viewport.ActualWidth : graphHost.ActualWidth) - 28),
-        Math.Max(300, (viewport.ActualHeight > 0 ? viewport.ActualHeight : graphHost.ActualHeight) - 28));
+    private Size AvailableSize() => new(Math.Max(300, viewport.ActualWidth - 28),
+        Math.Max(300, viewport.ActualHeight - 28));
     private (int Width, int Height) ImageSize()
     {
         var available = AvailableSize();
@@ -255,15 +254,15 @@ internal sealed partial class GraphImageSaveWindow : Window
     private BitmapSource SavePng(string path)
     {
         // ズームは表示だけに使用し、保存には元の出力画像を使う。
-        if (tabs.SelectedItem == previewTab) RefreshPreview();
-        var bitmap = tabs.SelectedItem == previewTab && preview.Source is BitmapSource current ? current : CreateImage();
+        RefreshPreview();
+        var bitmap = preview.Source as BitmapSource ?? CreateImage();
         var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var stream = File.Create(path); encoder.Save(stream);
         return bitmap;
     }
     private void RefreshPreview()
     {
-        if (tabs.SelectedItem != previewTab || viewport.ActualWidth <= 0 || viewport.ActualHeight <= 0) return;
+        if (viewport.ActualWidth <= 0 || viewport.ActualHeight <= 0) return;
         try
         {
             preview.Source = CreateImage(); ApplyZoom();
