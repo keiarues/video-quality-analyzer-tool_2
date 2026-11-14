@@ -83,6 +83,10 @@ public sealed class PartialEvaluationTestWindow : Window
                 if (previewReference?.Path != videoPath)
                     throw new InvalidOperationException("連続した動画変更で最新の動画情報が反映されていません。");
                 VerifyCardPreviews();
+                partialSettings.SetSelection(EvaluationSelection.Full);
+                if (partialSettings.GetSelection() != EvaluationSelection.Full)
+                    throw new InvalidOperationException("全編評価のカードが選択できません。");
+                await RunAsync(true, true);
                 startSeconds.Text = "0.1";
                 foreach (var mode in Enum.GetValues<PartialEvaluationMode>())
                 {
@@ -223,12 +227,13 @@ public sealed class PartialEvaluationTestWindow : Window
             var probe = new FfprobeService(FfprobeService.FindExecutable() ?? throw new InvalidOperationException("FFprobeが見つかりません。"));
             var reference = await probe.ProbeAsync(referencePath.Text, source.Token);
             var candidate = await probe.ProbeAsync(candidatePath.Text, source.Token);
-            var mode = modes.Single(pair => pair.Value.IsChecked == true).Key;
             previewReference = reference;
             UpdateCardPreviews();
-            var ranges = CreatePlan(reference, mode);
+            var selection = partialSettings.GetSelection();
+            var ranges = selection.CreatePlan(reference) ?? [new EvaluationFrameRange(0,
+                reference.TotalFrames ?? (long)Math.Ceiling(reference.Duration.TotalSeconds * reference.AverageFrameRate))];
             var targetFrames = ranges.Sum(range => range.End - range.Start);
-            output.Text = $"方式：{modeTitles[mode]}\n対象：{targetFrames}フレーム / {ranges.Count}区間\n" +
+            output.Text = $"方式：{selection.Description}\n対象：{targetFrames}フレーム / {ranges.Count}区間\n" +
                 string.Join("\n", ranges.Select((range, i) => $"{i + 1}: {range.Start / reference.AverageFrameRate:F3}～{range.End / reference.AverageFrameRate:F3}秒 / フレーム {range.Start}～{range.End - 1}"));
             if (!evaluate) { status.Text = "対象区間を確認しました。終了時刻・終了フレームは含みません。"; return; }
             var selected = metrics.Where(pair => pair.Value.IsChecked == true).Select(pair => pair.Key).ToArray();
@@ -237,7 +242,9 @@ public sealed class PartialEvaluationTestWindow : Window
             foreach (var metric in selected)
             {
                 var progress = new Progress<TimeSpan>(time => { if (cancellation == source) status.Text = $"{metric}: 評価対象の{time.TotalSeconds:F1}秒を処理中…"; });
-                var result = await service.EvaluatePartialAsync(reference, candidate, metric, ranges, progress, source.Token);
+                var result = selection.IsPartial
+                    ? await service.EvaluatePartialAsync(reference, candidate, metric, ranges, progress, source.Token)
+                    : await service.EvaluateAsync(reference, candidate, metric, progress, source.Token);
                 if (verify && (result.Frames.Count != targetFrames ||
                     !result.Frames.Select(frame => frame.Number).SequenceEqual(ranges.SelectMany(range => Enumerable.Range(0, checked((int)(range.End - range.Start))).Select(offset => range.Start + offset))) ||
                     result.Average < 0.999))

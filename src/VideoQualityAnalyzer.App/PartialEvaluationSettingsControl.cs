@@ -15,7 +15,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
     internal readonly TextBox period = new() { Text = "60" }, periodicLength = new() { Text = "10" };
     internal readonly TextBox count = new() { Text = "6" }, uniformLength = new() { Text = "10" };
     internal readonly Dictionary<PartialEvaluationMode, RadioButton> modes = [];
-    private readonly UniformGrid cards = new() { Columns = 3, Margin = new Thickness(0, 12, 0, 12) };
+    private readonly UniformGrid cards = new() { Columns = 4, Margin = new Thickness(0, 12, 0, 12) };
     private readonly StackPanel modeSettings = new();
     internal readonly Dictionary<PartialEvaluationMode, WrapPanel> modeInputs = [];
     internal readonly Dictionary<PartialEvaluationMode, string> modeTitles = [];
@@ -23,12 +23,32 @@ public sealed class PartialEvaluationSettingsControl : UserControl
     internal readonly Dictionary<PartialEvaluationMode, IntervalPreviewBar> intervalBars = [];
     internal readonly Dictionary<PartialEvaluationMode, TextBlock> frameStatuses = [];
     internal VideoDescriptor? previewReference;
+    private readonly RadioButton fullRange = new() { GroupName = "部分評価方式", Margin = new Thickness(4),
+        HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
+    private readonly IntervalPreviewBar fullBar;
+    private readonly TextBlock fullStatus = new() { TextWrapping = TextWrapping.Wrap, MinHeight = 34, Margin = new Thickness(0, 8, 0, 0) };
     public PartialEvaluationSettingsControl()
     {
         Style = (Style)Application.Current.FindResource(typeof(UserControl));
         var panel = new StackPanel();
         Content = panel;
         panel.Children.Add(cards);
+        fullBar = new IntervalPreviewBar((Brush)FindResource("BackgroundBrush"), (Brush)FindResource("UiEmphasisBrush"));
+        fullStatus.Style = (Style)FindResource("UiSmallTextStyle");
+        var fullContent = new StackPanel();
+        var fullHeading = new DockPanel();
+        var fullSelected = new TextBlock { Text = "✓", Visibility = Visibility.Hidden, Foreground = (Brush)FindResource("UiEmphasisBrush") };
+        DockPanel.SetDock(fullSelected, Dock.Right); fullHeading.Children.Add(fullSelected);
+        fullHeading.Children.Add(new TextBlock { Text = "全編評価", Style = (Style)FindResource("UiSectionStyle") });
+        fullContent.Children.Add(fullHeading);
+        fullContent.Children.Add(new TextBlock { Text = "動画の最初から最後まで全フレームを評価", TextWrapping = TextWrapping.Wrap,
+            MinHeight = 42, Margin = new Thickness(0, 8, 0, 8) });
+        fullContent.Children.Add(fullBar); fullContent.Children.Add(fullStatus);
+        fullRange.Content = fullContent;
+        ApplyCardAppearance(fullRange, "全編評価");
+        fullRange.Checked += (_, _) => { fullSelected.Visibility = Visibility.Visible; modeTitle.Text = "全編を評価します（範囲指定は不要です）"; };
+        fullRange.Unchecked += (_, _) => fullSelected.Visibility = Visibility.Hidden;
+        cards.Children.Add(fullRange);
         modeTitle.Style = (Style)FindResource("UiSectionStyle");
         modeSettings.Children.Add(modeTitle);
         panel.Children.Add(modeSettings);
@@ -38,7 +58,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
             [("周期（秒）", period), ("各周期の先頭から（秒）", periodicLength)]);
         AddMode(PartialEvaluationMode.Uniform, "全体に均等配置", "指定した数の区間を動画全体に分散",
             [("区間数", count), ("各区間の長さ（秒）", uniformLength)]);
-        modes[PartialEvaluationMode.TimeRange].IsChecked = true;
+        fullRange.IsChecked = true;
         foreach (var input in new[] { startSeconds, endSeconds, period, periodicLength, count, uniformLength })
             input.TextChanged += (_, _) => UpdateCardPreviews();
         UpdateCardPreviews();
@@ -52,6 +72,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
 
     public EvaluationSelection GetSelection()
     {
+        if (fullRange.IsChecked == true) return EvaluationSelection.Full;
         var mode = modes.Single(pair => pair.Value.IsChecked == true).Key;
         if (previewReference is null) throw new InvalidOperationException("元動画がありません。");
         CreatePlan(previewReference, mode);
@@ -65,7 +86,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
 
     public void SetSelection(EvaluationSelection selection)
     {
-        if (selection.Mode is not { } mode) return;
+        if (selection.Mode is not { } mode) { fullRange.IsChecked = true; return; }
         modes[mode].IsChecked = true;
         if (mode == PartialEvaluationMode.TimeRange)
         { startSeconds.Text = selection.StartSeconds.ToString(CultureInfo.CurrentCulture); endSeconds.Text = selection.EndSeconds.ToString(CultureInfo.CurrentCulture); }
@@ -97,6 +118,29 @@ public sealed class PartialEvaluationSettingsControl : UserControl
             BorderBrush = (Brush)FindResource("PanelBrush"),
             Foreground = (Brush)FindResource("TextBrush"),
             HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
+        ApplyCardAppearance(radio, title);
+        modes.Add(mode, radio); modeTitles.Add(mode, title); cards.Children.Add(radio);
+        var inputs = new WrapPanel { Margin = new Thickness(0, 6, 0, 8), Visibility = Visibility.Collapsed };
+        modeInputs.Add(mode, inputs);
+        radio.Checked += (_, _) =>
+        {
+            inputs.Visibility = Visibility.Visible;
+            selected.Visibility = Visibility.Visible;
+            modeTitle.Text = title + "の設定";
+        };
+        radio.Unchecked += (_, _) => { inputs.Visibility = Visibility.Collapsed; selected.Visibility = Visibility.Hidden; };
+        foreach (var field in fields)
+        {
+            inputs.Children.Add(new TextBlock { Text = field.Label, Margin = new Thickness(4), VerticalAlignment = VerticalAlignment.Center });
+            field.Input.Width = 85; field.Input.Margin = new Thickness(4); inputs.Children.Add(field.Input);
+        }
+        modeSettings.Children.Add(inputs);
+    }
+
+    private void ApplyCardAppearance(RadioButton radio, string title)
+    {
+        radio.Foreground = (Brush)FindResource("TextBrush");
+        radio.BorderBrush = (Brush)FindResource("PanelBrush");
         System.Windows.Automation.AutomationProperties.SetName(radio, title);
         // 選択状態とキーボード操作はRadioButtonに任せ、外観だけカードにする。
         var border = new FrameworkElementFactory(typeof(Border)) { Name = "CardBorder" };
@@ -117,22 +161,6 @@ public sealed class PartialEvaluationSettingsControl : UserControl
         focus.Setters.Add(new Setter(Border.BorderBrushProperty, FindResource("UiWarningBrush"), "CardBorder"));
         template.Triggers.Add(focus);
         radio.Template = template;
-        modes.Add(mode, radio); modeTitles.Add(mode, title); cards.Children.Add(radio);
-        var inputs = new WrapPanel { Margin = new Thickness(0, 6, 0, 8), Visibility = Visibility.Collapsed };
-        modeInputs.Add(mode, inputs);
-        radio.Checked += (_, _) =>
-        {
-            inputs.Visibility = Visibility.Visible;
-            selected.Visibility = Visibility.Visible;
-            modeTitle.Text = title + "の設定";
-        };
-        radio.Unchecked += (_, _) => { inputs.Visibility = Visibility.Collapsed; selected.Visibility = Visibility.Hidden; };
-        foreach (var field in fields)
-        {
-            inputs.Children.Add(new TextBlock { Text = field.Label, Margin = new Thickness(4), VerticalAlignment = VerticalAlignment.Center });
-            field.Input.Width = 85; field.Input.Margin = new Thickness(4); inputs.Children.Add(field.Input);
-        }
-        modeSettings.Children.Add(inputs);
     }
 
     private static double ReadNumber(TextBox input) => double.TryParse(input.Text, NumberStyles.Float,
@@ -156,6 +184,14 @@ public sealed class PartialEvaluationSettingsControl : UserControl
 
     internal void UpdateCardPreviews(string unavailable = "元動画を選択してください", string? detail = null)
     {
+        fullBar.SetRanges([], 0);
+        fullStatus.Text = unavailable;
+        if (previewReference is { } fullReference && fullReference.AverageFrameRate > 0 && fullReference.Duration > TimeSpan.Zero)
+        {
+            var total = fullReference.TotalFrames ?? (long)Math.Ceiling(fullReference.Duration.TotalSeconds * fullReference.AverageFrameRate);
+            if (total > 0) fullBar.SetRanges([new(0, total)], total);
+            fullStatus.Text = $"00:00:00 ～ {FormatPosition(fullReference.Duration.TotalSeconds)} {total}フレーム";
+        }
         foreach (var mode in modes.Keys)
         {
             var bar = intervalBars[mode];

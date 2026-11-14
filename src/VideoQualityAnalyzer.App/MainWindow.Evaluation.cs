@@ -17,8 +17,13 @@ public partial class MainWindow
         if (evaluationCancellation is not null) return;
         var reference = videos.FirstOrDefault(entry => entry.IsReference)?.Descriptor;
         if (reference is null) { SetWindowStatus("元動画を登録してください。"); return; }
-        var dialog = new EvaluationSettingsWindow(reference, evaluationResults.Selection) { Owner = this };
-        if (dialog.ShowDialog() == true) ApplyEvaluationSelection(dialog.Selection);
+        var metricChecks = new[] { (VmafCheck, QualityMetric.Vmaf), (SsimCheck, QualityMetric.Ssim), (PsnrCheck, QualityMetric.Psnr) };
+        var dialog = new EvaluationSettingsWindow(reference, evaluationResults.Selection,
+            metricChecks.Where(pair => pair.Item1.IsChecked == true).Select(pair => pair.Item2)) { Owner = this };
+        if (dialog.ShowDialog() != true) return;
+        ApplyEvaluationSelection(dialog.Selection);
+        foreach (var (check, metric) in metricChecks) check.IsChecked = dialog.SelectedMetrics.Contains(metric);
+        evaluationTask = EvaluateMainSelectionAsync();
     }
 
     private void ApplyEvaluationSelection(EvaluationSelection selection)
