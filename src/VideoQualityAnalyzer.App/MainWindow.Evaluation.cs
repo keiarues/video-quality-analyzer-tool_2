@@ -138,15 +138,10 @@ public partial class MainWindow
     {
         var items = videos.Where(entry => !entry.IsReference)
             .Select(entry => new QualityCsvItem(entry.Descriptor, entry.Group)).ToArray();
-        if (!videos.Any(entry => entry.IsReference) || !QualityCsvExporter.HasResults(items, qualityResults))
+        var reference = videos.FirstOrDefault(entry => entry.IsReference)?.Descriptor;
+        if (reference is null || !QualityCsvExporter.HasResults(items, qualityResults))
         { SetWindowStatus("CSVに出力できる完了済みの評価結果がありません。"); return; }
-        var dialog = new Microsoft.Win32.SaveFileDialog
-        {
-            Filter = "CSVファイル (*.csv)|*.csv",
-            DefaultExt = ".csv",
-            AddExtension = true,
-            FileName = frames ? "フレーム品質.csv" : "ファイル品質.csv"
-        };
+        var dialog = QualityCsvSaveDialog.Create(DateTime.Now, reference, frames, items, qualityResults);
         if (dialog.ShowDialog(this) != true) return;
         try
         {

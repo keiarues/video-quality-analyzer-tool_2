@@ -69,6 +69,13 @@ public sealed class CsvExportTestWindow : Window
         Directory.CreateDirectory(directory);
         try
         {
+            var savedAt = new DateTime(2026, 11, 15, 9, 8, 7);
+            var frameDialog = QualityCsvSaveDialog.Create(savedAt, reference, true, items, results);
+            var fileDialog = QualityCsvSaveDialog.Create(savedAt, reference, false, items, results);
+            if (frameDialog.InitialDirectory != Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) ||
+                frameDialog.FileName != "20261115-090807_元動画.mkv_フレームグラフ_SSIM-PSNR.csv" ||
+                fileDialog.FileName != "20261115-090807_元動画.mkv_ファイルグラフ_SSIM-PSNR.csv")
+                throw new InvalidDataException("保存先または既定ファイル名が不正です。");
             var framesPath = Path.Combine(directory, "frames.csv");
             var filesPath = Path.Combine(directory, "files.csv");
             await SaveAsync(framesPath, true);

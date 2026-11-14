@@ -66,15 +66,14 @@ public sealed class EvaluationWindow : Window
             buttons.Children.Add(export);
             export.Click += async (_, _) =>
             {
-                var dialog = new Microsoft.Win32.SaveFileDialog { Filter = "CSV|*.csv",
-                    FileName = frameCsv ? "frames.csv" : "videos.csv" };
+                var items = candidates.Select(video => new QualityCsvItem(video,
+                    groups is not null && groups.TryGetValue(video.Id, out var group) ? group : "")).ToArray();
+                if (!QualityCsvExporter.HasResults(items, results))
+                { status.Text = "完了した評価結果がありません。"; return; }
+                var dialog = QualityCsvSaveDialog.Create(DateTime.Now, reference, frameCsv, items, results);
                 if (dialog.ShowDialog(this) != true) return;
                 try
                 {
-                    var items = candidates.Select(video => new QualityCsvItem(video,
-                        groups is not null && groups.TryGetValue(video.Id, out var group) ? group : "")).ToArray();
-                    if (!QualityCsvExporter.HasResults(items, results))
-                    { status.Text = "完了した評価結果がありません。"; return; }
                     var text = frameCsv ? QualityCsvExporter.Frames(reference, items, results)
                         : QualityCsvExporter.Summary(reference, items, results);
                     await QualityCsvExporter.SaveAsync(dialog.FileName, text);
