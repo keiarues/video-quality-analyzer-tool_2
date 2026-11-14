@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -35,6 +36,7 @@ internal sealed class GraphImageTestWindow : Window
     private readonly (int Width, int Height)[] presets = [(800, 600), (1024, 768), (1280, 960),
         (1600, 1200), (1920, 1440), (2560, 1920), (3840, 2880)];
     private QualityGraphPanel graph = null!;
+    private string referenceFileName = "サンプル基準動画.mkv";
     private bool fitToWindow;
     private bool updatingZoom;
     private bool updatingSizeInputs;
@@ -125,7 +127,8 @@ internal sealed class GraphImageTestWindow : Window
         save.Click += (_, _) =>
         {
             var dialog = new SaveFileDialog { Filter = "PNG画像 (*.png)|*.png", DefaultExt = ".png",
-                FileName = "品質グラフ.png", AddExtension = true };
+                FileName = PngFileName(DateTime.Now, referenceFileName, graph.SelectedMetric,
+                    (GraphImageTarget)target.SelectedIndex), AddExtension = true };
             if (dialog.ShowDialog(this) != true) return;
             try
             {
@@ -146,7 +149,8 @@ internal sealed class GraphImageTestWindow : Window
             {
                 var cache = await SsimTestCache.LoadAsync(dialog.FileName);
                 SetGraph(cache.Entries.Select(entry => entry.Video).ToArray(),
-                    cache.Entries.ToDictionary(entry => (entry.Video.Id, QualityMetric.Ssim), entry => entry.Result));
+                    cache.Entries.ToDictionary(entry => (entry.Video.Id, QualityMetric.Ssim), entry => entry.Result),
+                    cache.Reference.Name);
                 graph.SelectMetric(QualityMetric.Ssim); tabs.SelectedIndex = 0;
                 status.Text = "保存済みの実測SSIMデータを表示中です。";
             }
@@ -178,6 +182,12 @@ internal sealed class GraphImageTestWindow : Window
         Padding = new Thickness(4, 0, 4, 0), Margin = new Thickness(3, 2, 3, 2),
         VerticalContentAlignment = VerticalAlignment.Center
     };
+    private static string PngFileName(DateTime savedAt, string referenceName, QualityMetric metric, GraphImageTarget target)
+    {
+        var graphType = target == GraphImageTarget.Frames ? "フレームグラフ" : "ファイルグラフ";
+        return $"{savedAt.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}_{referenceName}_" +
+            $"{metric.ToString().ToUpperInvariant()}_{graphType}.png";
+    }
     private double FontScale() => new[] { 0.5, 0.8, 1, 1.2, 1.5, 2 }[font.SelectedIndex];
     private void UpdateSizeInputs()
     {
@@ -260,6 +270,13 @@ internal sealed class GraphImageTestWindow : Window
 
     private async Task VerifyAsync(string directory)
     {
+        var savedAt = new DateTime(2026, 11, 14, 9, 8, 7);
+        if (referenceFileName != "サンプル基準動画.mkv" ||
+            PngFileName(savedAt, referenceFileName, QualityMetric.Vmaf, GraphImageTarget.Frames) !=
+                "20261114-090807_サンプル基準動画.mkv_VMAF_フレームグラフ.png" ||
+            PngFileName(savedAt, "基準動画.mp4", QualityMetric.Ssim, GraphImageTarget.Files) !=
+                "20261114-090807_基準動画.mp4_SSIM_ファイルグラフ.png")
+            throw new InvalidOperationException("PNGの初期ファイル名が命名規則と一致しません。");
         tabs.SelectedItem = previewTab; UpdateLayout(); resizeTimer.Stop(); RefreshPreview();
         if (size.Items.Count != 9 || size.SelectedIndex != 4 || presets[1] != (1024, 768) ||
             presets[2] != (1280, 960) || presets[3] != (1600, 1200) ||
@@ -416,12 +433,14 @@ internal sealed class GraphImageTestWindow : Window
         if (!graph.DisplayedVideoIds.SequenceEqual(new[] { "sample-1" })) throw new InvalidOperationException("動画選択が反映されません。");
         graph.UpdateData([], [], null); RefreshPreview();
         if (preview.Source is null) throw new InvalidOperationException("空のデータを出力できません。");
-        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：30件、3指標×2対象、評価方式の双方向切り替え、9サイズ選択（1024×768・1600×1200を含む）、初期値1280×960・表示100%、6フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、1280×960指定、200%・100%・全体表示。サンプルは架空データ。");
+        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：PNGの初期ファイル名、30件、3指標×2対象、評価方式の双方向切り替え、9サイズ選択（1024×768・1600×1200を含む）、初期値1280×960・表示100%、6フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、1280×960指定、200%・100%・全体表示。サンプルは架空データ。");
         resizeTimer.Stop(); Console.WriteLine("グラフ画像保存テスト：合格");
     }
 
-    private void SetGraph(VideoDescriptor[] videos, Dictionary<(string, QualityMetric), QualityResult> results)
+    private void SetGraph(VideoDescriptor[] videos, Dictionary<(string, QualityMetric), QualityResult> results,
+        string referenceName)
     {
+        referenceFileName = referenceName;
         graph = new QualityGraphPanel(videos, results, allVideos: videos, separatePlaybackLayer: true);
         graphHost.Content = graph;
     }
@@ -445,7 +464,7 @@ internal sealed class GraphImageTestWindow : Window
                 })).ToArray();
             results[(videos[index].Id, metric)] = new(metric, frames.Average(frame => frame.Value), frames);
         }
-        SetGraph(videos, results);
+        SetGraph(videos, results, "サンプル基準動画.mkv");
         status.Text = "30本の架空サンプルを表示中（実測品質ではありません）。実データはSSIM検証用JSONを読み込めます。凡例・選択・指標を変えて保存を確認してください。";
     }
 }
