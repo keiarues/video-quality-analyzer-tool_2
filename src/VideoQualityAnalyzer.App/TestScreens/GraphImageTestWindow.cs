@@ -56,7 +56,9 @@ internal sealed class GraphImageTestWindow : Window
         toolbar.Children.Add(heightDimension); toolbar.Children.Add(Label("px"));
         toolbar.Children.Add(Label("フォント："));
         foreach (var text in new[] { "1倍", "1.2倍", "1.5倍", "2倍", "3倍" }) font.Items.Add(text);
-        font.SelectedIndex = 0; toolbar.Children.Add(font);
+        font.SelectedIndex = 0;
+        font.ToolTip = "出力画像上の文字サイズ：目盛り・凡例は16.5px、見出し・単位は19.5pxに倍率を掛けます。";
+        toolbar.Children.Add(font);
         var save = new Button { Content = "PNG画像を保存" }; toolbar.Children.Add(save);
         var load = new Button { Content = "実データを読み込む" }; toolbar.Children.Add(load);
         DockPanel.SetDock(status, Dock.Bottom); root.Children.Add(status);
@@ -174,10 +176,7 @@ internal sealed class GraphImageTestWindow : Window
     private BitmapSource CreateImage()
     {
         var (width, height) = ImageSize();
-        var available = AvailableSize();
-        var scale = Math.Max(width / available.Width, height / available.Height);
-        var layout = new Size(Math.Max(200, width / scale), Math.Max(200, height / scale));
-        return graph.CreateExportImage((GraphImageTarget)target.SelectedIndex, width, height, FontScale(), layout);
+        return graph.CreateExportImage((GraphImageTarget)target.SelectedIndex, width, height, FontScale());
     }
     private void RefreshPreview()
     {
@@ -185,7 +184,7 @@ internal sealed class GraphImageTestWindow : Window
         try
         {
             preview.Source = CreateImage(); ApplyZoom();
-            var bitmap = (BitmapSource)preview.Source;
+            var bitmap = RequirePreview();
             updatingSizeInputs = true;
             if (!dimension.IsEnabled) dimension.Text = bitmap.PixelWidth.ToString();
             if (!heightDimension.IsEnabled) heightDimension.Text = bitmap.PixelHeight.ToString();
@@ -194,6 +193,9 @@ internal sealed class GraphImageTestWindow : Window
         }
         catch (Exception error) { preview.Source = null; status.Text = "プレビューを作成できませんでした：" + error.Message; }
     }
+    private BitmapSource RequirePreview() => preview.Source as BitmapSource
+        ?? throw new InvalidOperationException("プレビュー画像が生成されていません。" + status.Text);
+
     private void ApplyZoom()
     {
         if (preview.Source is not BitmapSource bitmap) return;
@@ -221,8 +223,10 @@ internal sealed class GraphImageTestWindow : Window
         {
             tabs.SelectedIndex = 0; graph.SelectMetric(metric); UpdateLayout();
             tabs.SelectedItem = previewTab; UpdateLayout(); target.SelectedIndex = targetIndex; RefreshPreview();
+            if (graph.FilePointCount != 30 || graph.DisplayedVideoIds.Count != 30)
+                throw new InvalidOperationException("サンプルの表示件数が30件ではありません。");
             if (preview.Source is not BitmapSource) throw new InvalidOperationException("プレビューがありません。");
-            var image = (BitmapSource)preview.Source;
+            var image = RequirePreview();
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
             using var stream = File.Create(Path.Combine(directory, $"responsive-{metric}-{targetIndex}.png")); encoder.Save(stream);
         }
@@ -230,23 +234,25 @@ internal sealed class GraphImageTestWindow : Window
         {
             size.SelectedIndex = mode; RefreshPreview();
             var expected = ImageSize();
+            if (preview.Source is null && mode != 5 && status.Text.Contains("不足")) continue;
             if (preview.Source is not BitmapSource image || image.PixelWidth != expected.Width || image.PixelHeight != expected.Height)
                 throw new InvalidOperationException("出力寸法が選択に一致しません。");
             if (mode >= 4 && expected != presets[mode - 4]) throw new InvalidOperationException("プリセットが不正です。");
         }
         size.SelectedIndex = 0; RefreshPreview();
-        var before = (BitmapSource)preview.Source;
+        var before = RequirePreview();
         Width = 1000; Height = 720; UpdateLayout();
         // 実際のリサイズ通知からの自動更新を待つ。明示的な再生成では代用しない。
         await Task.Delay(350);
-        var after = (BitmapSource)preview.Source;
+        var after = RequirePreview();
         if (before.PixelWidth == after.PixelWidth || Math.Abs(before.PixelWidth / (double)before.PixelHeight -
             after.PixelWidth / (double)after.PixelHeight) < 0.01) throw new InvalidOperationException("ウィンドウの縦横比に追従しません。");
-        size.SelectedIndex = 5; RefreshPreview();
+        // 30件の凡例と最大倍率が収まる4K出力で全倍率を照合する。
+        size.SelectedIndex = 8; RefreshPreview();
         for (var index = 0; index < font.Items.Count; index++)
         {
             font.SelectedIndex = index; RefreshPreview();
-            var image = (BitmapSource)preview.Source;
+            var image = RequirePreview();
             var expected = CreateImage();
             var fontEncoder = new PngBitmapEncoder(); fontEncoder.Frames.Add(BitmapFrame.Create(image));
             using (var stream = File.Create(Path.Combine(directory, $"responsive-font-{index}.png"))) fontEncoder.Save(stream);
@@ -258,9 +264,59 @@ internal sealed class GraphImageTestWindow : Window
                     Math.Min(pixels[pixel], Math.Min(pixels[pixel + 1], pixels[pixel + 2])) > 60) colored++;
             if (colored < 100 || !pixels.SequenceEqual(other)) throw new InvalidOperationException("系列の描画または出力画像の一致が不正です。");
         }
+        // 同じ出力設定は通常・最大化・別サイズのウィンドウで全画素一致しなければならない。
+        static byte[] Pixels(BitmapSource bitmap)
+        {
+            var pixels = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4];
+            bitmap.CopyPixels(pixels, bitmap.PixelWidth * 4, 0); return pixels;
+        }
+        size.SelectedIndex = 8;
+        var fixedImages = new Dictionary<(int Target, int Font), byte[]>();
+        foreach (var targetIndex in new[] { 0, 1 })
+        for (var fontIndex = 0; fontIndex < font.Items.Count; fontIndex++)
+        {
+            target.SelectedIndex = targetIndex; font.SelectedIndex = fontIndex; RefreshPreview();
+            fixedImages[(targetIndex, fontIndex)] = Pixels(RequirePreview());
+        }
+        foreach (var state in new[] { WindowState.Maximized, WindowState.Normal })
+        {
+            WindowState = state;
+            if (state == WindowState.Normal) { Width = 1600; Height = 950; }
+            UpdateLayout(); await Task.Delay(350);
+            foreach (var targetIndex in new[] { 0, 1 })
+            for (var fontIndex = 0; fontIndex < font.Items.Count; fontIndex++)
+            {
+                target.SelectedIndex = targetIndex; font.SelectedIndex = fontIndex; RefreshPreview();
+                if (preview.Source is not BitmapSource image || image.PixelWidth != 3840 || image.PixelHeight != 2160 ||
+                    !fixedImages[(targetIndex, fontIndex)].SequenceEqual(Pixels(image)))
+                    throw new InvalidOperationException("固定解像度の画像がウィンドウサイズによって変化しました。");
+            }
+        }
+        // 出力解像度が変わっても、同じピクセル指定のタイトルは同じ画素で描画される。
+        static byte[] TitlePixels(BitmapSource bitmap)
+        {
+            var pixels = new byte[600 * 20 * 4];
+            bitmap.CopyPixels(new Int32Rect(12, 12, 600, 20), pixels, 600 * 4, 0); return pixels;
+        }
+        font.SelectedIndex = 0;
+        foreach (var targetIndex in new[] { 0, 1 })
+        {
+            target.SelectedIndex = targetIndex; size.SelectedIndex = 5; RefreshPreview();
+            var title = TitlePixels(RequirePreview());
+            size.SelectedIndex = 6; RefreshPreview();
+            if (!title.SequenceEqual(TitlePixels(RequirePreview())))
+                throw new InvalidOperationException("解像度変更で文字のピクセルサイズが変化しました。");
+            size.SelectedIndex = 1; dimension.Text = "1280"; RefreshPreview();
+            WindowState = WindowState.Maximized; UpdateLayout(); await Task.Delay(350);
+            if (preview.Source is not BitmapSource { PixelWidth: 1280 } fixedWidth ||
+                !title.SequenceEqual(TitlePixels(fixedWidth)))
+                throw new InvalidOperationException("最大化した横幅1280px指定で文字サイズが変化しました。");
+            WindowState = WindowState.Normal; UpdateLayout(); await Task.Delay(350);
+        }
+        target.SelectedIndex = 1; size.SelectedIndex = 5; font.SelectedIndex = 1; RefreshPreview();
         var original = preview.Source;
         fitToWindow = false; zoom.Value = 200; ApplyZoom(); UpdateLayout();
-        var dpi = VisualTreeHelper.GetDpi(this); var bitmap = (BitmapSource)preview.Source;
+        var dpi = VisualTreeHelper.GetDpi(this); var bitmap = RequirePreview();
         if (Math.Abs(preview.Width - bitmap.PixelWidth * 2 / dpi.DpiScaleX) > 0.1 || !ReferenceEquals(original, preview.Source) ||
             scroll.ExtentWidth <= scroll.ViewportWidth || scroll.ExtentHeight <= scroll.ViewportHeight)
             throw new InvalidOperationException("拡大表示が画像サイズを変更しました。");
@@ -278,11 +334,15 @@ internal sealed class GraphImageTestWindow : Window
         if (preview.Source is not null) throw new InvalidOperationException("不正な入力で古い画像が残っています。");
         dimension.Text = "1280";
         if (preview.Source is not BitmapSource { PixelWidth: 1280 }) throw new InvalidOperationException("入力修正後に画像が復元されません。");
+        size.SelectedIndex = 3; dimension.Text = "200"; heightDimension.Text = "100"; RefreshPreview();
+        if (preview.Source is not null || !status.Text.Contains("不足"))
+            throw new InvalidOperationException("描画領域が不足しても文字を縮小せずエラーを表示する必要があります。");
+        size.SelectedIndex = 5; RefreshPreview();
         graph.SelectFile("sample-1"); RefreshPreview();
         if (!graph.DisplayedVideoIds.SequenceEqual(new[] { "sample-1" })) throw new InvalidOperationException("動画選択が反映されません。");
         graph.UpdateData([], [], null); RefreshPreview();
         if (preview.Source is null) throw new InvalidOperationException("空のデータを出力できません。");
-        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：3指標×2対象、9サイズ選択、ウィンドウ追従、5フォント倍率、出力画素一致、200%・100%・全体表示。サンプルは架空データ。");
+        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：30件、3指標×2対象、9サイズ選択（領域不足時の案内を含む）、5フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、横幅1280px、200%・100%・全体表示。サンプルは架空データ。");
         resizeTimer.Stop(); Console.WriteLine("グラフ画像保存テスト：合格");
     }
 
@@ -294,23 +354,24 @@ internal sealed class GraphImageTestWindow : Window
 
     private void SetSample()
     {
-        var videos = Enumerable.Range(0, 4).Select(index => new VideoDescriptor($"sample-{index}",
-            $"サンプル動画{index + 1}.mkv", 1920, 1080, "av1", 30, 30, TimeSpan.FromSeconds(30), false, 900, 1,
-            1_000_000 + index * 800_000)).ToArray();
+        var videos = Enumerable.Range(0, 30).Select(index => new VideoDescriptor($"sample-{index}",
+            $"サンプル動画{index + 1:00}.mkv", 1920, 1080, "av1", 30, 30, TimeSpan.FromSeconds(30), false, 900, 1,
+            1_000_000 + index * 100_000)).ToArray();
         var results = new Dictionary<(string, QualityMetric), QualityResult>();
         foreach (var metric in Enum.GetValues<QualityMetric>())
         for (var index = 0; index < videos.Length; index++)
         {
+            var qualityLevel = index * 3d / (videos.Length - 1);
             var frames = Enumerable.Range(0, 900).Select(number => new QualityFrame(number,
                 metric switch
                 {
-                    QualityMetric.Ssim => 0.94 + index * 0.012 + 0.01 * Math.Sin(number / 30d) - (number % 120 == 0 ? 0.08 : 0),
-                    QualityMetric.Vmaf => 80 + index * 4 + 3 * Math.Sin(number / 30d),
-                    _ => 34 + index * 3 + 2 * Math.Sin(number / 30d)
+                    QualityMetric.Ssim => 0.94 + qualityLevel * 0.012 + 0.01 * Math.Sin(number / 30d) - (number % 120 == 0 ? 0.08 : 0),
+                    QualityMetric.Vmaf => 80 + qualityLevel * 4 + 3 * Math.Sin(number / 30d),
+                    _ => 34 + qualityLevel * 3 + 2 * Math.Sin(number / 30d)
                 })).ToArray();
             results[(videos[index].Id, metric)] = new(metric, frames.Average(frame => frame.Value), frames);
         }
         SetGraph(videos, results);
-        status.Text = "架空のサンプル値を表示中（実測品質ではありません）。実データはSSIM検証用JSONを読み込めます。凡例・選択・指標を変えて保存を確認してください。";
+        status.Text = "30本の架空サンプルを表示中（実測品質ではありません）。実データはSSIM検証用JSONを読み込めます。凡例・選択・指標を変えて保存を確認してください。";
     }
 }
