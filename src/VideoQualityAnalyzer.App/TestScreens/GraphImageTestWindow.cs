@@ -186,9 +186,8 @@ internal sealed class GraphImageTestWindow : Window
         if (size.SelectedIndex >= 4) return presets[size.SelectedIndex - 4];
         if (size.SelectedIndex == 0)
         {
-            var unit = Math.Floor(Math.Min(available.Width * dpi.DpiScaleX / 4,
-                available.Height * dpi.DpiScaleY / 3));
-            width = 4 * unit; height = 3 * unit;
+            width = available.Width * dpi.DpiScaleX;
+            height = available.Height * dpi.DpiScaleY;
         }
         else
         {
@@ -198,8 +197,10 @@ internal sealed class GraphImageTestWindow : Window
                     throw new InvalidOperationException("幅と高さは1～16384ピクセルの整数で入力してください。");
                 return value;
             }
-            width = size.SelectedIndex == 2 ? Parse(heightDimension.Text) * 4d / 3 : Parse(dimension.Text);
-            height = size.SelectedIndex == 1 ? width * 3d / 4 : Parse(heightDimension.Text);
+            width = size.SelectedIndex == 2 ? Parse(heightDimension.Text) * available.Width * dpi.DpiScaleX /
+                (available.Height * dpi.DpiScaleY) : Parse(dimension.Text);
+            height = size.SelectedIndex == 1 ? width * available.Height * dpi.DpiScaleY /
+                (available.Width * dpi.DpiScaleX) : Parse(heightDimension.Text);
         }
         if (width > 16384 || height > 16384 || width * height > 40_000_000)
             throw new InvalidOperationException("画像は各辺16384ピクセル、総画素数4000万以下にしてください。");
@@ -265,6 +266,13 @@ internal sealed class GraphImageTestWindow : Window
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(image));
             using var stream = File.Create(Path.Combine(directory, $"responsive-{metric}-{targetIndex}.png")); encoder.Save(stream);
         }
+        bool MatchesWindowRatio((int Width, int Height) image)
+        {
+            var available = AvailableSize();
+            var dpi = VisualTreeHelper.GetDpi(this);
+            return Math.Abs(image.Width / (double)image.Height -
+                available.Width * dpi.DpiScaleX / (available.Height * dpi.DpiScaleY)) < 0.01;
+        }
         foreach (var mode in Enumerable.Range(0, size.Items.Count))
         {
             size.SelectedIndex = mode; RefreshPreview();
@@ -274,18 +282,19 @@ internal sealed class GraphImageTestWindow : Window
                 throw new InvalidOperationException("出力寸法が選択に一致しません。");
             if (mode >= 4 && (expected != presets[mode - 4] || expected.Width * 3 != expected.Height * 4))
                 throw new InvalidOperationException("4:3のプリセットが不正です。");
-            if (mode is 0 or 1 or 2 && Math.Abs(expected.Width * 3 - expected.Height * 4) > 4)
-                throw new InvalidOperationException("自動サイズが4:3ではありません。");
+            if (mode is 0 or 1 or 2 && !MatchesWindowRatio(expected))
+                throw new InvalidOperationException("自動サイズがウィンドウの縦横比に合いません。");
         }
         size.SelectedIndex = 0; RefreshPreview();
         var before = RequirePreview();
-        Width = 1600; Height = 950; UpdateLayout();
+        Width = 1600; Height = 1000; UpdateLayout();
         // 実際のリサイズ通知からの自動更新を待つ。明示的な再生成では代用しない。
         await Task.Delay(350);
         var after = RequirePreview();
         if (before.PixelWidth == after.PixelWidth || before.PixelHeight == after.PixelHeight ||
-            after.PixelWidth * 3 != after.PixelHeight * 4)
-            throw new InvalidOperationException("4:3の画像サイズがウィンドウに追従しません。");
+            !MatchesWindowRatio((after.PixelWidth, after.PixelHeight)) ||
+            Math.Abs(before.PixelWidth / (double)before.PixelHeight - after.PixelWidth / (double)after.PixelHeight) < 0.01)
+            throw new InvalidOperationException("画像サイズがウィンドウの縦横比に追従しません。");
         // 30件の凡例と最大倍率が収まる4K出力で全倍率を照合する。
         size.SelectedIndex = 8; RefreshPreview();
         for (var index = 0; index < font.Items.Count; index++)
@@ -386,7 +395,7 @@ internal sealed class GraphImageTestWindow : Window
         if (!graph.DisplayedVideoIds.SequenceEqual(new[] { "sample-1" })) throw new InvalidOperationException("動画選択が反映されません。");
         graph.UpdateData([], [], null); RefreshPreview();
         if (preview.Source is null) throw new InvalidOperationException("空のデータを出力できません。");
-        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：30件、3指標×2対象、9サイズ選択（4:3と領域不足時の案内を含む）、初期値1280×960・表示100%、7フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、横幅1280px、200%・100%・全体表示。サンプルは架空データ。");
+        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：30件、3指標×2対象、9サイズ選択（固定プリセットは4:3、片側指定はウィンドウ比率）、初期値1280×960・表示100%、7フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、横幅1280px、200%・100%・全体表示。サンプルは架空データ。");
         resizeTimer.Stop(); Console.WriteLine("グラフ画像保存テスト：合格");
     }
 
