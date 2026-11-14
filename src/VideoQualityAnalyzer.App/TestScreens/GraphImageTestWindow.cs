@@ -57,7 +57,7 @@ internal sealed class GraphImageTestWindow : Window
         toolbar.Children.Add(Label("フォント："));
         foreach (var text in new[] { "1倍", "1.2倍", "1.5倍", "2倍", "3倍" }) font.Items.Add(text);
         font.SelectedIndex = 0;
-        font.ToolTip = "出力画像上の文字サイズ：目盛り・凡例は16.5px、見出し・単位は19.5pxに倍率を掛けます。";
+        font.ToolTip = "出力画像上の文字サイズ：目盛り・凡例は18px、見出し・単位は22pxに倍率を掛けます。";
         toolbar.Children.Add(font);
         var save = new Button { Content = "PNG画像を保存" }; toolbar.Children.Add(save);
         var load = new Button { Content = "実データを読み込む" }; toolbar.Children.Add(load);

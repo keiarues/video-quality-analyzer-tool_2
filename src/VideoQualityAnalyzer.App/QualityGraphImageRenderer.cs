@@ -13,7 +13,8 @@ internal sealed record QualityGraphImageSeries(VideoDescriptor Video, QualityRes
 // 出力の1単位を1pxとして直接描画する。画面サイズ・画面DPI・プレビュー倍率は参照しない。
 internal static class QualityGraphImageRenderer
 {
-    internal const double BaseFontScale = 1.5;
+    internal const double SmallFontPixels = 18;
+    internal const double MediumFontPixels = 22;
 
     public static BitmapSource Render(GraphImageTarget target, int width, int height, double fontScale,
         QualityMetric metric, IReadOnlyList<QualityGraphImageSeries> allSeries)
@@ -23,8 +24,8 @@ internal static class QualityGraphImageRenderer
             throw new ArgumentOutOfRangeException(nameof(width), "画像は各辺1～16384ピクセル、総画素数4000万以下にしてください。");
         if (!double.IsFinite(fontScale) || fontScale < 1 || fontScale > 3)
             throw new ArgumentOutOfRangeException(nameof(fontScale));
-        var small = UiTheme.Small * BaseFontScale * fontScale;
-        var medium = (double)Application.Current.FindResource("UiFontMedium") * BaseFontScale * fontScale;
+        var small = SmallFontPixels * fontScale;
+        var medium = MediumFontPixels * fontScale;
         var typeface = new Typeface((FontFamily)Application.Current.FindResource("UiFontFamily"),
             FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
         FormattedText Text(string value, double pixels, double maximumWidth = double.PositiveInfinity)
