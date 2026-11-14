@@ -15,6 +15,23 @@ public sealed class QualityEvaluationService(string executable)
 {
     public async Task<QualityResult> EvaluateAsync(VideoDescriptor reference, VideoDescriptor candidate,
         QualityMetric metric, IProgress<TimeSpan>? progress, CancellationToken token)
+        => await EvaluateCoreAsync(reference, candidate, metric, progress, token, null);
+
+    public async Task<QualityResult> EvaluatePartialAsync(VideoDescriptor reference, VideoDescriptor candidate,
+        QualityMetric metric, IReadOnlyList<EvaluationFrameRange> ranges, IProgress<TimeSpan>? progress, CancellationToken token)
+    {
+        var snapshot = ranges.ToArray();
+        if (reference.IsVariableFrameRate || candidate.IsVariableFrameRate || snapshot.Length == 0 ||
+            snapshot.Any(range => range.Start < 0 || range.End <= range.Start) ||
+            snapshot.Zip(snapshot.Skip(1)).Any(pair => pair.First.End > pair.Second.Start) ||
+            snapshot[^1].End > (candidate.TotalFrames ?? (long)Math.Ceiling(candidate.Duration.TotalSeconds * candidate.AverageFrameRate)) ||
+            snapshot[^1].End > (reference.TotalFrames ?? (long)Math.Ceiling(reference.Duration.TotalSeconds * reference.AverageFrameRate)))
+            throw new ArgumentException("評価区間が動画の範囲外、重複、またはCFRではありません。");
+        return await EvaluateCoreAsync(reference, candidate, metric, progress, token, snapshot);
+    }
+
+    private async Task<QualityResult> EvaluateCoreAsync(VideoDescriptor reference, VideoDescriptor candidate,
+        QualityMetric metric, IProgress<TimeSpan>? progress, CancellationToken token, EvaluationFrameRange[]? ranges)
     {
         token.ThrowIfCancellationRequested();
         if (reference.Width != candidate.Width || reference.Height != candidate.Height ||
@@ -35,9 +52,13 @@ public sealed class QualityEvaluationService(string executable)
                 UseShellExecute = false, CreateNoWindow = true,
                 RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = directory
             };
+            var selection = ranges is null ? "setpts=PTS-STARTPTS" :
+                $"trim=end_frame={ranges[^1].End},select='" +
+                string.Join("+", ranges.Select(range => $"between(n,{range.Start},{range.End - 1})")) +
+                $"',setpts=N/({reference.AverageFrameRate.ToString("R", CultureInfo.InvariantCulture)}*TB)";
             foreach (var argument in new[] { "-hide_banner", "-loglevel", "error", "-i", Path.GetFullPath(candidate.Path),
                 "-i", Path.GetFullPath(reference.Path), "-filter_complex",
-                "[0:v:0]setpts=PTS-STARTPTS[dist];[1:v:0]setpts=PTS-STARTPTS[ref];[dist][ref]" + filter,
+                $"[0:v:0]{selection}[dist];[1:v:0]{selection}[ref];[dist][ref]" + filter,
                 "-an", "-progress", "pipe:1", "-f", "null", "-" }) info.ArgumentList.Add(argument);
             using var process = Process.Start(info) ?? throw new InvalidOperationException("FFmpegを起動できません。");
             using var registration = token.Register(() =>
@@ -64,9 +85,20 @@ public sealed class QualityEvaluationService(string executable)
                 throw new InvalidOperationException(metric == QualityMetric.Vmaf
                     ? "VMAF評価に失敗しました。FFmpegのlibvmaf対応と動画を確認してください。"
                     : "品質評価に失敗しました。動画とFFmpegを確認してください。");
-            return metric == QualityMetric.Vmaf
+            var result = metric == QualityMetric.Vmaf
                 ? ParseVmaf(await File.ReadAllTextAsync(Path.Combine(directory, "metric.json"), token))
                 : ParseStats(metric, await File.ReadAllTextAsync(Path.Combine(directory, "metric.log"), token));
+            if (ranges is null) return result;
+            long Map(long number)
+            {
+                foreach (var range in ranges)
+                {
+                    if (number < range.End - range.Start) return range.Start + number;
+                    number -= range.End - range.Start;
+                }
+                throw new InvalidDataException("評価結果のフレーム番号が対象区間を超えています。");
+            }
+            return result with { Frames = result.Frames.Select(frame => frame with { Number = Map(frame.Number) }).ToArray() };
         }
         finally { Directory.Delete(directory, recursive: true); }
     }

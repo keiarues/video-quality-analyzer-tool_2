@@ -15,6 +15,13 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        if (e.Args.Contains("--test-partial-evaluation"))
+        {
+            base.OnStartup(e);
+            MainWindow = new PartialEvaluationTestWindow(e.Args.Contains("--auto"), e.Args.Where(System.IO.File.Exists).ToArray());
+            MainWindow.Show();
+            return;
+        }
         if (e.Args.Contains("--test-csv-export"))
         {
             base.OnStartup(e);
