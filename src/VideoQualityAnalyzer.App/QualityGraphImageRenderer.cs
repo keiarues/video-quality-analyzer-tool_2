@@ -22,7 +22,7 @@ internal static class QualityGraphImageRenderer
         if (!Enum.IsDefined(target)) throw new ArgumentOutOfRangeException(nameof(target));
         if (width < 1 || height < 1 || width > 16384 || height > 16384 || (long)width * height > 40_000_000)
             throw new ArgumentOutOfRangeException(nameof(width), "画像は各辺1～16384ピクセル、総画素数4000万以下にしてください。");
-        if (!double.IsFinite(fontScale) || fontScale < 0.5 || fontScale > 3)
+        if (!double.IsFinite(fontScale) || fontScale < 0.5 || fontScale > 2)
             throw new ArgumentOutOfRangeException(nameof(fontScale));
         var small = SmallFontPixels * fontScale;
         var medium = MediumFontPixels * fontScale;

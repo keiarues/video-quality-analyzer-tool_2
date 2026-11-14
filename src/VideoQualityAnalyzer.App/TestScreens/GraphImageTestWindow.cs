@@ -55,12 +55,12 @@ internal sealed class GraphImageTestWindow : Window
         foreach (var text in new[] { "フレームグラフ", "ファイルグラフ" }) target.Items.Add(text);
         target.SelectedIndex = 1;
         saveOptions.Children.Add(Group(Label("保存対象："), target));
-        foreach (var text in new[] { "現在の表示サイズ", "横幅を指定", "縦幅を指定", "幅と高さを指定" }) size.Items.Add(text);
+        foreach (var text in new[] { "現在の表示サイズ", "幅と高さを指定" }) size.Items.Add(text);
         foreach (var preset in presets) size.Items.Add($"{preset.Width} × {preset.Height}");
-        size.SelectedIndex = 5;
+        size.SelectedIndex = 3;
         saveOptions.Children.Add(Group(Label("画像サイズ："), size));
         saveOptions.Children.Add(Group(dimension, Label("×"), heightDimension, Label("px")));
-        foreach (var text in new[] { "0.5倍", "0.8倍", "1倍", "1.2倍", "1.5倍", "2倍", "3倍" }) font.Items.Add(text);
+        foreach (var text in new[] { "0.5倍", "0.8倍", "1倍", "1.2倍", "1.5倍", "2倍" }) font.Items.Add(text);
         font.SelectedIndex = 2;
         font.ToolTip = "出力画像上の文字サイズ：目盛り・凡例は18px、見出し・単位は22pxに倍率を掛けます。";
         saveOptions.Children.Add(Group(Label("フォント："), font));
@@ -165,11 +165,11 @@ internal sealed class GraphImageTestWindow : Window
         Padding = new Thickness(4, 0, 4, 0), Margin = new Thickness(3, 2, 3, 2),
         VerticalContentAlignment = VerticalAlignment.Center
     };
-    private double FontScale() => new[] { 0.5, 0.8, 1, 1.2, 1.5, 2, 3 }[font.SelectedIndex];
+    private double FontScale() => new[] { 0.5, 0.8, 1, 1.2, 1.5, 2 }[font.SelectedIndex];
     private void UpdateSizeInputs()
     {
-        dimension.IsEnabled = size.SelectedIndex is 1 or 3;
-        heightDimension.IsEnabled = size.SelectedIndex is 2 or 3;
+        dimension.IsEnabled = size.SelectedIndex == 1;
+        heightDimension.IsEnabled = size.SelectedIndex == 1;
     }
     private void QueueRefresh()
     {
@@ -183,7 +183,7 @@ internal sealed class GraphImageTestWindow : Window
         var available = AvailableSize();
         var dpi = VisualTreeHelper.GetDpi(this);
         double width, height;
-        if (size.SelectedIndex >= 4) return presets[size.SelectedIndex - 4];
+        if (size.SelectedIndex >= 2) return presets[size.SelectedIndex - 2];
         if (size.SelectedIndex == 0)
         {
             width = available.Width * dpi.DpiScaleX;
@@ -197,10 +197,8 @@ internal sealed class GraphImageTestWindow : Window
                     throw new InvalidOperationException("幅と高さは1～16384ピクセルの整数で入力してください。");
                 return value;
             }
-            width = size.SelectedIndex == 2 ? Parse(heightDimension.Text) * available.Width * dpi.DpiScaleX /
-                (available.Height * dpi.DpiScaleY) : Parse(dimension.Text);
-            height = size.SelectedIndex == 1 ? width * available.Height * dpi.DpiScaleY /
-                (available.Width * dpi.DpiScaleX) : Parse(heightDimension.Text);
+            width = Parse(dimension.Text);
+            height = Parse(heightDimension.Text);
         }
         if (width > 16384 || height > 16384 || width * height > 40_000_000)
             throw new InvalidOperationException("画像は各辺16384ピクセル、総画素数4000万以下にしてください。");
@@ -250,7 +248,8 @@ internal sealed class GraphImageTestWindow : Window
     private async Task VerifyAsync(string directory)
     {
         tabs.SelectedItem = previewTab; UpdateLayout(); resizeTimer.Stop(); RefreshPreview();
-        if (size.Items.Count != 9 || size.SelectedIndex != 5 || presets[1] != (1280, 960) ||
+        if (size.Items.Count != 7 || size.SelectedIndex != 3 || presets[1] != (1280, 960) ||
+            font.Items.Count != 6 || font.Items.Contains("3倍") ||
             fitToWindow || zoom.Value != 100 || zoomLabel.Text != "100%" ||
             RequirePreview() is not { PixelWidth: 1280, PixelHeight: 960 })
             throw new InvalidOperationException("画像サイズまたは表示倍率の初期値が不正です。");
@@ -277,12 +276,12 @@ internal sealed class GraphImageTestWindow : Window
         {
             size.SelectedIndex = mode; RefreshPreview();
             var expected = ImageSize();
-            if (preview.Source is null && mode != 5 && status.Text.Contains("不足")) continue;
+            if (preview.Source is null && mode != 3 && status.Text.Contains("不足")) continue;
             if (preview.Source is not BitmapSource image || image.PixelWidth != expected.Width || image.PixelHeight != expected.Height)
                 throw new InvalidOperationException("出力寸法が選択に一致しません。");
-            if (mode >= 4 && (expected != presets[mode - 4] || expected.Width * 3 != expected.Height * 4))
+            if (mode >= 2 && (expected != presets[mode - 2] || expected.Width * 3 != expected.Height * 4))
                 throw new InvalidOperationException("4:3のプリセットが不正です。");
-            if (mode is 0 or 1 or 2 && !MatchesWindowRatio(expected))
+            if (mode == 0 && !MatchesWindowRatio(expected))
                 throw new InvalidOperationException("自動サイズがウィンドウの縦横比に合いません。");
         }
         size.SelectedIndex = 0; RefreshPreview();
@@ -296,7 +295,7 @@ internal sealed class GraphImageTestWindow : Window
             Math.Abs(before.PixelWidth / (double)before.PixelHeight - after.PixelWidth / (double)after.PixelHeight) < 0.01)
             throw new InvalidOperationException("画像サイズがウィンドウの縦横比に追従しません。");
         // 30件の凡例と最大倍率が収まる4K出力で全倍率を照合する。
-        size.SelectedIndex = 8; RefreshPreview();
+        size.SelectedIndex = 6; RefreshPreview();
         for (var index = 0; index < font.Items.Count; index++)
         {
             font.SelectedIndex = index; RefreshPreview();
@@ -318,7 +317,7 @@ internal sealed class GraphImageTestWindow : Window
             var pixels = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4];
             bitmap.CopyPixels(pixels, bitmap.PixelWidth * 4, 0); return pixels;
         }
-        size.SelectedIndex = 8;
+        size.SelectedIndex = 6;
         var fixedImages = new Dictionary<(int Target, int Font), byte[]>();
         foreach (var targetIndex in new[] { 0, 1 })
         for (var fontIndex = 0; fontIndex < font.Items.Count; fontIndex++)
@@ -349,19 +348,19 @@ internal sealed class GraphImageTestWindow : Window
         font.SelectedIndex = 2;
         foreach (var targetIndex in new[] { 0, 1 })
         {
-            target.SelectedIndex = targetIndex; size.SelectedIndex = 5; RefreshPreview();
+            target.SelectedIndex = targetIndex; size.SelectedIndex = 3; RefreshPreview();
             var title = TitlePixels(RequirePreview());
-            size.SelectedIndex = 6; RefreshPreview();
+            size.SelectedIndex = 4; RefreshPreview();
             if (!title.SequenceEqual(TitlePixels(RequirePreview())))
                 throw new InvalidOperationException("解像度変更で文字のピクセルサイズが変化しました。");
-            size.SelectedIndex = 1; dimension.Text = "1280"; RefreshPreview();
+            size.SelectedIndex = 1; dimension.Text = "1280"; heightDimension.Text = "960"; RefreshPreview();
             WindowState = WindowState.Maximized; UpdateLayout(); await Task.Delay(350);
-            if (preview.Source is not BitmapSource { PixelWidth: 1280 } fixedWidth ||
+            if (preview.Source is not BitmapSource { PixelWidth: 1280, PixelHeight: 960 } fixedWidth ||
                 !title.SequenceEqual(TitlePixels(fixedWidth)))
-                throw new InvalidOperationException("最大化した横幅1280px指定で文字サイズが変化しました。");
+                throw new InvalidOperationException("最大化した1280×960指定で文字サイズが変化しました。");
             WindowState = WindowState.Normal; UpdateLayout(); await Task.Delay(350);
         }
-        target.SelectedIndex = 1; size.SelectedIndex = 5; font.SelectedIndex = 3; RefreshPreview();
+        target.SelectedIndex = 1; size.SelectedIndex = 3; font.SelectedIndex = 3; RefreshPreview();
         var original = preview.Source;
         fitToWindow = false; zoom.Value = 200; ApplyZoom(); UpdateLayout();
         var dpi = VisualTreeHelper.GetDpi(this); var bitmap = RequirePreview();
@@ -387,15 +386,15 @@ internal sealed class GraphImageTestWindow : Window
         if (preview.Source is not null) throw new InvalidOperationException("不正な入力で古い画像が残っています。");
         dimension.Text = "1280";
         if (preview.Source is not BitmapSource { PixelWidth: 1280 }) throw new InvalidOperationException("入力修正後に画像が復元されません。");
-        size.SelectedIndex = 3; dimension.Text = "200"; heightDimension.Text = "100"; RefreshPreview();
+        size.SelectedIndex = 1; dimension.Text = "200"; heightDimension.Text = "100"; RefreshPreview();
         if (preview.Source is not null || !status.Text.Contains("不足"))
             throw new InvalidOperationException("描画領域が不足しても文字を縮小せずエラーを表示する必要があります。");
-        size.SelectedIndex = 5; RefreshPreview();
+        size.SelectedIndex = 3; RefreshPreview();
         graph.SelectFile("sample-1"); RefreshPreview();
         if (!graph.DisplayedVideoIds.SequenceEqual(new[] { "sample-1" })) throw new InvalidOperationException("動画選択が反映されません。");
         graph.UpdateData([], [], null); RefreshPreview();
         if (preview.Source is null) throw new InvalidOperationException("空のデータを出力できません。");
-        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：30件、3指標×2対象、9サイズ選択（固定プリセットは4:3、片側指定はウィンドウ比率）、初期値1280×960・表示100%、7フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、横幅1280px、200%・100%・全体表示。サンプルは架空データ。");
+        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：30件、3指標×2対象、7サイズ選択（固定プリセットは4:3）、初期値1280×960・表示100%、6フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、1280×960指定、200%・100%・全体表示。サンプルは架空データ。");
         resizeTimer.Stop(); Console.WriteLine("グラフ画像保存テスト：合格");
     }
 
