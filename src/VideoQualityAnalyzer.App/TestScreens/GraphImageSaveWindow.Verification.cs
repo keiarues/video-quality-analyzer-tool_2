@@ -16,9 +16,9 @@ internal sealed partial class GraphImageSaveWindow
         var savedAt = new DateTime(2026, 11, 14, 9, 8, 7);
         if (referenceFileName != "サンプル基準動画.mkv" ||
             PngFileName(savedAt, referenceFileName, QualityMetric.Vmaf, GraphImageTarget.Frames) !=
-                "20261114-090807_サンプル基準動画.mkv_VMAF_フレームグラフ.png" ||
+                "20261114-090807_サンプル基準動画.mkv_フレームグラフ_VMAF.png" ||
             PngFileName(savedAt, "基準動画.mp4", QualityMetric.Ssim, GraphImageTarget.Files) !=
-                "20261114-090807_基準動画.mp4_SSIM_ファイルグラフ.png")
+                "20261114-090807_基準動画.mp4_ファイルグラフ_SSIM.png")
             throw new InvalidOperationException("PNGの初期ファイル名が命名規則と一致しません。");
         if (CreateSaveDialog(savedAt).InitialDirectory !=
             Environment.GetFolderPath(Environment.SpecialFolder.MyPictures))

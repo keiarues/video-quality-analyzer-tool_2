@@ -199,7 +199,7 @@ internal sealed partial class GraphImageSaveWindow : Window
     {
         var graphType = target == GraphImageTarget.Frames ? "フレームグラフ" : "ファイルグラフ";
         return $"{savedAt.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}_{referenceName}_" +
-            $"{metric.ToString().ToUpperInvariant()}_{graphType}.png";
+            $"{graphType}_{metric.ToString().ToUpperInvariant()}.png";
     }
     private SaveFileDialog CreateSaveDialog(DateTime savedAt) => new()
     {
