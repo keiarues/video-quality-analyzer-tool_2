@@ -8,13 +8,14 @@ namespace VideoQualityAnalyzer.Media;
 
 public enum QualityMetric { Vmaf, Ssim, Psnr }
 public sealed record QualityFrame(long Number, double Value);
+public sealed record QualityEvaluationTiming(TimeSpan FfmpegElapsed, TimeSpan AggregationElapsed, TimeSpan FfmpegCpuTime);
 public sealed record QualityResult(QualityMetric Metric, double Average, IReadOnlyList<QualityFrame> Frames)
 {
     public EvaluationSelection Selection { get; init; } = EvaluationSelection.Full;
 }
 
 // 評価は外部FFmpegで行い、正常終了した結果だけを返す。
-public sealed class QualityEvaluationService(string executable)
+public sealed class QualityEvaluationService(string executable, Action<QualityEvaluationTiming>? timing = null)
 {
     public async Task<QualityResult> EvaluateAsync(VideoDescriptor reference, VideoDescriptor candidate,
         QualityMetric metric, IProgress<TimeSpan>? progress, CancellationToken token)
@@ -63,6 +64,7 @@ public sealed class QualityEvaluationService(string executable)
                 "-i", Path.GetFullPath(reference.Path), "-filter_complex",
                 $"[0:v:0]{selection}[dist];[1:v:0]{selection}[ref];[dist][ref]" + filter,
                 "-an", "-progress", "pipe:1", "-f", "null", "-" }) info.ArgumentList.Add(argument);
+            var ffmpegClock = timing is null ? null : Stopwatch.StartNew();
             using var process = Process.Start(info) ?? throw new InvalidOperationException("FFmpegを起動できません。");
             using var registration = token.Register(() =>
             {
@@ -88,10 +90,18 @@ public sealed class QualityEvaluationService(string executable)
                 throw new InvalidOperationException(metric == QualityMetric.Vmaf
                     ? "VMAF評価に失敗しました。FFmpegのlibvmaf対応と動画を確認してください。"
                     : "品質評価に失敗しました。動画とFFmpegを確認してください。");
+            ffmpegClock?.Stop();
+            var aggregationClock = timing is null ? null : Stopwatch.StartNew();
+            void ReportTiming()
+            {
+                aggregationClock?.Stop();
+                if (timing is not null)
+                    timing(new(ffmpegClock!.Elapsed, aggregationClock!.Elapsed, process.TotalProcessorTime));
+            }
             var result = metric == QualityMetric.Vmaf
                 ? ParseVmaf(await File.ReadAllTextAsync(Path.Combine(directory, "metric.json"), token))
                 : ParseStats(metric, await File.ReadAllTextAsync(Path.Combine(directory, "metric.log"), token));
-            if (ranges is null) return result;
+            if (ranges is null) { ReportTiming(); return result; }
             long Map(long number)
             {
                 foreach (var range in ranges)
@@ -101,7 +111,9 @@ public sealed class QualityEvaluationService(string executable)
                 }
                 throw new InvalidDataException("評価結果のフレーム番号が対象区間を超えています。");
             }
-            return result with { Frames = result.Frames.Select(frame => frame with { Number = Map(frame.Number) }).ToArray() };
+            result = result with { Frames = result.Frames.Select(frame => frame with { Number = Map(frame.Number) }).ToArray() };
+            ReportTiming();
+            return result;
         }
         finally { Directory.Delete(directory, recursive: true); }
     }

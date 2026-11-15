@@ -1,0 +1,70 @@
+{
+  "Metadata": {
+    "StartedUtc": "2026-11-15T11:27:37.3723118+00:00",
+    "Phase": "metrics",
+    "Repeats": 1,
+    "Metric": "Vmaf",
+    "Os": "Microsoft Windows NT 10.0.26200.0",
+    "Runtime": "10.0.14",
+    "LogicalProcessors": 16,
+    "Cpu": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+    "Ffmpeg": "ffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+    "Reference": {
+      "Codec": "ffv1",
+      "Width": 1440,
+      "Height": 1080,
+      "AverageFrameRate": 29.97002997002997,
+      "DurationSeconds": 299.999,
+      "Frames": 8991,
+      "Bytes": 3925018054
+    },
+    "Candidate": {
+      "Codec": "av1",
+      "Width": 1440,
+      "Height": 1080,
+      "AverageFrameRate": 29.97002997002997,
+      "DurationSeconds": 299.532,
+      "Frames": 8977,
+      "Bytes": 95794096
+    },
+    "Conditions": "\u753B\u9762\u306A\u3057\u30FB1\u30B8\u30E7\u30D6\u305A\u3064\u5B9F\u884C\u30FBOS\u30AD\u30E3\u30C3\u30B7\u30E5\u6D88\u53BB\u306A\u3057\u30FB\u958B\u59CB\u524D\u306B\u5727\u7E2E\u30C7\u30FC\u30BF\u306E\u8AAD\u307F\u8FBC\u307F\u30921\u56DE\u5B9F\u65BD\u3002CPU\u79D2\u306F\u5168\u30B9\u30EC\u30C3\u30C9\u306E\u5408\u8A08\u3002"
+  },
+  "Results": [
+    {
+      "Case": "warmup_demux",
+      "Repeat": 0,
+      "WallSeconds": 0.6668078,
+      "FfmpegSeconds": 0.6668078,
+      "AggregationSeconds": 0,
+      "CpuSeconds": 0.828125,
+      "Frames": 8977,
+      "Average": null,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "full",
+      "Repeat": 1,
+      "WallSeconds": 148.4633522,
+      "FfmpegSeconds": 148.4003529,
+      "AggregationSeconds": 0.0597211,
+      "CpuSeconds": 621.8125,
+      "Frames": 8977,
+      "Average": 89.244077,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "uniform_10x6",
+      "Repeat": 1,
+      "WallSeconds": 60.941669,
+      "FfmpegSeconds": 60.9241575,
+      "AggregationSeconds": 0.0145781,
+      "CpuSeconds": 517.328125,
+      "Frames": 1799,
+      "Average": 94.911754,
+      "Mismatches": null,
+      "MaximumDifference": null
+    }
+  ]
+}

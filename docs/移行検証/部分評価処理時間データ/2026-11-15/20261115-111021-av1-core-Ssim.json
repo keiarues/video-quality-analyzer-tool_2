@@ -1,0 +1,190 @@
+{
+  "Metadata": {
+    "StartedUtc": "2026-11-15T11:10:21.1851342+00:00",
+    "Phase": "core",
+    "Repeats": 3,
+    "Metric": "Ssim",
+    "Os": "Microsoft Windows NT 10.0.26200.0",
+    "Runtime": "10.0.14",
+    "LogicalProcessors": 16,
+    "Cpu": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+    "Ffmpeg": "ffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+    "Reference": {
+      "Codec": "ffv1",
+      "Width": 1440,
+      "Height": 1080,
+      "AverageFrameRate": 29.97002997002997,
+      "DurationSeconds": 299.999,
+      "Frames": 8991,
+      "Bytes": 3925018054
+    },
+    "Candidate": {
+      "Codec": "av1",
+      "Width": 1440,
+      "Height": 1080,
+      "AverageFrameRate": 29.97002997002997,
+      "DurationSeconds": 299.532,
+      "Frames": 8977,
+      "Bytes": 95794096
+    },
+    "Conditions": "\u753B\u9762\u306A\u3057\u30FB1\u30B8\u30E7\u30D6\u305A\u3064\u5B9F\u884C\u30FBOS\u30AD\u30E3\u30C3\u30B7\u30E5\u6D88\u53BB\u306A\u3057\u30FB\u958B\u59CB\u524D\u306B\u5727\u7E2E\u30C7\u30FC\u30BF\u306E\u8AAD\u307F\u8FBC\u307F\u30921\u56DE\u5B9F\u65BD\u3002CPU\u79D2\u306F\u5168\u30B9\u30EC\u30C3\u30C9\u306E\u5408\u8A08\u3002"
+  },
+  "Results": [
+    {
+      "Case": "warmup_demux",
+      "Repeat": 0,
+      "WallSeconds": 0.7822342,
+      "FfmpegSeconds": 0.7822342,
+      "AggregationSeconds": 0,
+      "CpuSeconds": 0.921875,
+      "Frames": 8977,
+      "Average": null,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "full",
+      "Repeat": 1,
+      "WallSeconds": 43.3808319,
+      "FfmpegSeconds": 43.364564,
+      "AggregationSeconds": 0.0134246,
+      "CpuSeconds": 558.09375,
+      "Frames": 8977,
+      "Average": 0.9785573400913425,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "range_240_250",
+      "Repeat": 1,
+      "WallSeconds": 36.0930607,
+      "FfmpegSeconds": 36.0889845,
+      "AggregationSeconds": 0.0012819,
+      "CpuSeconds": 423.890625,
+      "Frames": 300,
+      "Average": 0.9820503133333339,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "periodic_60_10",
+      "Repeat": 1,
+      "WallSeconds": 34.6042848,
+      "FfmpegSeconds": 34.6011129,
+      "AggregationSeconds": 0.0021972,
+      "CpuSeconds": 424.6875,
+      "Frames": 1499,
+      "Average": 0.9820513515677108,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "uniform_10x6",
+      "Repeat": 1,
+      "WallSeconds": 41.6866875,
+      "FfmpegSeconds": 41.6670315,
+      "AggregationSeconds": 0.0186823,
+      "CpuSeconds": 509.5625,
+      "Frames": 1799,
+      "Average": 0.9809769677598659,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "range_240_250",
+      "Repeat": 2,
+      "WallSeconds": 34.2524098,
+      "FfmpegSeconds": 34.2513285,
+      "AggregationSeconds": 0.0004073,
+      "CpuSeconds": 415.265625,
+      "Frames": 300,
+      "Average": 0.9820503133333339,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "periodic_60_10",
+      "Repeat": 2,
+      "WallSeconds": 34.420523,
+      "FfmpegSeconds": 34.4187156,
+      "AggregationSeconds": 0.0010203,
+      "CpuSeconds": 423.625,
+      "Frames": 1499,
+      "Average": 0.9820513515677108,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "uniform_10x6",
+      "Repeat": 2,
+      "WallSeconds": 40.1365394,
+      "FfmpegSeconds": 40.1268981,
+      "AggregationSeconds": 0.008831,
+      "CpuSeconds": 505.3125,
+      "Frames": 1799,
+      "Average": 0.9809769677598659,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "full",
+      "Repeat": 2,
+      "WallSeconds": 41.4817529,
+      "FfmpegSeconds": 41.4737221,
+      "AggregationSeconds": 0.0071873,
+      "CpuSeconds": 547.515625,
+      "Frames": 8977,
+      "Average": 0.9785573400913425,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "periodic_60_10",
+      "Repeat": 3,
+      "WallSeconds": 33.4292025,
+      "FfmpegSeconds": 33.4275792,
+      "AggregationSeconds": 0.0009457,
+      "CpuSeconds": 419.234375,
+      "Frames": 1499,
+      "Average": 0.9820513515677108,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "uniform_10x6",
+      "Repeat": 3,
+      "WallSeconds": 40.252212,
+      "FfmpegSeconds": 40.2427813,
+      "AggregationSeconds": 0.0086344,
+      "CpuSeconds": 505.640625,
+      "Frames": 1799,
+      "Average": 0.9809769677598659,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "full",
+      "Repeat": 3,
+      "WallSeconds": 41.3517127,
+      "FfmpegSeconds": 41.3441294,
+      "AggregationSeconds": 0.0068432,
+      "CpuSeconds": 544.890625,
+      "Frames": 8977,
+      "Average": 0.9785573400913425,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "range_240_250",
+      "Repeat": 3,
+      "WallSeconds": 33.299722,
+      "FfmpegSeconds": 33.2985418,
+      "AggregationSeconds": 0.0003736,
+      "CpuSeconds": 413.6875,
+      "Frames": 300,
+      "Average": 0.9820503133333339,
+      "Mismatches": null,
+      "MaximumDifference": null
+    }
+  ]
+}

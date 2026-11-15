@@ -1,0 +1,82 @@
+{
+  "Metadata": {
+    "StartedUtc": "2026-11-15T11:32:42.0628842+00:00",
+    "Phase": "seek-exact",
+    "Repeats": 2,
+    "Metric": "Ssim",
+    "Os": "Microsoft Windows NT 10.0.26200.0",
+    "Runtime": "10.0.14",
+    "LogicalProcessors": 16,
+    "Cpu": "AMD64 Family 26 Model 68 Stepping 0, AuthenticAMD",
+    "Ffmpeg": "ffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+    "Reference": {
+      "Codec": "ffv1",
+      "Width": 1440,
+      "Height": 1080,
+      "AverageFrameRate": 29.97002997002997,
+      "DurationSeconds": 299.999,
+      "Frames": 8991,
+      "Bytes": 3925018054
+    },
+    "Candidate": {
+      "Codec": "av1",
+      "Width": 1440,
+      "Height": 1080,
+      "AverageFrameRate": 29.97002997002997,
+      "DurationSeconds": 299.532,
+      "Frames": 8977,
+      "Bytes": 95794096
+    },
+    "Conditions": "\u753B\u9762\u306A\u3057\u30FB1\u30B8\u30E7\u30D6\u305A\u3064\u5B9F\u884C\u30FBOS\u30AD\u30E3\u30C3\u30B7\u30E5\u6D88\u53BB\u306A\u3057\u30FB\u958B\u59CB\u524D\u306B\u5727\u7E2E\u30C7\u30FC\u30BF\u306E\u8AAD\u307F\u8FBC\u307F\u30921\u56DE\u5B9F\u65BD\u3002CPU\u79D2\u306F\u5168\u30B9\u30EC\u30C3\u30C9\u306E\u5408\u8A08\u3002"
+  },
+  "Results": [
+    {
+      "Case": "warmup_demux",
+      "Repeat": 0,
+      "WallSeconds": 0.7106225,
+      "FfmpegSeconds": 0.7106225,
+      "AggregationSeconds": 0,
+      "CpuSeconds": 0.890625,
+      "Frames": 8977,
+      "Average": null,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "uniform_baseline",
+      "Repeat": 1,
+      "WallSeconds": 39.8383767,
+      "FfmpegSeconds": 39.8197326,
+      "AggregationSeconds": 0.0146446,
+      "CpuSeconds": 502.015625,
+      "Frames": 1799,
+      "Average": 0.9809769677598659,
+      "Mismatches": null,
+      "MaximumDifference": null
+    },
+    {
+      "Case": "seek_exact_uniform",
+      "Repeat": 1,
+      "WallSeconds": 11.8310572,
+      "FfmpegSeconds": 11.8310572,
+      "AggregationSeconds": 0,
+      "CpuSeconds": 128.296875,
+      "Frames": 1799,
+      "Average": 0.9809769677598659,
+      "Mismatches": 0,
+      "MaximumDifference": 0
+    },
+    {
+      "Case": "seek_exact_uniform",
+      "Repeat": 2,
+      "WallSeconds": 11.9200927,
+      "FfmpegSeconds": 11.9200927,
+      "AggregationSeconds": 0,
+      "CpuSeconds": 129.375,
+      "Frames": 1799,
+      "Average": 0.9809769677598659,
+      "Mismatches": 0,
+      "MaximumDifference": 0
+    }
+  ]
+}

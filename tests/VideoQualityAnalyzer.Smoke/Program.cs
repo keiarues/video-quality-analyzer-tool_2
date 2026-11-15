@@ -8,6 +8,11 @@ var root = args.Length > 0 ? Path.GetFullPath(args[0]) :
 var probePath = FfprobeService.FindExecutable() ??
     throw new FileNotFoundException("FFprobeが見つかりません。");
 var service = new FfprobeService(probePath);
+if (args.Contains("--quality-timing"))
+{
+    await QualityTimingBenchmark.RunAsync(root, args);
+    return;
+}
 if (args.Contains("--uniform-partial-test"))
 {
     var paths = args.Skip(1).Where(File.Exists).ToArray();
