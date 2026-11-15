@@ -77,6 +77,9 @@ public sealed class EvaluationSettingsWindow : Window
         })
         {
             ranges.SetSelection(selection); UpdateLayout();
+            if (ranges.videoDuration.Visibility != (selection.Mode == PartialEvaluationMode.TimeRange ? Visibility.Visible : Visibility.Hidden) ||
+                !ranges.videoDuration.Text.Contains("動画の長さ："))
+                throw new InvalidOperationException("時間範囲指定の動画時間表示が不正です。");
             if (Math.Abs(metricCards.TranslatePoint(new Point(), this).Y - initialPosition) > 0.5 || ActualHeight != initialHeight ||
                 contentScroll.ComputedVerticalScrollBarVisibility == Visibility.Visible || contentScroll.ScrollableHeight > 0.5)
                 throw new InvalidOperationException("範囲切り替えで設定欄の高さ・画面配置・スクロール状態が変わりました。");

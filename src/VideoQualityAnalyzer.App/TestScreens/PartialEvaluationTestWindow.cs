@@ -158,7 +158,8 @@ public sealed class PartialEvaluationTestWindow : Window
             startSeconds.Text = "5"; endSeconds.Text = "60";
             period.Text = "60"; periodicLength.Text = "10"; count.Text = "6"; uniformLength.Text = "10";
             UpdateCardPreviews();
-            if (frameStatuses[PartialEvaluationMode.TimeRange].Text != "00:00:05 ～ 00:01:00 1650フレーム" ||
+            if (partialSettings.videoDuration.Text != "動画の長さ：00:02:05（125秒）" ||
+                frameStatuses[PartialEvaluationMode.TimeRange].Text != "00:00:05 ～ 00:01:00 1650フレーム" ||
                 frameStatuses[PartialEvaluationMode.Periodic].Text != "60秒ごとに10秒 3区間 750フレーム" ||
                 frameStatuses[PartialEvaluationMode.Uniform].Text != "10秒 6区間 1800フレーム" ||
                 !intervalBars[PartialEvaluationMode.TimeRange].Ranges.SequenceEqual([new EvaluationFrameRange(150, 1800)]) ||
@@ -178,7 +179,8 @@ public sealed class PartialEvaluationTestWindow : Window
                 throw new InvalidOperationException("不正入力で古いプレビューが残っています。");
             previewReference = previewReference with { Duration = TimeSpan.FromSeconds(95), TotalFrames = 2850 };
             UpdateCardPreviews();
-            if (frameStatuses[PartialEvaluationMode.Periodic].Text != "60秒ごとに10秒 2区間 600フレーム" ||
+            if (partialSettings.videoDuration.Text != "動画の長さ：00:01:35（95秒）" ||
+                frameStatuses[PartialEvaluationMode.Periodic].Text != "60秒ごとに10秒 2区間 600フレーム" ||
                 intervalBars[PartialEvaluationMode.Periodic].TotalFrames != 2850)
                 throw new InvalidOperationException("動画長の変更が反映されていません。");
             previewReference = null;

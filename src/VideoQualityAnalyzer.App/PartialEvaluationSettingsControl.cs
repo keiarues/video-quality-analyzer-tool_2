@@ -21,6 +21,8 @@ public sealed class PartialEvaluationSettingsControl : UserControl
     internal readonly Dictionary<PartialEvaluationMode, WrapPanel> modeInputs = [];
     internal readonly Dictionary<PartialEvaluationMode, string> modeTitles = [];
     private readonly TextBlock modeTitle = new() { Margin = new Thickness(4) };
+    internal readonly TextBlock videoDuration = new() { Margin = new Thickness(4, 4, 4, 0),
+        TextWrapping = TextWrapping.Wrap, Visibility = Visibility.Hidden };
     internal readonly Dictionary<PartialEvaluationMode, IntervalPreviewBar> intervalBars = [];
     internal readonly Dictionary<PartialEvaluationMode, TextBlock> frameStatuses = [];
     internal VideoDescriptor? previewReference;
@@ -48,11 +50,14 @@ public sealed class PartialEvaluationSettingsControl : UserControl
         fullContent.Children.Add(fullBar); fullContent.Children.Add(fullStatus);
         fullRange.Content = fullContent;
         ApplyCardAppearance(fullRange, "全編評価");
-        fullRange.Checked += (_, _) => { fullSelected.Visibility = Visibility.Visible; modeTitle.Text = "全編を評価します（範囲指定は不要です）"; };
+        fullRange.Checked += (_, _) => { fullSelected.Visibility = Visibility.Visible; modeTitle.Text = "全編を評価します（範囲指定は不要です）";
+            videoDuration.Visibility = Visibility.Hidden; };
         fullRange.Unchecked += (_, _) => fullSelected.Visibility = Visibility.Hidden;
         cards.Children.Add(fullRange);
         modeTitle.Style = (Style)FindResource("UiSectionStyle");
         modeSettings.Children.Add(modeTitle);
+        videoDuration.Style = (Style)FindResource("UiSmallTextStyle");
+        modeSettings.Children.Add(videoDuration);
         modeSettings.Children.Add(inputArea);
         panel.Children.Add(modeSettings);
         AddMode(PartialEvaluationMode.TimeRange, "時間範囲指定", "気になる場面を開始・終了時刻で指定",
@@ -139,6 +144,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
             inputs.Visibility = Visibility.Visible;
             selected.Visibility = Visibility.Visible;
             modeTitle.Text = title + "の設定";
+            videoDuration.Visibility = mode == PartialEvaluationMode.TimeRange ? Visibility.Visible : Visibility.Hidden;
         };
         radio.Unchecked += (_, _) => { inputs.Visibility = Visibility.Hidden; selected.Visibility = Visibility.Hidden; };
         foreach (var field in fields)
@@ -191,6 +197,21 @@ public sealed class PartialEvaluationSettingsControl : UserControl
 
     internal void UpdateCardPreviews(string unavailable = "元動画を選択してください", string? detail = null)
     {
+        videoDuration.Text = unavailable;
+        videoDuration.ToolTip = detail;
+        if (previewReference is { Duration: var duration } durationReference && duration > TimeSpan.Zero)
+        {
+            videoDuration.Text = $"動画の長さ：{FormatPosition(durationReference.Duration.TotalSeconds)}（{durationReference.Duration.TotalSeconds:0.###}秒）";
+            videoDuration.ToolTip = null;
+            if (double.IsFinite(durationReference.AverageFrameRate) && durationReference.AverageFrameRate > 0)
+                try
+                {
+                    var shared = new EvaluationSelection(PartialEvaluationMode.TimeRange).WithComparisonTimeline(durationReference, comparisonVideos);
+                    if (shared.FrameLimit is { } limit)
+                        videoDuration.Text += $" ／ 評価可能な終了時刻：{FormatPosition(limit / durationReference.AverageFrameRate)}まで";
+                }
+                catch (ArgumentException exception) { videoDuration.ToolTip = exception.Message; }
+        }
         fullBar.SetRanges([], 0);
         fullStatus.Text = unavailable;
         if (previewReference is { } fullReference && fullReference.AverageFrameRate > 0 && fullReference.Duration > TimeSpan.Zero)
