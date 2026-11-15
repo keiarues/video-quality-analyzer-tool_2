@@ -15,6 +15,13 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        if (e.Args.Contains("--test-metric-cards"))
+        {
+            base.OnStartup(e);
+            MainWindow = new QualityMetricCardsTestWindow(e.Args.Contains("--auto"));
+            MainWindow.Show();
+            return;
+        }
         if (e.Args.Contains("--test-partial-evaluation"))
         {
             base.OnStartup(e);
