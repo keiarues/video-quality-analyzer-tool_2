@@ -1,0 +1,89 @@
+[
+  {
+    "Case": "\u5883\u754C8\u4F4D\u7F6E\u30FB\u5165\u529B1",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 7,
+        "End": 10
+      },
+      {
+        "Start": 29,
+        "End": 32
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 4488,
+        "End": 4491
+      },
+      {
+        "Start": 8676,
+        "End": 8679
+      },
+      {
+        "Start": 8946,
+        "End": 8949
+      },
+      {
+        "Start": 8974,
+        "End": 8977
+      }
+    ],
+    "Frames": 24,
+    "Values": 24,
+    "SequentialSeconds": 52.2665902,
+    "SeekSeconds": 7.0710689,
+    "ReferencePixelMismatches": 24,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": false,
+    "ReferenceExamples": [
+      {
+        "Expected": {
+          "Number": 0,
+          "Bytes": 2332800,
+          "Sha256": "67edb03b349614fb6ad6415e07d64442835b32d00e92088c1b7c4834d3e07d59"
+        },
+        "Actual": {
+          "Number": 0,
+          "Bytes": 2332800,
+          "Sha256": "ea7da53ccb3c09ef77343c1f787cad577422b1317d2b3669b86b9ffc831cc736"
+        }
+      },
+      {
+        "Expected": {
+          "Number": 1,
+          "Bytes": 2332800,
+          "Sha256": "cb630fd75aa62a90536591d5044371221965d2ba294e9d7bc34623aa96901b26"
+        },
+        "Actual": {
+          "Number": 1,
+          "Bytes": 2332800,
+          "Sha256": "99776c49e48ce977eb8ab54d9032e33ee5ff36d1a0419148ff44744bc14c6f6c"
+        }
+      },
+      {
+        "Expected": {
+          "Number": 2,
+          "Bytes": 2332800,
+          "Sha256": "4d30020890209dcf6b2d8561cebeed968b10ff2aceed729226f8914a2b424521"
+        },
+        "Actual": {
+          "Number": 2,
+          "Bytes": 2332800,
+          "Sha256": "fdd320f0f86ac06c6619cb1a7dfcdda44d7cb6654bb8b1d05c4a0c3225914109"
+        }
+      }
+    ]
+  }
+]

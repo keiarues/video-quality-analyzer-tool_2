@@ -1,0 +1,420 @@
+[
+  {
+    "Case": "\u624B\u52D5",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "SequentialSeconds": 0.0518198,
+    "SeekSeconds": 0.285814,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2\u30FB\u5165\u529B1",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "SequentialSeconds": 0.0395846,
+    "SeekSeconds": 0.0422177,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2\u30FB\u5165\u529B1",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "SequentialSeconds": 0.0371047,
+    "SeekSeconds": 0.1174604,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593\u30FB\u5165\u529B1",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "SequentialSeconds": 0.0378017,
+    "SeekSeconds": 0.2518087,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2\u30FB\u5165\u529B1",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "SequentialSeconds": 0.0375293,
+    "SeekSeconds": 0.0380959,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2\u30FB\u5165\u529B1",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "SequentialSeconds": 0.0356639,
+    "SeekSeconds": 0.114298,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593\u30FB\u5165\u529B1",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "SequentialSeconds": 0.0370014,
+    "SeekSeconds": 0.2278886,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2\u30FB\u5165\u529B2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "SequentialSeconds": 0.038871,
+    "SeekSeconds": 0.0653488,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2\u30FB\u5165\u529B2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "SequentialSeconds": 0.0650331,
+    "SeekSeconds": 0.113429,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593\u30FB\u5165\u529B2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "SequentialSeconds": 0.0352652,
+    "SeekSeconds": 0.2191562,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2\u30FB\u5165\u529B2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "SequentialSeconds": 0.038905,
+    "SeekSeconds": 0.0386046,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2\u30FB\u5165\u529B2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "SequentialSeconds": 0.0621199,
+    "SeekSeconds": 0.113728,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593\u30FB\u5165\u529B2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "ffv1",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "SequentialSeconds": 0.0349769,
+    "SeekSeconds": 0.2196153,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  }
+]

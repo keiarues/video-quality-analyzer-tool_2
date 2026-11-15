@@ -1,0 +1,244 @@
+[
+  {
+    "Case": "\u5883\u754C8\u4F4D\u7F6E\u30FB\u5165\u529B1",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 7,
+        "End": 10
+      },
+      {
+        "Start": 29,
+        "End": 32
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 4488,
+        "End": 4491
+      },
+      {
+        "Start": 8676,
+        "End": 8679
+      },
+      {
+        "Start": 8946,
+        "End": 8949
+      },
+      {
+        "Start": 8974,
+        "End": 8977
+      }
+    ],
+    "Frames": 24,
+    "Values": 24,
+    "SequentialSeconds": 52.3356822,
+    "SeekSeconds": 7.0265689,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5747\u7B4910\u79D2\u00D76",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 300
+      },
+      {
+        "Start": 1736,
+        "End": 2036
+      },
+      {
+        "Start": 3471,
+        "End": 3771
+      },
+      {
+        "Start": 5207,
+        "End": 5507
+      },
+      {
+        "Start": 6942,
+        "End": 7242
+      },
+      {
+        "Start": 8678,
+        "End": 8977
+      }
+    ],
+    "Frames": 1799,
+    "Values": 1799,
+    "SequentialSeconds": 52.3537717,
+    "SeekSeconds": 14.7362392,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5883\u754C8\u4F4D\u7F6E\u30FB\u5165\u529B2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 7,
+        "End": 10
+      },
+      {
+        "Start": 29,
+        "End": 32
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 4488,
+        "End": 4491
+      },
+      {
+        "Start": 8676,
+        "End": 8679
+      },
+      {
+        "Start": 8946,
+        "End": 8949
+      },
+      {
+        "Start": 8974,
+        "End": 8977
+      }
+    ],
+    "Frames": 24,
+    "Values": 24,
+    "SequentialSeconds": 40.4323954,
+    "SeekSeconds": 4.557078,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5883\u754C8\u4F4D\u7F6E\u30FB\u5165\u529B3",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "hevc",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 7,
+        "End": 10
+      },
+      {
+        "Start": 29,
+        "End": 32
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 4488,
+        "End": 4491
+      },
+      {
+        "Start": 8676,
+        "End": 8679
+      },
+      {
+        "Start": 8946,
+        "End": 8949
+      },
+      {
+        "Start": 8974,
+        "End": 8977
+      }
+    ],
+    "Frames": 24,
+    "Values": 24,
+    "SequentialSeconds": 36.4114086,
+    "SeekSeconds": 3.6944758,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u5883\u754C8\u4F4D\u7F6E\u30FB\u5165\u529B4",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "hevc",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 7,
+        "End": 10
+      },
+      {
+        "Start": 29,
+        "End": 32
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 4488,
+        "End": 4491
+      },
+      {
+        "Start": 8676,
+        "End": 8679
+      },
+      {
+        "Start": 8946,
+        "End": 8949
+      },
+      {
+        "Start": 8974,
+        "End": 8977
+      }
+    ],
+    "Frames": 24,
+    "Values": 24,
+    "SequentialSeconds": 32.5965392,
+    "SeekSeconds": 3.1058138,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  }
+]
