@@ -505,6 +505,22 @@ public sealed class QualityGraphPanel : UserControl
                         throw new InvalidOperationException("反対側のボタンでグラフのサイズを復元できません。");
                 }
                 UpdateLayout();
+                foreach (var ranges in new EvaluationFrameRange[][]
+                {
+                    [new(3, 9)],
+                    [new(0, 3), new(15, 18)],
+                    [new(0, 3), new(27, 30)]
+                })
+                {
+                    foreach (var processed in new[] { TimeSpan.Zero, TimeSpan.FromSeconds(0.1), TimeSpan.FromSeconds(0.15) })
+                    {
+                        var sourceTime = PartialEvaluationProgress.ToSourceTime(ranges, 30, processed);
+                        SetEvaluationProgress(playbackVideo, QualityMetric.Ssim, sourceTime);
+                        SetPlaybackPosition(TimeSpan.Zero);
+                        if (Math.Abs(PlayheadPosition.TotalSeconds - sourceTime.TotalSeconds) > 0.000001)
+                            throw new InvalidOperationException("部分評価の処理位置が元動画の時刻を示していません。");
+                    }
+                }
                 SetEvaluationProgress(playbackVideo, QualityMetric.Ssim, TimeSpan.FromSeconds(playbackVideo.Duration.TotalSeconds / 2));
                 var progressPosition = PlayheadPosition;
                 SetPlaybackPosition(TimeSpan.Zero);
@@ -556,6 +572,8 @@ public sealed class QualityGraphPanel : UserControl
         evaluationVideo = video;
         evaluationPosition = position;
         playbackPosition = TimeSpan.FromSeconds(Math.Clamp(position.TotalSeconds, 0, Math.Max(0, video.Duration.TotalSeconds)));
+        EvaluationProgressUpdateCount++;
+        LastEvaluationProgressPosition = playbackPosition;
         SelectMetric(value);
         if (changed) redrawPlaybackGraph(); else UpdatePlayhead();
     }
@@ -579,6 +597,8 @@ public sealed class QualityGraphPanel : UserControl
     }
 
     public TimeSpan PlayheadPosition => playbackPosition;
+    internal int EvaluationProgressUpdateCount { get; private set; }
+    internal TimeSpan LastEvaluationProgressPosition { get; private set; }
     public double PlayheadX => playhead.X1;
     // 専用操作試験用。キャッシュ表示と、その場で描き直した静的グラフを照合する。
     internal void VerifyCachedGraphPixels()

@@ -40,6 +40,7 @@ public partial class MainWindow
             async Task Select(EvaluationSelection selection)
             {
                 selection = selection.WithComparisonTimeline(reference, [candidate.Descriptor]);
+                var progressCount = qualityGraphPanel!.EvaluationProgressUpdateCount;
                 _ = Dispatcher.BeginInvoke(new Action(() =>
                 {
                     var dialog = Application.Current.Windows.OfType<EvaluationSettingsWindow>().Single();
@@ -48,7 +49,16 @@ public partial class MainWindow
                     dialog.ApplyForVerification(selection, [QualityMetric.Ssim]);
                 }));
                 EvaluationRangeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                var started = evaluationCancellation is not null;
+                var plannedRanges = selection.CreatePlan(reference);
+                if (started && plannedRanges is not null && Math.Abs(qualityGraphPanel.PlayheadPosition.TotalSeconds -
+                    plannedRanges[0].Start / reference.AverageFrameRate) > 0.000001)
+                    throw new InvalidOperationException("部分評価の処理位置が先頭の評価区間から始まっていません。");
                 await evaluationTask;
+                if (started && plannedRanges is not null &&
+                    (qualityGraphPanel.EvaluationProgressUpdateCount < progressCount + 2 ||
+                    qualityGraphPanel.LastEvaluationProgressPosition.TotalSeconds <= plannedRanges[0].Start / reference.AverageFrameRate))
+                    throw new InvalidOperationException("部分評価の実計算中にグラフの処理位置が進んでいません。");
                 if (!evaluationMetrics.SequenceEqual([QualityMetric.Ssim]))
                     throw new InvalidOperationException("設定画面の指標が主画面に同期されません。");
                 if (evaluationResults.Selection != selection) throw new InvalidOperationException("設定画面から条件が適用されません。");

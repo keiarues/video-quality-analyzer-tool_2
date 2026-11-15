@@ -86,6 +86,8 @@ public partial class MainWindow
         SetEvaluationState(true);
         var failures = new List<string>();
         var progressGeneration = 0;
+        TimeSpan SourcePosition(TimeSpan processed) => ranges is null ? processed
+            : PartialEvaluationProgress.ToSourceTime(ranges, reference.AverageFrameRate, processed);
         try
         {
             var evaluator = new QualityEvaluationService(executable);
@@ -96,7 +98,7 @@ public partial class MainWindow
                 var key = (candidate.Id, metric);
                 if (qualityResults.ContainsKey(key)) continue;
                 var currentProgressGeneration = ++progressGeneration;
-                if (!selection.IsPartial) qualityGraphPanel?.SetEvaluationProgress(candidate, metric, TimeSpan.Zero);
+                qualityGraphPanel?.SetEvaluationProgress(candidate, metric, SourcePosition(TimeSpan.Zero));
                 SetWindowStatus($"{candidate.Name} / {metric.ToString().ToUpperInvariant()} を評価中…", evaluation: true);
                 try
                 {
@@ -104,7 +106,7 @@ public partial class MainWindow
                     {
                         if (ReferenceEquals(evaluationCancellation, source) && !source.IsCancellationRequested && currentProgressGeneration == progressGeneration)
                         {
-                            if (!selection.IsPartial) qualityGraphPanel?.SetEvaluationProgress(candidate, metric, position);
+                            qualityGraphPanel?.SetEvaluationProgress(candidate, metric, SourcePosition(position));
                             SetWindowStatus($"{candidate.Name} / {metric.ToString().ToUpperInvariant()}: " +
                                 (selection.IsPartial ? "評価対象の累計" : "") + $"{position.TotalSeconds:F1}秒を処理済み", evaluation: true);
                         }
