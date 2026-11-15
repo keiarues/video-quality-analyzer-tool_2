@@ -144,7 +144,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
             inputs.Visibility = Visibility.Visible;
             selected.Visibility = Visibility.Visible;
             modeTitle.Text = title + "の設定";
-            videoDuration.Visibility = mode == PartialEvaluationMode.TimeRange ? Visibility.Visible : Visibility.Hidden;
+            videoDuration.Visibility = Visibility.Visible;
         };
         radio.Unchecked += (_, _) => { inputs.Visibility = Visibility.Hidden; selected.Visibility = Visibility.Hidden; };
         foreach (var field in fields)
