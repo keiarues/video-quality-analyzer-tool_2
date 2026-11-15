@@ -8,6 +8,22 @@ var root = args.Length > 0 ? Path.GetFullPath(args[0]) :
 var probePath = FfprobeService.FindExecutable() ??
     throw new FileNotFoundException("FFprobeが見つかりません。");
 var service = new FfprobeService(probePath);
+if (args.Contains("--compatibility-baseline"))
+{
+    string Option(string name) => args[Array.IndexOf(args, name) + 1];
+    var compatibilityReference = await service.ProbeAsync(Option("--reference"), CancellationToken.None);
+    var compatibilityCandidate = await service.ProbeAsync(Option("--candidate"), CancellationToken.None);
+    var ranges = System.Text.Json.JsonSerializer.Deserialize<EvaluationFrameRange[]>(await File.ReadAllTextAsync(Option("--plan")))!;
+    var evaluator = new QualityEvaluationService(FfmpegRgbReader.FindExecutable()!);
+    var results = new List<QualityResult>();
+    foreach (var metric in Enum.GetValues<QualityMetric>())
+    {
+        Console.WriteLine($"通常評価との比較用：{metric}");
+        results.Add(await evaluator.EvaluatePartialAsync(compatibilityReference, compatibilityCandidate, metric, ranges, null, CancellationToken.None));
+    }
+    await File.WriteAllTextAsync(Option("--output"), System.Text.Json.JsonSerializer.Serialize(results));
+    return;
+}
 if (args.Contains("--quality-timing"))
 {
     await QualityTimingBenchmark.RunAsync(root, args);

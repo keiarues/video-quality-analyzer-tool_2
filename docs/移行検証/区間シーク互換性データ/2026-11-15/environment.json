@@ -1,0 +1,8 @@
+{
+  "Python": "Python 3.11.9",
+  "Ffmpeg": "ffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+  "Conditions": "単一ジョブ・キャッシュ消去なし。検証経路n_threads=1、既存サービスは既定値。",
+  "VmafVersion": "f85a8536",
+  "Date": "2026-11-15",
+  "VmafModel": "vmaf_v0.6.1"
+}
