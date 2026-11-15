@@ -1,0 +1,8 @@
+{
+  "VmafModel": "vmaf_v0.6.1",
+  "Ffmpeg": "ffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+  "VmafThreads": 1,
+  "Conditions": "1440x1080・30000/1001fps・yuv420p。各1回、キャッシュ消去なし。映像評価は1ジョブずつ、バックグラウンド負荷固定なし。",
+  "Date": "2026-11-15",
+  "RemainingFfmpegProcesses": 0
+}

@@ -1,0 +1,734 @@
+[
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 10,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.1013736,
+    "SeekSeconds": 0.0932713,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 11,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0930424,
+    "SeekSeconds": 0.1505126,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 10,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 14,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 0.1165779,
+    "SeekSeconds": 0.2313727,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 8,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0806217,
+    "SeekSeconds": 0.0790756,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 9,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0794733,
+    "SeekSeconds": 0.1333639,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 10,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 13,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 0.0771812,
+    "SeekSeconds": 0.2161983,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 7,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0778216,
+    "SeekSeconds": 0.0802527,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 9,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0798527,
+    "SeekSeconds": 0.1329942,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 10,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 14,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 0.0783993,
+    "SeekSeconds": 0.2427662,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 9,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0899111,
+    "SeekSeconds": 0.0970807,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 11,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0942143,
+    "SeekSeconds": 0.1526201,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 10,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 14,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 0.1032281,
+    "SeekSeconds": 0.2298021,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 8,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.077614,
+    "SeekSeconds": 0.0838401,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 10,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0802805,
+    "SeekSeconds": 0.134908,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 10,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 12,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 0.0767271,
+    "SeekSeconds": 0.2189045,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0.1\uFF5E0.7\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 3,
+        "End": 21
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 8,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0777501,
+    "SeekSeconds": 0.0802709,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB\u5468\u671F\u6307\u5B9A\uFF1A1\u79D2\u3054\u3068\u306B0.1\u79D2",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 30,
+        "End": 33
+      },
+      {
+        "Start": 60,
+        "End": 63
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 10,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0784944,
+    "SeekSeconds": 0.1329337,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB\u5747\u7B49\u914D\u7F6E\uFF1A0.1\u79D2\u00D76\u533A\u9593",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 10,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 12,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 0.0800689,
+    "SeekSeconds": 0.2232064,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u624B\u52D5",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 18,
+        "End": 21
+      },
+      {
+        "Start": 35,
+        "End": 38
+      },
+      {
+        "Start": 53,
+        "End": 56
+      },
+      {
+        "Start": 70,
+        "End": 73
+      },
+      {
+        "Start": 87,
+        "End": 90
+      }
+    ],
+    "Frames": 18,
+    "Values": 18,
+    "PixelVerification": true,
+    "ProgressUpdates": 10,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 13,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 0.0867429,
+    "SeekSeconds": 0.2252526,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u4E2D\u6B62\u5F8C\u306E\u518D\u5B9F\u884C",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "h264",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 7,
+        "End": 10
+      }
+    ],
+    "Frames": 6,
+    "Values": 6,
+    "PixelVerification": true,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 9,
+    "IntermediateProgress": false,
+    "SequentialSeconds": 0.0783181,
+    "SeekSeconds": 0.1147178,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  }
+]

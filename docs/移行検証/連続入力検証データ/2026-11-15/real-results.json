@@ -1,0 +1,525 @@
+[
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB3\u4F4D\u7F6E\u00D73\u30D5\u30EC\u30FC\u30E0",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 1500,
+        "End": 1503
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 159,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 547,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 7.0339432,
+    "SeekSeconds": 2.497658,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB3\u4F4D\u7F6E\u00D73\u30D5\u30EC\u30FC\u30E0",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 1500,
+        "End": 1503
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 156,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 532,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 6.9618911,
+    "SeekSeconds": 2.5214459,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B1\u30FB3\u4F4D\u7F6E\u00D73\u30D5\u30EC\u30FC\u30E0",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 1500,
+        "End": 1503
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 162,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 555,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 7.2864367,
+    "SeekSeconds": 2.5312843,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6027\u80FD\u30FB\u5165\u529B1\u30FB\u5747\u7B4910\u79D2\u00D76",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 300
+      },
+      {
+        "Start": 1736,
+        "End": 2036
+      },
+      {
+        "Start": 3471,
+        "End": 3771
+      },
+      {
+        "Start": 5207,
+        "End": 5507
+      },
+      {
+        "Start": 6942,
+        "End": 7242
+      },
+      {
+        "Start": 8678,
+        "End": 8977
+      }
+    ],
+    "Frames": 1799,
+    "Values": 1799,
+    "PixelVerification": false,
+    "ProgressUpdates": 830,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 2910,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 61.1064452,
+    "SeekSeconds": 30.5335679,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6027\u80FD\u30FB\u5165\u529B1\u30FB\u5747\u7B4910\u79D2\u00D76",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 300
+      },
+      {
+        "Start": 1736,
+        "End": 2036
+      },
+      {
+        "Start": 3471,
+        "End": 3771
+      },
+      {
+        "Start": 5207,
+        "End": 5507
+      },
+      {
+        "Start": 6942,
+        "End": 7242
+      },
+      {
+        "Start": 8678,
+        "End": 8977
+      }
+    ],
+    "Frames": 1799,
+    "Values": 1799,
+    "PixelVerification": false,
+    "ProgressUpdates": 484,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 1702,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 40.6338801,
+    "SeekSeconds": 12.6742375,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6027\u80FD\u30FB\u5165\u529B1\u30FB\u5747\u7B4910\u79D2\u00D76",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 300
+      },
+      {
+        "Start": 1736,
+        "End": 2036
+      },
+      {
+        "Start": 3471,
+        "End": 3771
+      },
+      {
+        "Start": 5207,
+        "End": 5507
+      },
+      {
+        "Start": 6942,
+        "End": 7242
+      },
+      {
+        "Start": 8678,
+        "End": 8977
+      }
+    ],
+    "Frames": 1799,
+    "Values": 1799,
+    "PixelVerification": false,
+    "ProgressUpdates": 486,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 1689,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 40.5392543,
+    "SeekSeconds": 12.6962263,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB3\u4F4D\u7F6E\u00D73\u30D5\u30EC\u30FC\u30E0",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "hevc",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 1500,
+        "End": 1503
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 120,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 405,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 5.6766979,
+    "SeekSeconds": 1.2641397,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB3\u4F4D\u7F6E\u00D73\u30D5\u30EC\u30FC\u30E0",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "hevc",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 1500,
+        "End": 1503
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 119,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 401,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 5.6645246,
+    "SeekSeconds": 1.2433403,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u753B\u7D20\u7167\u5408\u30FB\u5165\u529B2\u30FB3\u4F4D\u7F6E\u00D73\u30D5\u30EC\u30FC\u30E0",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "hevc",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 300,
+        "End": 303
+      },
+      {
+        "Start": 1500,
+        "End": 1503
+      }
+    ],
+    "Frames": 9,
+    "Values": 9,
+    "PixelVerification": true,
+    "ProgressUpdates": 116,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 396,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 5.6667162,
+    "SeekSeconds": 1.1638017,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6027\u80FD\u30FB\u5165\u529B2\u30FB\u5747\u7B4910\u79D2\u00D76",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "hevc",
+    "Metric": "Vmaf",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 300
+      },
+      {
+        "Start": 1736,
+        "End": 2036
+      },
+      {
+        "Start": 3471,
+        "End": 3771
+      },
+      {
+        "Start": 5207,
+        "End": 5507
+      },
+      {
+        "Start": 6942,
+        "End": 7242
+      },
+      {
+        "Start": 8678,
+        "End": 8977
+      }
+    ],
+    "Frames": 1799,
+    "Values": 1799,
+    "PixelVerification": false,
+    "ProgressUpdates": 740,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 2599,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 52.5420996,
+    "SeekSeconds": 28.8005098,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6027\u80FD\u30FB\u5165\u529B2\u30FB\u5747\u7B4910\u79D2\u00D76",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "hevc",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 300
+      },
+      {
+        "Start": 1736,
+        "End": 2036
+      },
+      {
+        "Start": 3471,
+        "End": 3771
+      },
+      {
+        "Start": 5207,
+        "End": 5507
+      },
+      {
+        "Start": 6942,
+        "End": 7242
+      },
+      {
+        "Start": 8678,
+        "End": 8977
+      }
+    ],
+    "Frames": 1799,
+    "Values": 1799,
+    "PixelVerification": false,
+    "ProgressUpdates": 383,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 1329,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 32.0781323,
+    "SeekSeconds": 10.1426104,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u6027\u80FD\u30FB\u5165\u529B2\u30FB\u5747\u7B4910\u79D2\u00D76",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "hevc",
+    "Metric": "Psnr",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 300
+      },
+      {
+        "Start": 1736,
+        "End": 2036
+      },
+      {
+        "Start": 3471,
+        "End": 3771
+      },
+      {
+        "Start": 5207,
+        "End": 5507
+      },
+      {
+        "Start": 6942,
+        "End": 7242
+      },
+      {
+        "Start": 8678,
+        "End": 8977
+      }
+    ],
+    "Frames": 1799,
+    "Values": 1799,
+    "PixelVerification": false,
+    "ProgressUpdates": 382,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 1336,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 31.8887362,
+    "SeekSeconds": 10.0275212,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  },
+  {
+    "Case": "\u4E2D\u6B62\u5F8C\u306E\u518D\u5B9F\u884C",
+    "ReferenceCodec": "ffv1",
+    "CandidateCodec": "av1",
+    "Metric": "Ssim",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 3
+      },
+      {
+        "Start": 7,
+        "End": 10
+      }
+    ],
+    "Frames": 6,
+    "Values": 6,
+    "PixelVerification": false,
+    "ProgressUpdates": 9,
+    "DirectReferenceVerified": true,
+    "UiTimerTicks": 26,
+    "IntermediateProgress": true,
+    "SequentialSeconds": 0.1888779,
+    "SeekSeconds": 0.5549728,
+    "ReferencePixelMismatches": 0,
+    "CandidatePixelMismatches": 0,
+    "ValueMismatches": 0,
+    "MaximumValueDifference": 0,
+    "Passed": true,
+    "ReferenceExamples": []
+  }
+]
