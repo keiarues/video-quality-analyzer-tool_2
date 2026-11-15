@@ -10,6 +10,7 @@ public sealed class EvaluationSettingsWindow : Window
     private readonly PartialEvaluationSettingsControl ranges = new();
     private readonly Button start = new() { Content = "評価を開始", IsDefault = true };
     private readonly QualityMetricSelectionControl metricCards = new();
+    private readonly ScrollViewer contentScroll = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     public EvaluationSelection Selection { get; private set; }
     public QualityMetric[] SelectedMetrics => metricCards.SelectedMetrics;
 
@@ -17,7 +18,7 @@ public sealed class EvaluationSettingsWindow : Window
         IEnumerable<VideoDescriptor>? comparisonVideos = null)
     {
         Style = (Style)Application.Current.FindResource(typeof(Window));
-        Title = "評価範囲の設定"; Width = 1060; Height = 720; MinWidth = 850; MinHeight = 540;
+        Title = "評価範囲の設定"; Width = 1060; Height = 800; MinWidth = 850; MinHeight = 540;
         Selection = selection;
         var root = new DockPanel { Margin = new Thickness(16), Background = (System.Windows.Media.Brush)FindResource("BackgroundBrush") }; Content = root;
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
@@ -25,7 +26,7 @@ public sealed class EvaluationSettingsWindow : Window
         actions.Children.Add(new Button { Content = "キャンセル", IsCancel = true });
         actions.Children.Add(start);
         var panel = new StackPanel();
-        root.Children.Add(new ScrollViewer { Content = panel, VerticalScrollBarVisibility = ScrollBarVisibility.Auto });
+        contentScroll.Content = panel; root.Children.Add(contentScroll);
         panel.Children.Add(new TextBlock { Text = $"元動画：{reference.Name}", TextWrapping = TextWrapping.Wrap });
         panel.Children.Add(ranges);
         panel.Children.Add(new TextBlock { Text = "評価指標", Style = (Style)FindResource("UiSectionStyle"), Margin = new Thickness(4, 16, 4, 8) });
@@ -59,5 +60,27 @@ public sealed class EvaluationSettingsWindow : Window
         if (selectedMetrics is not null)
             metricCards.SetSelectedMetrics(selectedMetrics);
         start.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+    }
+
+    internal void VerifyStableRangeLayout()
+    {
+        UpdateLayout();
+        var initialPosition = metricCards.TranslatePoint(new Point(), this).Y;
+        var initialHeight = ActualHeight;
+        foreach (var selection in new[]
+        {
+            EvaluationSelection.Full,
+            new EvaluationSelection(PartialEvaluationMode.TimeRange, 0.5, 1.5),
+            new EvaluationSelection(PartialEvaluationMode.Periodic, PeriodSeconds: 1, LengthSeconds: 0.25),
+            new EvaluationSelection(PartialEvaluationMode.Uniform, LengthSeconds: 0.25, Count: 2),
+            EvaluationSelection.Full
+        })
+        {
+            ranges.SetSelection(selection); UpdateLayout();
+            if (Math.Abs(metricCards.TranslatePoint(new Point(), this).Y - initialPosition) > 0.5 || ActualHeight != initialHeight ||
+                contentScroll.ComputedVerticalScrollBarVisibility == Visibility.Visible || contentScroll.ScrollableHeight > 0.5)
+                throw new InvalidOperationException("範囲切り替えで設定欄の高さ・画面配置・スクロール状態が変わりました。");
+        }
+        ranges.SetSelection(Selection); UpdateLayout();
     }
 }

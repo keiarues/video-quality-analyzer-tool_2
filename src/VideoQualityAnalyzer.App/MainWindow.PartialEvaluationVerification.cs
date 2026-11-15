@@ -36,6 +36,7 @@ public partial class MainWindow
                 _ = Dispatcher.BeginInvoke(new Action(() =>
                 {
                     var dialog = Application.Current.Windows.OfType<EvaluationSettingsWindow>().Single();
+                    dialog.VerifyStableRangeLayout();
                     Save(dialog, "main-settings.png");
                     dialog.ApplyForVerification(selection, [QualityMetric.Ssim]);
                 }));

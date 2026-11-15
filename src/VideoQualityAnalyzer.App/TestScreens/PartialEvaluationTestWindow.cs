@@ -199,7 +199,7 @@ public sealed class PartialEvaluationTestWindow : Window
     private void VerifyModeSelection(PartialEvaluationMode mode)
     {
         if (modes.Count(pair => pair.Value.IsChecked == true) != 1 || modes[mode].IsChecked != true ||
-            modeInputs.Any(pair => pair.Value.Visibility != (pair.Key == mode ? Visibility.Visible : Visibility.Collapsed)))
+            modeInputs.Any(pair => pair.Value.Visibility != (pair.Key == mode ? Visibility.Visible : Visibility.Hidden)))
             throw new InvalidOperationException("カードの排他選択または設定欄の切り替えが不正です。");
     }
 

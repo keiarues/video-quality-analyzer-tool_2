@@ -17,6 +17,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
     internal readonly Dictionary<PartialEvaluationMode, RadioButton> modes = [];
     private readonly UniformGrid cards = new() { Columns = 4, Margin = new Thickness(0, 12, 0, 12) };
     private readonly StackPanel modeSettings = new();
+    private readonly Grid inputArea = new() { MinHeight = 44 };
     internal readonly Dictionary<PartialEvaluationMode, WrapPanel> modeInputs = [];
     internal readonly Dictionary<PartialEvaluationMode, string> modeTitles = [];
     private readonly TextBlock modeTitle = new() { Margin = new Thickness(4) };
@@ -52,6 +53,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
         cards.Children.Add(fullRange);
         modeTitle.Style = (Style)FindResource("UiSectionStyle");
         modeSettings.Children.Add(modeTitle);
+        modeSettings.Children.Add(inputArea);
         panel.Children.Add(modeSettings);
         AddMode(PartialEvaluationMode.TimeRange, "時間範囲指定", "気になる場面を開始・終了時刻で指定",
             [("開始（秒）", startSeconds), ("終了（秒・含まない）", endSeconds)]);
@@ -130,7 +132,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
             HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
         ApplyCardAppearance(radio, title);
         modes.Add(mode, radio); modeTitles.Add(mode, title); cards.Children.Add(radio);
-        var inputs = new WrapPanel { Margin = new Thickness(0, 6, 0, 8), Visibility = Visibility.Collapsed };
+        var inputs = new WrapPanel { Margin = new Thickness(0, 6, 0, 8), Visibility = Visibility.Hidden };
         modeInputs.Add(mode, inputs);
         radio.Checked += (_, _) =>
         {
@@ -138,13 +140,13 @@ public sealed class PartialEvaluationSettingsControl : UserControl
             selected.Visibility = Visibility.Visible;
             modeTitle.Text = title + "の設定";
         };
-        radio.Unchecked += (_, _) => { inputs.Visibility = Visibility.Collapsed; selected.Visibility = Visibility.Hidden; };
+        radio.Unchecked += (_, _) => { inputs.Visibility = Visibility.Hidden; selected.Visibility = Visibility.Hidden; };
         foreach (var field in fields)
         {
             inputs.Children.Add(new TextBlock { Text = field.Label, Margin = new Thickness(4), VerticalAlignment = VerticalAlignment.Center });
             field.Input.Width = 85; field.Input.Margin = new Thickness(4); inputs.Children.Add(field.Input);
         }
-        modeSettings.Children.Add(inputs);
+        inputArea.Children.Add(inputs);
     }
 
     private void ApplyCardAppearance(RadioButton radio, string title)
