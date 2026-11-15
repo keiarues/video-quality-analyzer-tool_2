@@ -11,19 +11,19 @@ public partial class MainWindow
     private Task evaluationTask = Task.CompletedTask;
     private bool evaluationCloseRequested;
     private int pendingVideoLoads;
+    private QualityMetric[] evaluationMetrics = [QualityMetric.Ssim];
 
     private void EvaluationRange_Click(object sender, RoutedEventArgs e)
     {
         if (evaluationCancellation is not null) return;
         var reference = videos.FirstOrDefault(entry => entry.IsReference)?.Descriptor;
         if (reference is null) { SetWindowStatus("元動画を登録してください。"); return; }
-        var metricChecks = new[] { (VmafCheck, QualityMetric.Vmaf), (SsimCheck, QualityMetric.Ssim), (PsnrCheck, QualityMetric.Psnr) };
         var dialog = new EvaluationSettingsWindow(reference, evaluationResults.Selection,
-            metricChecks.Where(pair => pair.Item1.IsChecked == true).Select(pair => pair.Item2),
+            evaluationMetrics,
             SelectedOrAllVideoEntries().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor)) { Owner = this };
         if (dialog.ShowDialog() != true) return;
         ApplyEvaluationSelection(dialog.Selection);
-        foreach (var (check, metric) in metricChecks) check.IsChecked = dialog.SelectedMetrics.Contains(metric);
+        evaluationMetrics = dialog.SelectedMetrics;
         evaluationTask = EvaluateMainSelectionAsync();
     }
 
@@ -35,14 +35,6 @@ public partial class MainWindow
         RefreshQualityValues();
         RefreshVideoOrder();
         SetWindowStatus("評価範囲を変更しました。現在の条件の結果を表示しています。");
-    }
-
-    private void InitializeEvaluationControls()
-    {
-        foreach (var (check, metric) in new[] { (VmafCheck, QualityMetric.Vmaf), (SsimCheck, QualityMetric.Ssim), (PsnrCheck, QualityMetric.Psnr) })
-        {
-            check.MouseEnter += (_, _) => EvaluationHelpText.Text = QualityMetricHelp.GetText(metric);
-        }
     }
 
     private void ClearEvaluation_Click(object sender, RoutedEventArgs e)
@@ -62,11 +54,11 @@ public partial class MainWindow
         if (evaluationCancellation is not null)
         {
             evaluationCancellation.Cancel();
-            EvaluationStartButton.Content = "中止中…";
-            EvaluationStartButton.IsEnabled = false;
+            EvaluationRangeButton.Content = "中止中…";
+            EvaluationRangeButton.IsEnabled = false;
             return;
         }
-        evaluationTask = EvaluateMainSelectionAsync();
+        EvaluationRange_Click(sender, e);
     }
 
     private async Task EvaluateMainSelectionAsync()
@@ -74,8 +66,7 @@ public partial class MainWindow
         if (pendingVideoLoads > 0) { SetWindowStatus("動画情報の取得が終わるまでお待ちください。", evaluation: true); return; }
         var reference = videos.FirstOrDefault(entry => entry.Descriptor.Id == referenceId)?.Descriptor;
         var candidates = SelectedOrAllVideoEntries().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray();
-        var selected = new[] { (VmafCheck, QualityMetric.Vmaf), (SsimCheck, QualityMetric.Ssim), (PsnrCheck, QualityMetric.Psnr) }
-            .Where(pair => pair.Item1.IsChecked == true).Select(pair => pair.Item2).ToArray();
+        var selected = evaluationMetrics.ToArray();
         if (reference is null || candidates.Length == 0 || selected.Length == 0)
         { SetWindowStatus("元動画、比較動画と評価指標を選択してください。", evaluation: true); return; }
         var executable = FfmpegRgbReader.FindExecutable();
@@ -149,10 +140,8 @@ public partial class MainWindow
     {
         if (running) WindowStatusText.Foreground = UiTheme.Emphasis;
         EvaluationClearButton.IsEnabled = !running;
-        EvaluationRangeButton.IsEnabled = !running;
-        EvaluationStartButton.Content = running ? "評価を中止" : "評価を開始";
-        EvaluationStartButton.IsEnabled = true;
-        VmafCheck.IsEnabled = SsimCheck.IsEnabled = PsnrCheck.IsEnabled = !running;
+        EvaluationRangeButton.Content = running ? "評価を中止" : "評価範囲を設定";
+        EvaluationRangeButton.IsEnabled = true;
         AddVideoButton.IsEnabled = SetReferenceButton.IsEnabled = RemoveVideoButton.IsEnabled = !running;
     }
 

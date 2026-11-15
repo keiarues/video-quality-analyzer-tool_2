@@ -108,27 +108,10 @@
                     </StackPanel>
                     <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
                         <TextBlock Text="評価設定" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,8" />
-                        <DockPanel Margin="0,0,0,8">
-                            <Button Name="EvaluationRangeButton" DockPanel.Dock="Right" Content="評価範囲を設定" Click="EvaluationRange_Click" />
-                            <TextBlock Name="EvaluationRangeText" Text="全編評価" TextWrapping="Wrap" VerticalAlignment="Center" Margin="4" />
-                        </DockPanel>
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-                            <Border Name="EvaluationHelpBorder" Loaded="EvaluationHelpBorder_Loaded" Grid.Column="0" BorderBrush="{StaticResource UiMutedBrush}" BorderThickness="1" CornerRadius="4" Padding="10" Margin="0,0,12,0">
-                                <TextBlock Name="EvaluationHelpText" Text="評価方法にマウスを合わせると解説を表示します。" TextWrapping="Wrap" />
-                            </Border>
-                            <StackPanel Grid.Column="1" Name="EvaluationMetricChecks" Width="150" Orientation="Vertical">
-                            <CheckBox Name="VmafCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="VMAF" Margin="0,3,0,3" VerticalAlignment="Center" />
-                            <CheckBox Name="SsimCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="SSIM" IsChecked="True" Margin="0,3,0,3" VerticalAlignment="Center" />
-                            <CheckBox Name="PsnrCheck" FontSize="{StaticResource UiFontLarge}" FontWeight="SemiBold" Content="PSNR" Margin="0,3,0,3" VerticalAlignment="Center" />
-                            </StackPanel>
-                        </Grid>
+                        <TextBlock Name="EvaluationRangeText" Text="全編評価" TextWrapping="Wrap" Margin="4,0,4,8" />
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                             <Button Name="EvaluationClearButton" Content="評価クリア" Click="ClearEvaluation_Click" Margin="0,3,8,3" />
-                            <Button Name="EvaluationStartButton" Content="評価を開始" Click="Evaluate_Click" Width="220" />
+                            <Button Name="EvaluationRangeButton" Content="評価範囲を設定" Click="Evaluate_Click" Width="220" />
                         </StackPanel>
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Top" Text="評価対象動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />

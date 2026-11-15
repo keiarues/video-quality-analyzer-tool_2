@@ -98,7 +98,6 @@ public partial class MainWindow : Window
         RightMedia.IsMuted = true;
         initialized = true;
         InitializeEmbeddedGraphs();
-        InitializeEvaluationControls();
         // FFmpeg未配置でも本体と設定画面を開けるよう、比較画面の初期化を保留する。
         if (probe is not null) InitializePreviewZoomControls();
         log.Record("session_start", "none", null, "ready", detail: "presented_fps=unmeasured;decode_mode=unknown");
@@ -184,11 +183,6 @@ public partial class MainWindow : Window
         };
     }
 
-    private void EvaluationHelpBorder_Loaded(object sender, RoutedEventArgs e)
-    {
-        if (double.IsNaN(EvaluationHelpBorder.Height))
-            EvaluationHelpBorder.Height = EvaluationHelpBorder.ActualHeight * 2;
-    }
 
     private double expandedSidebarWidth = 700;
     private bool sidebarCollapsed;

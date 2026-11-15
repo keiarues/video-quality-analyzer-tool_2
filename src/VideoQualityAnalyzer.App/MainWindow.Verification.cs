@@ -93,44 +93,36 @@ public partial class MainWindow
             var candidate = videos.First(entry => !entry.IsReference);
             VideoList.SelectedItem = candidate;
             await comparisonChangeTask;
-            if (VmafCheck.IsChecked == true || SsimCheck.IsChecked != true || PsnrCheck.IsChecked == true || string.IsNullOrWhiteSpace(EvaluationHelpText.Text))
-                throw new InvalidOperationException("主画面の初期指標または説明が不正です。");
-            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
-            if (evaluationCancellation is null || !Equals(EvaluationStartButton.Content, "評価を中止") ||
+            if (!evaluationMetrics.SequenceEqual([QualityMetric.Ssim]) || FindName("VmafCheck") is not null ||
+                FindName("SsimCheck") is not null || FindName("PsnrCheck") is not null || FindName("EvaluationHelpBorder") is not null)
+                throw new InvalidOperationException("指標の初期値または旧評価UIの削除が不正です。");
+            StartEvaluationForVerification(EvaluationSelection.Full, [QualityMetric.Ssim]);
+            if (evaluationCancellation is null || !Equals(EvaluationRangeButton.Content, "評価を中止") ||
                 AddVideoButton.IsEnabled || SetReferenceButton.IsEnabled || RemoveVideoButton.IsEnabled || Application.Current.Windows.Count != 1)
                 throw new InvalidOperationException("主画面での評価開始状態が不正です。");
             await evaluationTask;
             var key = (candidate.Descriptor.Id, QualityMetric.Ssim);
             if (!qualityResults.TryGetValue(key, out var completed) || completed.Frames.Count != 30 ||
-                !Equals(EvaluationStartButton.Content, "評価を開始") || !EvaluationStartButton.IsEnabled)
+                !Equals(EvaluationRangeButton.Content, "評価範囲を設定") || !EvaluationRangeButton.IsEnabled)
                 throw new InvalidOperationException("主画面で評価結果が確定されません。");
             qualityGraphPanel!.SelectMetric(QualityMetric.Ssim);
             if (qualityGraphPanel.FilePointCount != 1) throw new InvalidOperationException("評価結果が主画面グラフに反映されません。");
-            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            StartEvaluationForVerification(EvaluationSelection.Full, [QualityMetric.Ssim]);
             await evaluationTask;
             if (!ReferenceEquals(completed, qualityResults[key])) throw new InvalidOperationException("完了済み結果が再計算されました。");
-            PsnrCheck.IsChecked = true;
-            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            StartEvaluationForVerification(EvaluationSelection.Full, [QualityMetric.Ssim, QualityMetric.Psnr]);
             if (evaluationCancellation is null) throw new InvalidOperationException("中止試験の評価が始まりません。");
-            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
+            EvaluationRangeButton.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Button.ClickEvent));
             await evaluationTask;
             if (qualityResults.ContainsKey((candidate.Descriptor.Id, QualityMetric.Psnr)) ||
-                !ReferenceEquals(completed, qualityResults[key]) || !EvaluationStartButton.IsEnabled ||
-                !Equals(EvaluationStartButton.Content, "評価を開始"))
+                !ReferenceEquals(completed, qualityResults[key]) || !EvaluationRangeButton.IsEnabled ||
+                !Equals(EvaluationRangeButton.Content, "評価範囲を設定"))
                 throw new InvalidOperationException("評価中止後の結果またはボタン状態が不正です。");
             UpdateLayout();
-            var checks = new[] { VmafCheck, SsimCheck, PsnrCheck };
             var expectedText = ((System.Windows.Media.SolidColorBrush)FindResource("TextBrush")).Color;
-            if (checks.Append(MuteCheck).Any(check => check.Foreground is not System.Windows.Media.SolidColorBrush brush || brush.Color != expectedText))
-                throw new InvalidOperationException("評価チェックまたはミュートの文字色が共通の明るい文字色になっていません。");
-            if (checks[0].TranslatePoint(new Point(), this).Y >= checks[1].TranslatePoint(new Point(), this).Y ||
-                checks[1].TranslatePoint(new Point(), this).Y >= checks[2].TranslatePoint(new Point(), this).Y ||
-                checks.Any(check => Math.Abs(check.TranslatePoint(new Point(), this).X - checks[0].TranslatePoint(new Point(), this).X) > 1))
-                throw new InvalidOperationException("指標のチェックが縦に並んでいません。");
-            if (FontFamily.Source != "Yu Gothic UI" || FontSize != (double)FindResource("UiFontMedium") ||
-                checks.Any(check => check.FontFamily.Source != FontFamily.Source || check.FontSize != (double)FindResource("UiFontLarge")) ||
-                (double)FindResource("UiFontSmall") >= FontSize || (double)FindResource("UiFontLarge") <= FontSize)
-                throw new InvalidOperationException("共通フォントのプリセットが適用されていません。");
+            if (MuteCheck.Foreground is not System.Windows.Media.SolidColorBrush brush || brush.Color != expectedText ||
+                FontFamily.Source != "Yu Gothic UI" || FontSize != (double)FindResource("UiFontMedium"))
+                throw new InvalidOperationException("共通フォントまたはミュートの文字色が不正です。");
             if (EvaluationControls.TranslatePoint(new Point(0, 0), this).Y <
                 VideoList.TranslatePoint(new Point(0, VideoList.ActualHeight), this).Y)
                 throw new InvalidOperationException("評価操作がファイル一覧の下にありません。");

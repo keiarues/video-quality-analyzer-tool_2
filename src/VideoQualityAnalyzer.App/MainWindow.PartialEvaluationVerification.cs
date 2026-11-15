@@ -9,6 +9,13 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
+    private void StartEvaluationForVerification(EvaluationSelection selection, QualityMetric[] metrics)
+    {
+        _ = Dispatcher.BeginInvoke(new Action(() =>
+            Application.Current.Windows.OfType<EvaluationSettingsWindow>().Single().ApplyForVerification(selection, metrics)));
+        EvaluationRangeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+    }
+
     private async Task VerifyMainPartialEvaluationAsync()
     {
         try
@@ -42,7 +49,7 @@ public partial class MainWindow
                 }));
                 EvaluationRangeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
                 await evaluationTask;
-                if (SsimCheck.IsChecked != true || VmafCheck.IsChecked == true || PsnrCheck.IsChecked == true)
+                if (!evaluationMetrics.SequenceEqual([QualityMetric.Ssim]))
                     throw new InvalidOperationException("設定画面の指標が主画面に同期されません。");
                 if (evaluationResults.Selection != selection) throw new InvalidOperationException("設定画面から条件が適用されません。");
             }
@@ -58,7 +65,7 @@ public partial class MainWindow
             EvaluationRangeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             if (evaluationResults.Selection != EvaluationSelection.Full || !ReferenceEquals(full, qualityResults[key]))
                 throw new InvalidOperationException("設定のキャンセルで条件または結果が変わりました。");
-            VmafCheck.IsChecked = true; SsimCheck.IsChecked = false;
+            evaluationMetrics = [QualityMetric.Vmaf];
             foreach (var configuredSelection in new[]
             {
                 new EvaluationSelection(PartialEvaluationMode.TimeRange, 0.5, 1.5),
@@ -96,13 +103,12 @@ public partial class MainWindow
                 var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
                 using (var stream = File.Create(Path.Combine(directory, "main-partial-graph.png"))) encoder.Save(stream);
             }
-            PsnrCheck.IsChecked = true;
-            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-            EvaluationStartButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+            StartEvaluationForVerification(evaluationResults.Selection, [QualityMetric.Ssim, QualityMetric.Psnr]);
+            EvaluationRangeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await evaluationTask;
             if (qualityResults.ContainsKey((candidate.Descriptor.Id, QualityMetric.Psnr)) || !EvaluationRangeButton.IsEnabled)
                 throw new InvalidOperationException("部分評価の中止後に不正な結果または操作制限が残っています。");
-            PsnrCheck.IsChecked = false;
+            evaluationMetrics = [QualityMetric.Ssim];
             evaluationResults.Clear();
             ApplyEvaluationSelection(EvaluationSelection.Full);
             if (qualityResults.Count != 0) throw new InvalidOperationException("全条件のクリア後に結果が復活しました。");
