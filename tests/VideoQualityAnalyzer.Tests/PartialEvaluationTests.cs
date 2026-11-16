@@ -90,6 +90,7 @@ public sealed class PartialEvaluationTests
         var selection = new EvaluationSelection(PartialEvaluationMode.TimeRange, 5, 60);
         store.Switch(selection);
         Assert.IsEmpty(store.Results);
+        Assert.IsTrue(store.HasResults);
         var partial = full with { Selection = selection, PartialVersion = QualityResult.CurrentPartialVersion, Method = QualityEvaluationMethod.PartialContinuous };
         store.Results[key] = partial;
         store.Switch(EvaluationSelection.Full);
@@ -99,6 +100,7 @@ public sealed class PartialEvaluationTests
         Assert.AreSame(partial, store.Results[key]);
         store.Switch(selection with { EndSeconds = 61 });
         Assert.IsEmpty(store.Results);
+        Assert.IsTrue(store.HasResults);
     }
 
     [TestMethod]
@@ -117,6 +119,7 @@ public sealed class PartialEvaluationTests
         store.Switch(partial);
         Assert.IsEmpty(store.Results);
         store.Clear();
+        Assert.IsFalse(store.HasResults);
         store.Switch(EvaluationSelection.Full);
         Assert.IsEmpty(store.Results);
     }

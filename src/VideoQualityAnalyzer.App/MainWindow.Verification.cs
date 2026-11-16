@@ -463,6 +463,17 @@ public partial class MainWindow
             qualityResults[(original[2].Descriptor.Id, QualityMetric.Ssim)] = result;
             VideoList.SelectedItems.Clear();
             VideoList.SelectedItem = original[1];
+            var confirmationCount = 0;
+            confirmEvaluationResetForVerification = message =>
+            {
+                if (!message.Contains("基準動画を変更すると")) throw new InvalidOperationException("基準動画変更の警告文が不正です。");
+                confirmationCount++;
+                return false;
+            };
+            SetReference_Click(this, new RoutedEventArgs());
+            if (referenceId != original[0].Descriptor.Id || !ReferenceEquals(result, qualityResults[(original[2].Descriptor.Id, QualityMetric.Ssim)]) ||
+                confirmationCount != 1) throw new InvalidOperationException("基準動画変更のキャンセルで結果または選択が変わりました。");
+            confirmEvaluationResetForVerification = _ => true;
             SetReference_Click(this, new RoutedEventArgs());
             if (qualityResults.Count != 0 || referenceId != original[1].Descriptor.Id ||
                 videos.Count(entry => entry.IsReference) != 1)
@@ -475,11 +486,23 @@ public partial class MainWindow
             qualityResults[(original[0].Descriptor.Id, QualityMetric.Ssim)] = result;
             qualityResults[(original[2].Descriptor.Id, QualityMetric.Ssim)] = result;
             VideoList.SelectedItem = original[2];
+            confirmEvaluationResetForVerification = _ => throw new InvalidOperationException("比較動画の削除で警告が表示されました。");
             Remove_Click(this, new RoutedEventArgs());
             if (qualityResults.Count != 1 || !qualityResults.ContainsKey((original[0].Descriptor.Id, QualityMetric.Ssim)))
                 throw new InvalidOperationException("比較動画削除時の結果破棄が不正です。");
             ReferenceList.SelectedItem = original[1];
+            confirmEvaluationResetForVerification = message =>
+            {
+                if (!message.Contains("基準動画を削除すると")) throw new InvalidOperationException("基準動画削除の警告文が不正です。");
+                confirmationCount++;
+                return false;
+            };
             Remove_Click(this, new RoutedEventArgs());
+            if (!videos.Contains(original[1]) || !ReferenceEquals(result, qualityResults[(original[0].Descriptor.Id, QualityMetric.Ssim)]) ||
+                confirmationCount != 2) throw new InvalidOperationException("基準動画削除のキャンセルで動画または結果が変わりました。");
+            confirmEvaluationResetForVerification = _ => true;
+            Remove_Click(this, new RoutedEventArgs());
+            confirmEvaluationResetForVerification = null;
             if (qualityResults.Count != 0 || videos.Count(entry => entry.IsReference) != 1)
                 throw new InvalidOperationException("元動画削除時の結果破棄が不正です。");
             Console.WriteLine("主画面: 動画情報列・評価列の昇降順・選択維持・元動画変更・削除時の結果破棄が合格");

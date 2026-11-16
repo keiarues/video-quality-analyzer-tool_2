@@ -288,6 +288,8 @@ public partial class MainWindow : Window
         if (evaluationCancellation is not null) return;
         if (VideoList.SelectedItem is not VideoEntry entry)
             return;
+        if (referenceId != entry.Descriptor.Id && evaluationResults.HasResults &&
+            !ConfirmEvaluationReset("基準動画を変更すると、計算済みの評価値がすべて削除されます。続行しますか？")) return;
         if (referenceId != entry.Descriptor.Id) evaluationResults.Clear();
         referenceId = entry.Descriptor.Id;
         foreach (var item in videos)
@@ -320,6 +322,8 @@ public partial class MainWindow : Window
 
     private void RemoveVideos(VideoEntry[] removed)
     {
+        if (removed.Any(item => item.Descriptor.Id == referenceId) && evaluationResults.HasResults &&
+            !ConfirmEvaluationReset("基準動画を削除すると、計算済みの評価値がすべて削除されます。続行しますか？")) return;
         suppressSelection = true;
         foreach (var item in removed)
         {
@@ -339,6 +343,12 @@ public partial class MainWindow : Window
         suppressSelection = false;
         UpdateSelection();
     }
+
+    private Func<string, bool>? confirmEvaluationResetForVerification;
+
+    private bool ConfirmEvaluationReset(string message) => confirmEvaluationResetForVerification?.Invoke(message) ??
+        MessageBox.Show(this, message, "評価値の削除", MessageBoxButton.YesNo, MessageBoxImage.Warning,
+            MessageBoxResult.No) == MessageBoxResult.Yes;
 
     private void VideoList_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
