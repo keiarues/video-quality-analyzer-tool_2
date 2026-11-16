@@ -66,7 +66,7 @@
                     <StackPanel DockPanel.Dock="Top">
                         <WrapPanel Margin="0,0,0,8">
                             <Button Name="AddVideoButton" Content="動画ファイルを追加" Click="Add_Click" />
-                            <Button Name="RemoveVideoButton" Content="削除" Click="Remove_Click" />
+                            <Button Name="RemoveVideoButton" Content="動画を削除" Click="Remove_Click" />
                         </WrapPanel>
                     <TextBlock Text="基準動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
                     <DataGrid Name="ReferenceList" Height="82" Margin="0,0,0,8" SelectionMode="Single" SelectionUnit="FullRow"
