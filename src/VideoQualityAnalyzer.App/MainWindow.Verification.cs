@@ -94,7 +94,8 @@ public partial class MainWindow
             VideoList.SelectedItem = candidate;
             await comparisonChangeTask;
             if (!evaluationMetrics.SequenceEqual([QualityMetric.Ssim]) || FindName("VmafCheck") is not null ||
-                FindName("SsimCheck") is not null || FindName("PsnrCheck") is not null || FindName("EvaluationHelpBorder") is not null)
+                FindName("SsimCheck") is not null || FindName("PsnrCheck") is not null || FindName("EvaluationHelpBorder") is not null ||
+                FindName("EvaluationRangeText") is not null)
                 throw new InvalidOperationException("指標の初期値または旧評価UIの削除が不正です。");
             StartEvaluationForVerification(EvaluationSelection.Full, [QualityMetric.Ssim]);
             if (evaluationCancellation is null || !Equals(EvaluationRangeButton.Content, "評価を中止") ||
@@ -469,6 +470,8 @@ public partial class MainWindow
             if (ReferenceList.Items.Count != 1 || ReferenceList.Items[0] != original[1] ||
                 VideoList.Items.Contains(original[1]) || !VideoList.Items.Contains(original[0]))
                 throw new InvalidOperationException($"元動画変更時に上下の一覧が更新されません。上={ReferenceList.Items.Count} / {ReferenceList.Items.Cast<VideoEntry>().FirstOrDefault()?.Descriptor.Name} 下={string.Join(",", VideoList.Items.Cast<VideoEntry>().Select(item => item.Descriptor.Name))}");
+            if (VideoList.SelectedItems.Count != 0 || ReferenceList.SelectedItems.Count != 0)
+                throw new InvalidOperationException($"元動画変更後に一覧の選択が残っています。対象={VideoList.SelectedItems.Count}、基準={ReferenceList.SelectedItems.Count}");
             qualityResults[(original[0].Descriptor.Id, QualityMetric.Ssim)] = result;
             qualityResults[(original[2].Descriptor.Id, QualityMetric.Ssim)] = result;
             VideoList.SelectedItem = original[2];

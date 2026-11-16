@@ -85,7 +85,7 @@ public partial class MainWindow
             {
                 var selection = configuredSelection.WithComparisonTimeline(reference, [candidate.Descriptor]);
                 await Select(selection);
-                if (qualityResults.Count != 1 || !EvaluationRangeText.Text.Contains("対象部分のみ"))
+                if (qualityResults.Count != 1 || evaluationResults.Selection != selection || !evaluationResults.Selection.IsPartial)
                     throw new InvalidOperationException("異なる条件の結果が混在しています。");
                 var result = qualityResults[key];
                 var ranges = selection.CreatePlan(reference)!;

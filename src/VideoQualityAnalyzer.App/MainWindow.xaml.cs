@@ -272,8 +272,10 @@ public partial class MainWindow : Window
             }
         }
 
+        ClearLibrarySelection();
         UpdateSelection();
         if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
+        ClearLibrarySelection();
         var groupCount = videos.Where(entry => !entry.IsReference && !string.IsNullOrWhiteSpace(entry.Group))
             .Select(entry => entry.Group).Distinct().Count();
         SetWindowStatus($"読み込み済み：{videos.Count}ファイル／{groupCount}グループ");
@@ -294,7 +296,9 @@ public partial class MainWindow : Window
         suppressSelection = true;
         VideoList.Items.Refresh();
         suppressSelection = false;
+        ClearLibrarySelection();
         UpdateSelection();
+        ClearLibrarySelection();
     }
 
     private void Remove_Click(object sender, RoutedEventArgs e)
@@ -352,6 +356,18 @@ public partial class MainWindow : Window
 
     private IEnumerable<VideoEntry> SelectedOrAllVideoEntries() =>
         VideoList.SelectedItems.Count == 0 ? videos : VideoList.SelectedItems.Cast<VideoEntry>();
+
+    private void ClearLibrarySelection()
+    {
+        var wasSuppressed = suppressSelection;
+        suppressSelection = true;
+        try
+        {
+            VideoList.UnselectAll();
+            ReferenceList.UnselectAll();
+        }
+        finally { suppressSelection = wasSuppressed; }
+    }
 
     private void ReferenceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {

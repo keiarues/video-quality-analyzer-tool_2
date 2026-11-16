@@ -31,7 +31,6 @@ public partial class MainWindow
     {
         if (evaluationCancellation is not null) throw new InvalidOperationException("評価中は範囲を変更できません。");
         evaluationResults.Switch(selection);
-        EvaluationRangeText.Text = selection.Description + (selection.IsPartial ? "（対象部分のみの平均）" : "");
         RefreshQualityValues();
         RefreshVideoOrder();
         SetWindowStatus("評価範囲を変更しました。現在の条件の結果を表示しています。");

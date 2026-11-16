@@ -14,6 +14,8 @@ public partial class MainWindow
         {
             var cache = await SsimTestCache.LoadAsync(cachePath);
             await AddFilesAsync(new[] { cache.Reference.Path }.Concat(cache.Entries.Select(e => e.Video.Path)));
+            if (VideoList.SelectedItems.Count != 0 || ReferenceList.SelectedItems.Count != 0)
+                throw new InvalidOperationException("動画読み込み後に一覧の選択が残っています。");
             foreach (var entry in cache.Entries)
             {
                 var registered = videos.Single(v => string.Equals(v.Descriptor.Path, entry.Video.Path, StringComparison.OrdinalIgnoreCase));
