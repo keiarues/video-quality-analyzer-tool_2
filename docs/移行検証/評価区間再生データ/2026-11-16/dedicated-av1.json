@@ -1,0 +1,108 @@
+[
+  {
+    "Mode": "TimeRange",
+    "Ranges": [
+      {
+        "Start": 6,
+        "End": 18
+      }
+    ],
+    "Shown": [
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17
+    ],
+    "Last": 17,
+    "Outside": 0,
+    "StaticPixels": true,
+    "Pause": true
+  },
+  {
+    "Mode": "Periodic",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 6
+      },
+      {
+        "Start": 2998,
+        "End": 3003
+      },
+      {
+        "Start": 5995,
+        "End": 6000
+      }
+    ],
+    "Shown": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      2998,
+      2999,
+      3000,
+      3001,
+      3002,
+      5995,
+      5996,
+      5997,
+      5998,
+      5999
+    ],
+    "Last": 5999,
+    "Outside": 0,
+    "StaticPixels": true,
+    "Pause": true
+  },
+  {
+    "Mode": "Uniform",
+    "Ranges": [
+      {
+        "Start": 0,
+        "End": 6
+      },
+      {
+        "Start": 4486,
+        "End": 4492
+      },
+      {
+        "Start": 8972,
+        "End": 8977
+      }
+    ],
+    "Shown": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      4486,
+      4487,
+      4488,
+      4489,
+      4490,
+      4491,
+      8972,
+      8973,
+      8974,
+      8975,
+      8976
+    ],
+    "Last": 8976,
+    "Outside": 0,
+    "StaticPixels": true,
+    "Pause": true
+  }
+]

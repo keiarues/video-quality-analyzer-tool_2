@@ -181,6 +181,7 @@ public partial class MainWindow : Window
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-evaluation")) await VerifyMainEvaluationAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-partial-evaluation")) await VerifyMainPartialEvaluationAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-continuous-evaluation")) await VerifyMainContinuousEvaluationAsync();
+            else if (Environment.GetCommandLineArgs().Contains("--verify-evaluated-playback")) await VerifyEvaluatedPlaybackAsync();
         };
     }
 
@@ -434,6 +435,8 @@ public partial class MainWindow : Window
         comparisonActive = CanCompare(leftVideo, rightVideo);
         SetSlot(left, leftVideo, choice.Generation);
         SetSlot(right, rightVideo, choice.Generation);
+        RefreshEvaluatedPlayback(seekOnChange: false);
+        resume = isPlaying;
         UpdateEmbeddedComparison(leftVideo, rightVideo, position, resume);
         RightMedia.IsMuted = true;
         UpdateInfo();
@@ -539,12 +542,16 @@ public partial class MainWindow : Window
             return;
         if (isPlaying)
             return;
+        RefreshEvaluatedPlayback();
+        if (evaluatedPlaybackEnded && evaluatedPlaybackPlan is { } plan)
+            ApplySeek(TimeSpan.FromSeconds(plan.FirstFrame / left.Video.AverageFrameRate));
         if (comparisonActive && comparisonPanel is not null)
         {
             isPlaying = true;
             UpdatePlayPauseButton();
+            if (evaluatedPlaybackPlan is not null && !comparisonPanel.IsReady) evaluatedAudioPending = true;
             comparisonPanel.Play();
-            if (left.Media.Source is not null) { left.Media.Position = CurrentPosition(); left.Media.Play(); }
+            if (left.Media.Source is not null) { left.Media.Position = CurrentPosition(); if (!evaluatedAudioPending) left.Media.Play(); }
             return;
         }
         basePosition = ClampToCommon(basePosition);
@@ -597,11 +604,12 @@ public partial class MainWindow : Window
         UpdatePlayPauseButton();
         ResetFpsSamples();
         left.LastShownPosition = right.LastShownPosition = null;
-        basePosition = TimeSpan.Zero;
-        if (comparisonActive && comparisonPanel is not null) comparisonChangeTask = comparisonPanel.SeekAsync(TimeSpan.Zero, false);
-        if (left.Av1.IsOpen) left.Av1.Seek(TimeSpan.Zero);
-        if (left.Media.Source is not null) left.Media.Position = TimeSpan.Zero;
-        if (right.Av1.IsOpen) right.Av1.Seek(TimeSpan.Zero);
+        evaluatedPlaybackEnded = evaluatedAudioPending = false;
+        basePosition = evaluatedPlaybackPlan is { } plan && left.Video is { } video ? TimeSpan.FromSeconds(plan.FirstFrame / video.AverageFrameRate) : TimeSpan.Zero;
+        if (comparisonActive && comparisonPanel is not null) comparisonChangeTask = comparisonPanel.SeekAsync(basePosition, false);
+        if (left.Av1.IsOpen) left.Av1.Seek(basePosition);
+        if (left.Media.Source is not null) left.Media.Position = basePosition;
+        if (right.Av1.IsOpen) right.Av1.Seek(basePosition);
         left.Media.Pause();
         right.Media.Pause();
         left.Av1.Pause();
@@ -610,8 +618,8 @@ public partial class MainWindow : Window
         UpdateTimeDisplay();
     }
 
-    private void BackFive_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() - TimeSpan.FromSeconds(5));
-    private void BackOne_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() - TimeSpan.FromSeconds(1));
+    private void BackFive_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() - TimeSpan.FromSeconds(5), -1);
+    private void BackOne_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() - TimeSpan.FromSeconds(1), -1);
     private void SetGroup_Click(object sender, RoutedEventArgs e)
     {
         var selected = VideoList.SelectedItems.Cast<VideoEntry>().Where(entry => !entry.IsReference).ToArray();
@@ -649,6 +657,7 @@ public partial class MainWindow : Window
             entry.PsnrAverage = qualityResults.TryGetValue((entry.Descriptor.Id, QualityMetric.Psnr), out var psnr) ? psnr.Average : null;
         }
         RefreshEmbeddedGraphs();
+        RefreshEvaluatedPlayback();
     }
 
     private void RefreshVideoOrder()
@@ -667,12 +676,14 @@ public partial class MainWindow : Window
     private void ForwardOne_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(1));
     private void ForwardFive_Click(object sender, RoutedEventArgs e) => ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(5));
 
-    private void ApplySeek(TimeSpan position)
+    private void ApplySeek(TimeSpan position, int direction = 0)
     {
         if (left.Video is null)
             return;
         left.LastShownPosition = right.LastShownPosition = null;
-        basePosition = ClampToCommon(position);
+        evaluatedPlaybackEnded = false;
+        basePosition = ClampToCommon(NormalizeEvaluatedSeek(position, direction));
+        if (isPlaying && evaluatedPlaybackPlan is not null) BeginEvaluatedAudioTransition(basePosition);
         if (comparisonActive && comparisonPanel is not null) comparisonChangeTask = comparisonPanel.SeekAsync(basePosition, isPlaying);
         ResetFpsSamples();
         if (isPlaying)
@@ -696,7 +707,9 @@ public partial class MainWindow : Window
             return;
         if (comparisonActive)
         {
-            ApplySeek(CurrentPosition() + TimeSpan.FromSeconds(direction / video.AverageFrameRate));
+            ApplySeek(evaluatedPlaybackPlan is { } plan
+                ? TimeSpan.FromSeconds(plan.Move((long)Math.Round(CurrentPosition().TotalSeconds * video.AverageFrameRate), direction) / video.AverageFrameRate)
+                : CurrentPosition() + TimeSpan.FromSeconds(direction / video.AverageFrameRate));
             return;
         }
         var token = frameTimesCancellation.Token;

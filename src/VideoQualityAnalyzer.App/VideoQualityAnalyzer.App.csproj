@@ -16,6 +16,7 @@
     <Page Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonPanel.xaml" Link="ComparisonPanel.xaml" />
     <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonPanel.Zoom.cs" Link="ComparisonPanel.Zoom.cs" />
     <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonPanel.xaml.cs" Link="ComparisonPanel.xaml.cs" />
+    <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonPanel.EvaluatedPlayback.cs" Link="ComparisonPanel.EvaluatedPlayback.cs" />
     <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\ComparisonWindow.cs" Link="ComparisonWindow.cs" />
     <Compile Include="..\..\experiments\VideoQualityAnalyzer.GpuPreview\WipeBoundaryController.cs" Link="WipeBoundaryController.cs" />
     <ProjectReference Include="..\VideoQualityAnalyzer.Core\VideoQualityAnalyzer.Core.csproj" />

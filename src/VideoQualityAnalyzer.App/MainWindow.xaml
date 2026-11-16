@@ -247,6 +247,9 @@
                               Checked="MuteCheck_Changed" Unchecked="MuteCheck_Changed" />
 
                     </StackPanel>
+                    <CheckBox Name="EvaluatedOnlyCheck" Content="評価した部分のみ再生" IsEnabled="False" VerticalAlignment="Center"
+                              Margin="12,0,4,0" Checked="EvaluatedOnlyCheck_Changed" Unchecked="EvaluatedOnlyCheck_Changed" local:PriorityWrapPanel.Priority="3"
+                              ToolTip="部分評価を完了し、評価済みの比較動画をプレビューに選択してください。" />
                     <preview:ZoomControlBar x:Name="PreviewZoomControls" ShowButtons="False" Margin="16,0,0,0" local:PriorityWrapPanel.Priority="3" />
                     <preview:ZoomControlBar x:Name="PreviewZoomButtons" ShowSlider="False" local:PriorityWrapPanel.Priority="0" />
                 </local:PriorityWrapPanel>

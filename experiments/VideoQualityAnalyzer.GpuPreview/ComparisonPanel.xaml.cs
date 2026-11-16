@@ -217,6 +217,8 @@ public partial class ComparisonPanel : UserControl, IDisposable
 
     public async Task SeekAsync(TimeSpan position, bool resume)
     {
+        if (evaluatedPlaybackPlan is { } plan)
+            position = TimeSpan.FromSeconds(plan.ForwardOrLast((long)Math.Round(position.TotalSeconds * sourceFrameRate)) / sourceFrameRate);
         var generation = ++selectionGeneration;
         StopPlayback(keepRequestedFrame: true);
         requestedPosition = position;
@@ -296,6 +298,11 @@ public partial class ComparisonPanel : UserControl, IDisposable
         {
             return;
         }
+        if (evaluatedPlaybackPlan is { } plan)
+        {
+            frameNumber = plan.ForwardOrLast(frameNumber);
+            FrameNumberBox.Text = frameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
         loadCancellation?.Cancel();
         StreamingFramePairReader? reusedReader = null;
         (ComparisonFrame Left, ComparisonFrame Right)? firstPair = null;
@@ -337,13 +344,17 @@ public partial class ComparisonPanel : UserControl, IDisposable
         (ComparisonFrame Left, ComparisonFrame Right)? firstPair = null)
     {
         var token = cancellation.Token;
+        var playbackPlan = evaluatedPlaybackPlan;
+        if (playbackPlan is not null) firstFrameNumber = playbackPlan.ForwardOrLast(firstFrameNumber);
         Interlocked.Exchange(ref lateDroppedFrames, 0);
         try
         {
             await Task.Run(async () =>
             {
-            await using var reader = reusedReader ?? await StreamingFramePairReader.OpenAsync(ffmpegPath,
+            StreamingFramePairReader? reader = reusedReader ?? await StreamingFramePairReader.OpenAsync(ffmpegPath,
                 ffprobePath, leftPath, rightPath, firstFrameNumber, token);
+            try
+            {
             var frameRate = reader.Descriptor.AverageFrameRate;
             var firstMeasured = firstFrameNumber + (long)Math.Ceiling(2 * frameRate);
             var afterMeasured = firstFrameNumber + (long)Math.Ceiling(32 * frameRate);
@@ -359,6 +370,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
             var measuredSubmitted = new List<long>();
             var measuredLateDropped = new List<long>();
             var pendingPair = firstPair;
+            var nextFrame = firstFrameNumber;
             while (!token.IsCancellationRequested)
             {
                 if (playbackPaused)
@@ -366,6 +378,19 @@ public partial class ComparisonPanel : UserControl, IDisposable
                     clock.Stop();
                     await Task.Delay(20, token);
                     continue;
+                }
+                if (playbackPlan is not null && !playbackPlan.Contains(nextFrame))
+                {
+                    var nextRange = playbackPlan.Ranges.FirstOrDefault(range => range.Start >= nextFrame);
+                    if (nextRange is null) break;
+                    await Dispatcher.InvokeAsync(() => { if (!token.IsCancellationRequested) PlaybackSegmentStarting?.Invoke(TimeSpan.FromSeconds(nextRange.Start / frameRate)); });
+                    var previousReader = reader;
+                    reader = null;
+                    await previousReader.DisposeAsync();
+                    reader = await StreamingFramePairReader.OpenAsync(ffmpegPath, ffprobePath, leftPath, rightPath, nextRange.Start, token);
+                    pendingPair = null;
+                    nextFrame = firstFrameNumber = nextRange.Start;
+                    clock.Reset();
                 }
                 var pair = pendingPair ?? await reader.ReadNextAsync(token);
                 pendingPair = null;
@@ -377,11 +402,14 @@ public partial class ComparisonPanel : UserControl, IDisposable
                 }
                 clock.Start();
                 var (left, right) = pair.Value;
+                nextFrame = left.FrameNumber + 1;
+                if (playbackPlan is not null && !playbackPlan.Contains(left.FrameNumber))
+                    throw new InvalidDataException("評価対象外のフレームを再生しようとしました。");
                 if (benchmarkMode && left.FrameNumber >= afterMeasured) break;
                 var due = TimeSpan.FromSeconds((left.FrameNumber - firstFrameNumber) / frameRate);
                 var wait = due - clock.Elapsed;
                 if (wait > TimeSpan.Zero) await Task.Delay(wait, token);
-                if (clock.Elapsed - due > TimeSpan.FromMilliseconds(100))
+                if (clock.Elapsed - due > TimeSpan.FromMilliseconds(100) && (playbackPlan is null || left.FrameNumber != playbackPlan.LastFrame))
                 {
                     skipped++;
                     if (ReferenceEquals(playbackCancellation, cancellation))
@@ -411,7 +439,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
                         FrameNumberBox.Text = left.FrameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
                     }
                 });
-                if (!presented && !token.IsCancellationRequested) pendingPair = pair;
+                if (!presented && !token.IsCancellationRequested) { pendingPair = pair; nextFrame = left.FrameNumber; }
             }
             if (benchmarkMode && !token.IsCancellationRequested)
             {
@@ -426,6 +454,8 @@ public partial class ComparisonPanel : UserControl, IDisposable
                     appCpuSeconds, appPeakBytes, decoderCpuSeconds, decoderPeakBytes));
                 return;
             }
+            }
+            finally { if (reader is not null) await reader.DisposeAsync(); }
             });
         }
         catch (OperationCanceledException) { }
@@ -884,6 +914,11 @@ public partial class ComparisonPanel : UserControl, IDisposable
             !long.TryParse(FrameNumberBox.Text, out var frameNumber) || frameNumber < 0)
         {
             return;
+        }
+        if (evaluatedPlaybackPlan is { } plan)
+        {
+            frameNumber = plan.ForwardOrLast(frameNumber);
+            FrameNumberBox.Text = frameNumber.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
         loadCancellation?.Cancel();
         loadCancellation?.Dispose();

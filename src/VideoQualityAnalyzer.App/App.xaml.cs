@@ -15,6 +15,12 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        if (e.Args.Contains("--test-evaluated-playback"))
+        {
+            base.OnStartup(e);
+            MainWindow = new EvaluatedPlaybackTestWindow(e.Args.Where(System.IO.File.Exists).ToArray());
+            MainWindow.Show(); return;
+        }
         if (e.Args.Contains("--test-production-partial"))
         {
             base.OnStartup(e);

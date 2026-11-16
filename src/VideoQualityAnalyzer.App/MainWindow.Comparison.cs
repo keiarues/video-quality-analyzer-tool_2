@@ -66,11 +66,15 @@ public partial class MainWindow
                 UpdateSelection();
             };
             ComparisonHost.Content = comparisonPanel;
-            comparisonPanel.FrameShown += RequestPlaybackRefresh;
+            comparisonPanel.SetPlaybackRanges(evaluatedPlaybackPlan?.Ranges);
+            comparisonPanel.PlaybackSegmentStarting += target => { if (evaluatedPlaybackPlan is not null) BeginEvaluatedAudioTransition(target); };
+            comparisonPanel.FrameShown += () => { OnEvaluatedPlaybackFrameShown(); RequestPlaybackRefresh(); };
             comparisonPanel.PlaybackEnded += () =>
             {
                 if (!comparisonActive) return;
                 basePosition = comparisonPanel.Position;
+                evaluatedPlaybackEnded = evaluatedPlaybackPlan is not null;
+                evaluatedAudioPending = false;
                 isPlaying = false;
                 playbackClock.Stop();
                 LeftMedia.Pause();
@@ -83,6 +87,7 @@ public partial class MainWindow
     {
         try
         {
+            if (evaluatedPlaybackPlan is not null && isPlaying) BeginEvaluatedAudioTransition(position);
             await comparisonPanel!.SetSourcesAsync(leftVideo, rightVideo, position, false);
             if (generation != comparisonGeneration || !comparisonActive || closing) return;
             left.Ready = right.Ready = comparisonPanel.IsReady;
