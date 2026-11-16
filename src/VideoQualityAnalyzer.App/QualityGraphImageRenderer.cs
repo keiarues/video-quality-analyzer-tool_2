@@ -59,7 +59,7 @@ internal static class QualityGraphImageRenderer
         var values = target == GraphImageTarget.Frames
             ? series.SelectMany(item => item.Result.Frames.Select(frame => frame.Value))
             : series.Select(item => item.Result.Average);
-        var (minimum, maximum) = Range(values);
+        var (minimum, maximum) = QualityGraphScale.VerticalRange(values);
         var yLabels = Enumerable.Range(0, 6).Select(index => Text((minimum + (maximum - minimum) * index / 5).ToString("G4"), small)).ToArray();
         var axisName = Text(metric.ToString().ToUpperInvariant(), medium);
         var qualityGuide = Text("↑ 高画質", small);
@@ -183,13 +183,4 @@ internal static class QualityGraphImageRenderer
         bitmap.Render(visual); bitmap.Freeze(); return bitmap;
     }
 
-    private static (double Minimum, double Maximum) Range(IEnumerable<double> values)
-    {
-        var finite = values.Where(double.IsFinite).ToArray();
-        if (finite.Length == 0) return (0, 1);
-        var minimum = finite.Min(); var maximum = finite.Max();
-        var padding = Math.Max((maximum - minimum) * 0.05,
-            Math.Max(Math.Max(Math.Abs(minimum), Math.Abs(maximum)) * 0.001, 0.000001));
-        return (minimum - padding, maximum + padding);
-    }
 }

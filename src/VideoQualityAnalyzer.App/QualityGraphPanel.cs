@@ -284,9 +284,9 @@ public sealed class QualityGraphPanel : UserControl
             }
             // フレーム値とファイル平均値は変動幅が異なるため、表示対象ごとに軸を求める。
             var frameVideos = available.Where(video => selectedIds.Contains(video.Id)).ToArray();
-            var (min, max) = VerticalRange(frameVideos.SelectMany(video =>
+            var (min, max) = QualityGraphScale.VerticalRange(frameVideos.SelectMany(video =>
                 results[(video.Id, selected)].Frames.Select(frame => frame.Value)));
-            var (fileMin, fileMax) = VerticalRange(available.Select(video => results[(video.Id, selected)].Average));
+            var (fileMin, fileMax) = QualityGraphScale.VerticalRange(available.Select(video => results[(video.Id, selected)].Average));
             maximumTime = available.Max(video => results[(video.Id, selected)].Frames.Max(frame => frame.Number) / video.AverageFrameRate);
             if (available.Any(video => results[(video.Id, selected)].Selection.IsPartial))
                 maximumTime = available.Max(video => video.Duration.TotalSeconds);
@@ -434,12 +434,12 @@ public sealed class QualityGraphPanel : UserControl
                         throw new InvalidOperationException("縦軸名または品質方向の案内がありません。");
                 }
                 // 外れたフレーム値に平均値の軸が引っ張られず、単一値でも描画できる。
-                var frameRange = VerticalRange([0.1, 0.99]);
-                var averageRange = VerticalRange([0.94, 0.95]);
-                var singleRange = VerticalRange([0.95]);
+                var frameRange = QualityGraphScale.VerticalRange([0.1, 0.99]);
+                var averageRange = QualityGraphScale.VerticalRange([0.94, 0.95]);
+                var singleRange = QualityGraphScale.VerticalRange([0.95]);
                 if (averageRange.Maximum - averageRange.Minimum >= frameRange.Maximum - frameRange.Minimum ||
                     singleRange.Minimum >= 0.95 || singleRange.Maximum <= 0.95 ||
-                    VerticalRange([]) != (0d, 1d))
+                    QualityGraphScale.VerticalRange([]) != (0d, 1d))
                     throw new InvalidOperationException("グラフ別の縦軸範囲または単一値・空データの範囲が不正です。");
                 if (averages.Children.OfType<TextBlock>().Count(label => Equals(label.Tag, "点の評価値")) != FilePointCount ||
                     legend.Children.Count != FilePointCount)
@@ -737,18 +737,6 @@ public sealed class QualityGraphPanel : UserControl
     }
 
     private static double Bitrate(VideoDescriptor video) => video.AverageBitrateKbps ?? 0;
-
-    private static (double Minimum, double Maximum) VerticalRange(IEnumerable<double> values)
-    {
-        var finite = values.Where(double.IsFinite).ToArray();
-        if (finite.Length == 0) return (0, 1);
-        var minimum = finite.Min();
-        var maximum = finite.Max();
-        // 点や折れ線が上下端に重ならないよう余白を付け、単一値でも範囲を確保する。
-        var padding = Math.Max((maximum - minimum) * 0.05,
-            Math.Max(Math.Max(Math.Abs(minimum), Math.Abs(maximum)) * 0.001, 0.000001));
-        return (minimum - padding, maximum + padding);
-    }
 
     // 軸・目盛りと描画データは同じ領域を基準に配置する。
     private Rect PlotArea(Canvas canvas) => new(88, 28,
