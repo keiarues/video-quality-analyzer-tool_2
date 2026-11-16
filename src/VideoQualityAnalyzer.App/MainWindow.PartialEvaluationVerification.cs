@@ -90,7 +90,8 @@ public partial class MainWindow
                 var result = qualityResults[key];
                 var ranges = selection.CreatePlan(reference)!;
                 var numbers = ranges.SelectMany(range => Enumerable.Range(0, checked((int)(range.End - range.Start))).Select(offset => range.Start + offset));
-                if (result.Selection != selection || !result.Frames.Select(frame => frame.Number).SequenceEqual(numbers) || result.Average < 0.999)
+                if (result.Selection != selection || !result.Frames.Select(frame => frame.Number).SequenceEqual(numbers) || result.Average < 0.999 ||
+                    result.PartialVersion != QualityResult.CurrentPartialVersion || result.Method != QualityEvaluationMethod.PartialContinuous)
                     throw new InvalidOperationException("部分評価の条件・元フレーム番号・SSIMが不正です。");
                 qualityGraphPanel!.SelectMetric(QualityMetric.Ssim);
                 if (qualityGraphPanel.FrameSegmentCount != ranges.Count || qualityGraphPanel.FilePointCount != 1 || candidate.SsimAverage != result.Average)
@@ -98,7 +99,7 @@ public partial class MainWindow
                 await ExportQualityCsvAsync(Path.Combine(directory, "main-partial-summary.csv"), false);
                 await ExportQualityCsvAsync(Path.Combine(directory, "main-partial-frames.csv"), true);
                 var text = await File.ReadAllTextAsync(Path.Combine(directory, "main-partial-frames.csv"));
-                if (!text.Contains("評価条件") || !text.Contains(selection.Description))
+                if (!text.Contains("評価条件") || !text.Contains(selection.Description) || !text.Contains(result.MethodDescription))
                     throw new InvalidOperationException("CSVに評価条件がありません。");
                 await Select(EvaluationSelection.Full);
                 if (!ReferenceEquals(full, qualityResults[key])) throw new InvalidOperationException("全編評価が失われました。");
@@ -113,6 +114,34 @@ public partial class MainWindow
                 var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
                 using (var stream = File.Create(Path.Combine(directory, "main-partial-graph.png"))) encoder.Save(stream);
             }
+            var activeSelection = evaluationResults.Selection;
+            var old = qualityResults[key] with { PartialVersion = 0, Method = QualityEvaluationMethod.Legacy };
+            qualityResults[key] = old;
+            evaluationMetrics = [QualityMetric.Ssim, QualityMetric.Psnr, QualityMetric.Vmaf];
+            await EvaluateMainSelectionAsync();
+            if (ReferenceEquals(old, qualityResults[key])) throw new InvalidOperationException("旧方式の部分評価が再利用されました。");
+            var expectedNumbers = activeSelection.CreatePlan(reference)!.SelectMany(range =>
+                Enumerable.Range(0, checked((int)(range.End - range.Start))).Select(offset => range.Start + offset)).ToArray();
+            foreach (var metric in evaluationMetrics)
+            {
+                if (!qualityResults.TryGetValue((candidate.Descriptor.Id, metric), out var actual) ||
+                    !actual.IsReusableFor(activeSelection) || actual.Method != QualityEvaluationMethod.PartialContinuous ||
+                    !actual.Frames.Select(frame => frame.Number).SequenceEqual(expectedNumbers))
+                    throw new InvalidOperationException($"主画面の{metric}部分評価が不正です。");
+                qualityGraphPanel!.SelectMetric(metric);
+                if (qualityGraphPanel.FilePointCount != 1 || qualityGraphPanel.FrameSegmentCount != activeSelection.CreatePlan(reference)!.Count)
+                    throw new InvalidOperationException("3指標の部分評価グラフが不正です。");
+            }
+            await ExportQualityCsvAsync(Path.Combine(directory, "main-production-summary.csv"), false);
+            await ExportQualityCsvAsync(Path.Combine(directory, "main-production-frames.csv"), true);
+            var frameCsv = await File.ReadAllTextAsync(Path.Combine(directory, "main-production-frames.csv"));
+            if (!frameCsv.Contains("評価方式") || !frameCsv.Contains("部分評価v2") ||
+                !frameCsv.Contains("VMAF") || !frameCsv.Contains("PSNR") || frameCsv.Split('\n', StringSplitOptions.RemoveEmptyEntries).Length != 1 + expectedNumbers.Length * 3)
+                throw new InvalidOperationException("3指標のCSVに元番号・件数・方式を保持できません。");
+            await File.WriteAllTextAsync(Path.Combine(directory, "main-production.json"), System.Text.Json.JsonSerializer.Serialize(new
+            { Metrics = 3, FramesPerMetric = expectedNumbers.Length, PartialVersion = QualityResult.CurrentPartialVersion,
+                OldResultRecomputed = true, Graphs = true, Csv = true }));
+            qualityResults.Remove((candidate.Descriptor.Id, QualityMetric.Psnr));
             StartEvaluationForVerification(evaluationResults.Selection, [QualityMetric.Ssim, QualityMetric.Psnr]);
             EvaluationRangeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
             await evaluationTask;

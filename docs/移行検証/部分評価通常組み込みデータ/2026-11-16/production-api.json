@@ -1,0 +1,59 @@
+{
+  "Results": [
+    {
+      "Metric": "Vmaf",
+      "Method": "PartialContinuous",
+      "PartialVersion": 2,
+      "Values": 9,
+      "DirectDifference": 0,
+      "BridgeDifference": 0,
+      "BaselineWasNotRun": true,
+      "CpuSeconds": 0.265625
+    },
+    {
+      "Metric": "Ssim",
+      "Method": "PartialContinuous",
+      "PartialVersion": 2,
+      "Values": 9,
+      "DirectDifference": 0,
+      "BridgeDifference": 0,
+      "BaselineWasNotRun": true,
+      "CpuSeconds": 0.1875
+    },
+    {
+      "Metric": "Psnr",
+      "Method": "PartialContinuous",
+      "PartialVersion": 2,
+      "Values": 9,
+      "DirectDifference": 0,
+      "BridgeDifference": 0,
+      "BaselineWasNotRun": true,
+      "CpuSeconds": 0.1875
+    },
+    {
+      "Metric": "Vmaf",
+      "Method": "PartialSequential",
+      "PartialVersion": 2,
+      "Values": 90,
+      "Native10BitDifference": 0
+    },
+    {
+      "Metric": "Ssim",
+      "Method": "PartialSequential",
+      "PartialVersion": 2,
+      "Values": 90,
+      "Native10BitDifference": 0
+    },
+    {
+      "Metric": "Psnr",
+      "Method": "PartialSequential",
+      "PartialVersion": 2,
+      "Values": 90,
+      "Native10BitDifference": 0
+    }
+  ],
+  "BeforeStart": true,
+  "DuringContinuous": true,
+  "DuringFallback": true,
+  "Restart": true
+}

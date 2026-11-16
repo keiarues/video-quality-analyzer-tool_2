@@ -15,6 +15,13 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        if (e.Args.Contains("--test-production-partial"))
+        {
+            base.OnStartup(e);
+            MainWindow = new InputSeekTestWindow(e.Args.Contains("--auto"), e.Args.Where(System.IO.File.Exists).ToArray(), continuousInput: true, productionVerification: true);
+            MainWindow.Show();
+            return;
+        }
         if (e.Args.Contains("--test-continuous-input"))
         {
             base.OnStartup(e);

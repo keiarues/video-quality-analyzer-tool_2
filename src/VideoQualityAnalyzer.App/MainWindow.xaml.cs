@@ -180,6 +180,7 @@ public partial class MainWindow : Window
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-seek")) await VerifySeekSliderAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-evaluation")) await VerifyMainEvaluationAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-partial-evaluation")) await VerifyMainPartialEvaluationAsync();
+            else if (Environment.GetCommandLineArgs().Contains("--verify-main-continuous-evaluation")) await VerifyMainContinuousEvaluationAsync();
         };
     }
 

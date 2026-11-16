@@ -16,6 +16,10 @@ public sealed class ContinuousInputEvaluationTests
         using var canceled = new CancellationTokenSource(); canceled.Cancel();
         await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
             service.CompareAsync(Video(), Video(), [new(0, 3)], QualityMetric.Vmaf, false, null, canceled.Token));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+            service.EvaluatePartialAsync(Video(), Video(), [new(0, 3)], QualityMetric.Vmaf, null, canceled.Token));
+        await Assert.ThrowsExactlyAsync<OperationCanceledException>(() =>
+            new QualityEvaluationService("存在しないffmpeg").EvaluatePartialAsync(Video(), Video(), QualityMetric.Ssim, [new(0, 3)], null, canceled.Token));
     }
 
     [TestMethod]

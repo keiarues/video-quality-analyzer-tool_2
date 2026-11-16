@@ -9,12 +9,17 @@ public sealed class EvaluationResultStore
 
     public void Switch(EvaluationSelection selection)
     {
-        if (selection == Selection) return;
-        profiles[Selection] = new(Results);
+        if (selection == Selection) { RemoveStale(); return; }
+        profiles[Selection] = Results.Where(pair => pair.Value.IsReusableFor(Selection)).ToDictionary(pair => pair.Key, pair => pair.Value);
         Results.Clear();
         if (profiles.TryGetValue(selection, out var saved))
-            foreach (var pair in saved) Results.Add(pair.Key, pair.Value);
+            foreach (var pair in saved.Where(pair => pair.Value.IsReusableFor(selection))) Results.Add(pair.Key, pair.Value);
         Selection = selection;
+    }
+
+    private void RemoveStale()
+    {
+        foreach (var key in Results.Where(pair => !pair.Value.IsReusableFor(Selection)).Select(pair => pair.Key).ToArray()) Results.Remove(key);
     }
 
     public void Clear() { profiles.Clear(); Results.Clear(); }

@@ -1,0 +1,32 @@
+{
+  "Codec": "ffv1",
+  "Conditions": "\u6642\u9593\u7BC4\u56F2\u6307\u5B9A\uFF1A0\uFF5E3\u79D2",
+  "WallSeconds": 0.4142986,
+  "ProgressUpdates": 12,
+  "Results": [
+    {
+      "Metric": "Vmaf",
+      "Method": "PartialSequential",
+      "PartialVersion": 2,
+      "Frames": 90,
+      "Average": 98.929223
+    },
+    {
+      "Metric": "Ssim",
+      "Method": "PartialSequential",
+      "PartialVersion": 2,
+      "Frames": 90,
+      "Average": 0.9996121444444449
+    },
+    {
+      "Metric": "Psnr",
+      "Method": "PartialSequential",
+      "PartialVersion": 2,
+      "Frames": 90,
+      "Average": 43.90000000000006
+    }
+  ],
+  "Reused": true,
+  "Csv": true,
+  "FallbackNotice": true
+}

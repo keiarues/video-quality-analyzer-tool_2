@@ -90,7 +90,7 @@ public sealed class PartialEvaluationTests
         var selection = new EvaluationSelection(PartialEvaluationMode.TimeRange, 5, 60);
         store.Switch(selection);
         Assert.IsEmpty(store.Results);
-        var partial = full with { Selection = selection };
+        var partial = full with { Selection = selection, PartialVersion = QualityResult.CurrentPartialVersion, Method = QualityEvaluationMethod.PartialContinuous };
         store.Results[key] = partial;
         store.Switch(EvaluationSelection.Full);
         Assert.AreSame(dictionary, store.Results);

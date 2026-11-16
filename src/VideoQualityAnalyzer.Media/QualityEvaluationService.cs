@@ -7,11 +7,25 @@ using VideoQualityAnalyzer.Core;
 namespace VideoQualityAnalyzer.Media;
 
 public enum QualityMetric { Vmaf, Ssim, Psnr }
+public enum QualityEvaluationMethod { Legacy, Full, PartialContinuous, PartialSequential }
 public sealed record QualityFrame(long Number, double Value);
 public sealed record QualityEvaluationTiming(TimeSpan FfmpegElapsed, TimeSpan AggregationElapsed, TimeSpan FfmpegCpuTime);
 public sealed record QualityResult(QualityMetric Metric, double Average, IReadOnlyList<QualityFrame> Frames)
 {
+    public const int CurrentPartialVersion = 2;
     public EvaluationSelection Selection { get; init; } = EvaluationSelection.Full;
+    public int PartialVersion { get; init; }
+    public QualityEvaluationMethod Method { get; init; }
+    public bool IsReusableFor(EvaluationSelection selection) => Selection == selection && (selection.IsPartial
+        ? PartialVersion == CurrentPartialVersion && Method is QualityEvaluationMethod.PartialContinuous or QualityEvaluationMethod.PartialSequential
+        : Method is QualityEvaluationMethod.Legacy or QualityEvaluationMethod.Full);
+    public string MethodDescription => Method switch
+    {
+        QualityEvaluationMethod.PartialContinuous => $"部分評価v{PartialVersion}・区間シーク連続入力",
+        QualityEvaluationMethod.PartialSequential => $"部分評価v{PartialVersion}・先頭復号",
+        QualityEvaluationMethod.Full => "全編評価",
+        _ => "旧方式"
+    };
 }
 
 // 評価は外部FFmpegで行い、正常終了した結果だけを返す。
@@ -19,23 +33,24 @@ public sealed class QualityEvaluationService(string executable, Action<QualityEv
 {
     public async Task<QualityResult> EvaluateAsync(VideoDescriptor reference, VideoDescriptor candidate,
         QualityMetric metric, IProgress<TimeSpan>? progress, CancellationToken token)
-        => await EvaluateCoreAsync(reference, candidate, metric, progress, token, null);
+        => await EvaluateCoreAsync(reference, candidate, metric, progress, token);
 
     public async Task<QualityResult> EvaluatePartialAsync(VideoDescriptor reference, VideoDescriptor candidate,
         QualityMetric metric, IReadOnlyList<EvaluationFrameRange> ranges, IProgress<TimeSpan>? progress, CancellationToken token)
     {
-        var snapshot = ranges.ToArray();
-        if (reference.IsVariableFrameRate || candidate.IsVariableFrameRate || snapshot.Length == 0 ||
-            snapshot.Any(range => range.Start < 0 || range.End <= range.Start) ||
-            snapshot.Zip(snapshot.Skip(1)).Any(pair => pair.First.End > pair.Second.Start) ||
-            snapshot[^1].End > (candidate.TotalFrames ?? (long)Math.Ceiling(candidate.Duration.TotalSeconds * candidate.AverageFrameRate)) ||
-            snapshot[^1].End > (reference.TotalFrames ?? (long)Math.Ceiling(reference.Duration.TotalSeconds * reference.AverageFrameRate)))
-            throw new ArgumentException("評価区間が動画の範囲外、重複、またはCFRではありません。");
-        return await EvaluateCoreAsync(reference, candidate, metric, progress, token, snapshot);
+        token.ThrowIfCancellationRequested();
+        var probe = Path.Combine(Path.GetDirectoryName(Path.GetFullPath(executable))!, "ffprobe.exe");
+        if (!File.Exists(probe)) probe = FfprobeService.FindExecutable() ?? throw new InvalidOperationException("FFprobeが見つかりません。");
+        var adapter = progress is null ? null : new EvaluationProgressAdapter(progress, reference.AverageFrameRate);
+        return await new ContinuousInputEvaluationService(executable, probe, timing)
+            .EvaluatePartialAsync(reference, candidate, ranges, metric, adapter, token);
     }
 
+    private sealed class EvaluationProgressAdapter(IProgress<TimeSpan> progress, double fps) : IProgress<InputSeekProgress>
+    { public void Report(InputSeekProgress value) => progress.Report(TimeSpan.FromSeconds(value.CompletedFrames / fps)); }
+
     private async Task<QualityResult> EvaluateCoreAsync(VideoDescriptor reference, VideoDescriptor candidate,
-        QualityMetric metric, IProgress<TimeSpan>? progress, CancellationToken token, EvaluationFrameRange[]? ranges)
+        QualityMetric metric, IProgress<TimeSpan>? progress, CancellationToken token)
     {
         token.ThrowIfCancellationRequested();
         if (reference.Width != candidate.Width || reference.Height != candidate.Height ||
@@ -56,10 +71,7 @@ public sealed class QualityEvaluationService(string executable, Action<QualityEv
                 UseShellExecute = false, CreateNoWindow = true,
                 RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = directory
             };
-            var selection = ranges is null ? "setpts=PTS-STARTPTS" :
-                $"trim=end_frame={ranges[^1].End},select='" +
-                string.Join("+", ranges.Select(range => $"between(n,{range.Start},{range.End - 1})")) +
-                $"',setpts=N/({reference.AverageFrameRate.ToString("R", CultureInfo.InvariantCulture)}*TB)";
+            const string selection = "setpts=PTS-STARTPTS";
             foreach (var argument in new[] { "-hide_banner", "-loglevel", "error", "-i", Path.GetFullPath(candidate.Path),
                 "-i", Path.GetFullPath(reference.Path), "-filter_complex",
                 $"[0:v:0]{selection}[dist];[1:v:0]{selection}[ref];[dist][ref]" + filter,
@@ -101,19 +113,8 @@ public sealed class QualityEvaluationService(string executable, Action<QualityEv
             var result = metric == QualityMetric.Vmaf
                 ? ParseVmaf(await File.ReadAllTextAsync(Path.Combine(directory, "metric.json"), token))
                 : ParseStats(metric, await File.ReadAllTextAsync(Path.Combine(directory, "metric.log"), token));
-            if (ranges is null) { ReportTiming(); return result; }
-            long Map(long number)
-            {
-                foreach (var range in ranges)
-                {
-                    if (number < range.End - range.Start) return range.Start + number;
-                    number -= range.End - range.Start;
-                }
-                throw new InvalidDataException("評価結果のフレーム番号が対象区間を超えています。");
-            }
-            result = result with { Frames = result.Frames.Select(frame => frame with { Number = Map(frame.Number) }).ToArray() };
             ReportTiming();
-            return result;
+            return result with { Method = QualityEvaluationMethod.Full };
         }
         finally { Directory.Delete(directory, recursive: true); }
     }

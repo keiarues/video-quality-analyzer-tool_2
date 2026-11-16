@@ -85,6 +85,7 @@ public partial class MainWindow
         evaluationCancellation = source;
         SetEvaluationState(true);
         var failures = new List<string>();
+        var sequentialFallbacks = 0;
         var progressGeneration = 0;
         TimeSpan SourcePosition(TimeSpan processed) => ranges is null ? processed
             : PartialEvaluationProgress.ToSourceTime(ranges, reference.AverageFrameRate, processed);
@@ -96,7 +97,8 @@ public partial class MainWindow
             {
                 source.Token.ThrowIfCancellationRequested();
                 var key = (candidate.Id, metric);
-                if (qualityResults.ContainsKey(key)) continue;
+                if (qualityResults.TryGetValue(key, out var cached) && cached.IsReusableFor(selection)) continue;
+                qualityResults.Remove(key);
                 var currentProgressGeneration = ++progressGeneration;
                 qualityGraphPanel?.SetEvaluationProgress(candidate, metric, SourcePosition(TimeSpan.Zero));
                 SetWindowStatus($"{candidate.Name} / {metric.ToString().ToUpperInvariant()} を評価中…", evaluation: true);
@@ -116,6 +118,7 @@ public partial class MainWindow
                         : await evaluator.EvaluatePartialAsync(reference, candidate, metric, ranges, progress, source.Token);
                     result = result with { Selection = selection };
                     source.Token.ThrowIfCancellationRequested();
+                    if (result.Method == QualityEvaluationMethod.PartialSequential) sequentialFallbacks++;
                     qualityResults[key] = result;
                     RefreshQualityValues();
                     RefreshVideoOrder();
@@ -124,7 +127,9 @@ public partial class MainWindow
                 catch (Exception exception) { failures.Add($"{candidate.Name} / {metric}: {exception.Message}"); }
             }
             WindowStatusText.Foreground = failures.Count == 0 ? UiTheme.Emphasis : UiTheme.Warning;
-            SetWindowStatus(failures.Count == 0 ? $"{selection.Description}が完了しました。" : $"評価を終了しました。失敗{failures.Count}件。{failures[^1]}", evaluation: true);
+            SetWindowStatus(failures.Count == 0 ? $"{selection.Description}が完了しました。" +
+                (sequentialFallbacks > 0 ? $" {sequentialFallbacks}件は元の画素形式を保つ先頭復号で評価しました。" : "")
+                : $"評価を終了しました。失敗{failures.Count}件。{failures[^1]}", evaluation: true);
         }
         catch (OperationCanceledException) { WindowStatusText.Foreground = UiTheme.Warning; SetWindowStatus("評価を中止しました。完了済みの結果は保持しています。", evaluation: true); }
         finally

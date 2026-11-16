@@ -10,7 +10,7 @@ using VideoQualityAnalyzer.Media;
 
 namespace VideoQualityAnalyzer.App;
 
-public sealed class InputSeekTestWindow : Window
+public sealed partial class InputSeekTestWindow : Window
 {
     private readonly TextBox referencePath = new(), candidatePath = new();
     private readonly PartialEvaluationSettingsControl settings = new();
@@ -29,11 +29,11 @@ public sealed class InputSeekTestWindow : Window
     private readonly List<object> reports = [];
     private readonly string reportDirectory;
 
-    public InputSeekTestWindow(bool automatic, string[] paths, bool continuousInput = false)
+    public InputSeekTestWindow(bool automatic, string[] paths, bool continuousInput = false, bool productionVerification = false)
     {
         this.continuousInput = continuousInput;
         reportDirectory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "../../../../../measurement-results/" + (continuousInput ? "continuous-input" : "input-seek")));
+            "../../../../../measurement-results/" + (productionVerification ? "production-partial" : continuousInput ? "continuous-input" : "input-seek")));
         Style = (Style)Application.Current.FindResource(typeof(Window));
         Title = continuousInput ? "部分評価・中間キャッシュなしの連続入力検証" : "部分評価・区間入力シーク検証"; Width = 980; Height = 900;
         if (continuousInput) { metric.ItemsSource = new[] { "SSIM", "PSNR", "VMAF" }; metric.SelectedIndex = 0; }
@@ -67,7 +67,7 @@ public sealed class InputSeekTestWindow : Window
         settings.SetSelection(new(PartialEvaluationMode.Uniform, LengthSeconds: automatic ? 0.1 : 10, Count: 6));
         if (automatic) Loaded += async (_, _) =>
         {
-            try { if (continuousInput) await RunContinuousAutomaticAsync(paths); else await RunAutomaticAsync(paths); SaveScreen(); Application.Current.Shutdown(0); }
+            try { if (productionVerification) await RunProductionAutomaticAsync(paths); else if (continuousInput) await RunContinuousAutomaticAsync(paths); else await RunAutomaticAsync(paths); SaveScreen(); Application.Current.Shutdown(0); }
             catch (Exception error) { Directory.CreateDirectory(reportDirectory); await File.WriteAllTextAsync(Path.Combine(reportDirectory, "failure.txt"), error.ToString()); Application.Current.Shutdown(1); }
         };
         return;

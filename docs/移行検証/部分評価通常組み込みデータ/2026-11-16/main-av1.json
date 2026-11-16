@@ -1,0 +1,32 @@
+{
+  "Codec": "av1",
+  "Conditions": "\u5747\u7B49\u914D\u7F6E\uFF1A10\u79D2\u00D76\u533A\u9593\uFF08\u5171\u901A\u7BC4\u56F2\uFF1A8977\u30D5\u30EC\u30FC\u30E0\uFF09",
+  "WallSeconds": 56.1297354,
+  "ProgressUpdates": 511,
+  "Results": [
+    {
+      "Metric": "Vmaf",
+      "Method": "PartialContinuous",
+      "PartialVersion": 2,
+      "Frames": 1799,
+      "Average": 94.911754
+    },
+    {
+      "Metric": "Ssim",
+      "Method": "PartialContinuous",
+      "PartialVersion": 2,
+      "Frames": 1799,
+      "Average": 0.9809769677598659
+    },
+    {
+      "Metric": "Psnr",
+      "Method": "PartialContinuous",
+      "PartialVersion": 2,
+      "Frames": 1799,
+      "Average": 39.997754307948796
+    }
+  ],
+  "Reused": true,
+  "Csv": true,
+  "FallbackNotice": true
+}

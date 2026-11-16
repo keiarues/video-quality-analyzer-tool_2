@@ -1,0 +1,9 @@
+{
+  "RemainingFfmpegProcesses": 0,
+  "VmafThreads": 1,
+  "Date": "2026-11-16",
+  "Ffmpeg": "ffmpeg version 9.0.2-essentials_build-www.gyan.dev Copyright (c) 2000-2026 the FFmpeg developers",
+  "Conditions": "各1回、OSキャッシュ消去なし、バックグラウンド負荷固定なし。通常画面の3指標合計時間。",
+  "PartialVersion": 2,
+  "MstestPassed": 54
+}

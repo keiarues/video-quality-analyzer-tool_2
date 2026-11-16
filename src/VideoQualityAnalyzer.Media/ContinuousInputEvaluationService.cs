@@ -9,27 +9,46 @@ using VideoQualityAnalyzer.Core;
 
 namespace VideoQualityAnalyzer.Media;
 
-// 専用画面の実験経路。復号器2本から有界のパイプへ送り、一つの評価器の時間特徴を維持する。
-public sealed class ContinuousInputEvaluationService(string executable, string probeExecutable)
+// 復号器2本から有界のパイプへ送り、一つの評価器の時間特徴を維持する。
+public sealed class ContinuousInputEvaluationService(string executable, string probeExecutable, Action<QualityEvaluationTiming>? timing = null)
 {
-    private sealed record Raster(string PixelFormat, double Start, string Parameters);
+    private sealed record Raster(string PixelFormat, double? Start, string Parameters);
+
+    public async Task<QualityResult> EvaluatePartialAsync(VideoDescriptor reference, VideoDescriptor candidate,
+        IReadOnlyList<EvaluationFrameRange> ranges, QualityMetric metric, IProgress<InputSeekProgress>? progress, CancellationToken token)
+        => (await ExecuteCoreAsync(reference, candidate, ranges, metric, false, progress, token, compare: false)).Run.Result;
 
     public async Task<InputSeekComparison> CompareAsync(VideoDescriptor reference, VideoDescriptor candidate,
         IReadOnlyList<EvaluationFrameRange> ranges, QualityMetric metric, bool verifyPixels,
         IProgress<InputSeekProgress>? progress, CancellationToken token)
+        => (await ExecuteCoreAsync(reference, candidate, ranges, metric, verifyPixels, progress, token, compare: true)).Comparison!;
+
+    private async Task<(InputSeekRun Run, InputSeekComparison? Comparison)> ExecuteCoreAsync(VideoDescriptor reference, VideoDescriptor candidate,
+        IReadOnlyList<EvaluationFrameRange> ranges, QualityMetric metric, bool verifyPixels,
+        IProgress<InputSeekProgress>? progress, CancellationToken token, bool compare)
     {
         token.ThrowIfCancellationRequested();
         InputSeekEvaluationService.Validate(reference, candidate, ranges, QualityMetric.Ssim);
         if (!Enum.IsDefined(metric)) throw new ArgumentException("評価指標が不正です。");
-        if (reference.Width <= 0 || reference.Height <= 0 || reference.Width % 2 != 0 || reference.Height % 2 != 0)
+        if (reference.Width <= 0 || reference.Height <= 0) throw new ArgumentException("動画の解像度が不正です。");
+        if (compare && (reference.Width % 2 != 0 || reference.Height % 2 != 0))
             throw new NotSupportedException("連続入力の試作は、偶数解像度のyuv420p素材が対象です。");
         var snapshot = ranges.ToArray();
         var referenceRaster = await ReadRasterAsync(reference.Path, token);
         var candidateRaster = await ReadRasterAsync(candidate.Path, token);
-        if (referenceRaster.PixelFormat != "yuv420p" || candidateRaster.PixelFormat != "yuv420p")
+        var usePipes = OperatingSystem.IsWindows() && reference.Width % 2 == 0 && reference.Height % 2 == 0 &&
+            referenceRaster.PixelFormat == "yuv420p" && candidateRaster.PixelFormat == "yuv420p" && referenceRaster.Start is not null && candidateRaster.Start is not null;
+        if (compare && !usePipes)
             throw new NotSupportedException("連続入力の試作は、偶数解像度のyuv420p素材が対象です。");
         var numbers = snapshot.SelectMany(range => Enumerable.Range(0, checked((int)(range.End - range.Start))).Select(offset => range.Start + offset)).ToArray();
         var fps = reference.AverageFrameRate.ToString("R", CultureInfo.InvariantCulture);
+        if (!compare)
+        {
+            var run = usePipes ? await RunAsync(true) : await RunDirectAsync();
+            run = run with { Result = run.Result with { PartialVersion = QualityResult.CurrentPartialVersion,
+                Method = usePipes ? QualityEvaluationMethod.PartialContinuous : QualityEvaluationMethod.PartialSequential } };
+            return (run, null);
+        }
         var direct = await RunDirectAsync();
         var sequential = verifyPixels ? await RunAsync(false) : direct;
         if (verifyPixels && (direct.Result.Frames.Count != sequential.Result.Frames.Count ||
@@ -42,12 +61,13 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
         var actual = seek.Result.Frames.ToDictionary(frame => frame.Number, frame => frame.Value);
         var differences = expected.Keys.Union(actual.Keys).Select(number => expected.TryGetValue(number, out var a) && actual.TryGetValue(number, out var b)
             ? Math.Abs(a - b) : double.PositiveInfinity).ToArray();
-        return new(sequential, seek, Pixels(sequential.ReferenceFrames, seek.ReferenceFrames), Pixels(sequential.CandidateFrames, seek.CandidateFrames),
-            differences.Count(value => value > 0.000001), differences.DefaultIfEmpty().Max());
+        return (seek, new(sequential, seek, Pixels(sequential.ReferenceFrames, seek.ReferenceFrames), Pixels(sequential.CandidateFrames, seek.CandidateFrames),
+            differences.Count(value => value > 0.000001), differences.DefaultIfEmpty().Max()));
 
         async Task<InputSeekRun> RunAsync(bool useSeek)
         {
             var clock = Stopwatch.StartNew();
+            long cpuTicks = 0;
             var directory = Path.Combine(Path.GetTempPath(), "VideoQualityAnalyzer", "continuous-" + Guid.NewGuid().ToString("N"));
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(token);
             var referenceName = "vqa-ref-" + Guid.NewGuid().ToString("N");
@@ -99,12 +119,15 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
                     }
                 }
                 await Task.WhenAll(
-                    Task.Run(() => Guard(() => EvaluateAsync(arguments, directory, Report, linked.Token))),
+                    Task.Run(() => Guard(() => EvaluateAsync(arguments, directory, Report, linked.Token, cpu => Interlocked.Add(ref cpuTicks, cpu.Ticks)))),
                     Task.Run(() => Guard(() => FeedAsync(reference, referenceRaster, referencePipe, referenceHashes, linked.Token))),
                     Task.Run(() => Guard(() => FeedAsync(candidate, candidateRaster, candidatePipe, candidateHashes, linked.Token))));
                 token.ThrowIfCancellationRequested();
+                var aggregation = Stopwatch.StartNew();
                 var result = await ReadResultAsync(directory, numbers, metric, token);
+                aggregation.Stop();
                 Report(numbers.LongLength); clock.Stop();
+                if (!compare) timing?.Invoke(new(clock.Elapsed - aggregation.Elapsed, aggregation.Elapsed, TimeSpan.FromTicks(cpuTicks)));
                 return new(result, referenceHashes, candidateHashes, clock.Elapsed);
 
                 async Task FeedAsync(VideoDescriptor video, Raster raster, NamedPipeServerStream pipe, List<EvaluationFrameDigest> hashes, CancellationToken stop)
@@ -126,7 +149,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
                                     (batch[^1].End / reference.AverageFrameRate - anchor + 1).ToString("F9", CultureInfo.InvariantCulture)]);
                             }
                             var select = useSeek
-                                ? $"select='between(round((t-{raster.Start.ToString("R", CultureInfo.InvariantCulture)})*{fps}),{batch[0].Start},{batch[^1].End - 1})'"
+                                ? $"select='between(round((t-{raster.Start!.Value.ToString("R", CultureInfo.InvariantCulture)})*{fps}),{batch[0].Start},{batch[^1].End - 1})'"
                                 : $"trim=end_frame={batch[^1].End},select='" + string.Join("+", batch.Select(range => $"between(n,{range.Start},{range.End - 1})")) + "'";
                             decoderArguments.AddRange(["-i", Path.GetFullPath(video.Path), "-map", "0:v:0", "-vf", select, "-an", "-sn", "-dn",
                                 "-c:v", "rawvideo", "-threads:v", "1", "-pix_fmt", "yuv420p", "-fps_mode", "passthrough", "-f", "rawvideo", "pipe:1"]);
@@ -147,7 +170,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
                                 await decoder.WaitForExitAsync(stop);
                                 if (decoder.ExitCode != 0) throw new InvalidOperationException("区間復号に失敗しました。");
                             }
-                            finally { Kill(decoder); await decoder.WaitForExitAsync(CancellationToken.None); await errors; }
+                            finally { Kill(decoder); await decoder.WaitForExitAsync(CancellationToken.None); await errors; Interlocked.Add(ref cpuTicks, decoder.TotalProcessorTime.Ticks); }
                         }
                     }
                     catch (EndOfStreamException) { throw new InvalidDataException("区間復号のフレームが不足しています。"); }
@@ -165,6 +188,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
         async Task<InputSeekRun> RunDirectAsync()
         {
             var clock = Stopwatch.StartNew();
+            long cpuTicks = 0;
             var directory = Path.Combine(Path.GetTempPath(), "VideoQualityAnalyzer", "direct-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(directory);
             try
@@ -188,9 +212,12 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
                         PartialEvaluationProgress.ToSourceTime(snapshot, reference.AverageFrameRate, TimeSpan.FromSeconds(processed / reference.AverageFrameRate))));
                 }
                 Report(0);
-                await Task.Run(() => EvaluateAsync(arguments, directory, Report, token));
+                await Task.Run(() => EvaluateAsync(arguments, directory, Report, token, cpu => Interlocked.Add(ref cpuTicks, cpu.Ticks)));
+                var aggregation = Stopwatch.StartNew();
                 var result = await ReadResultAsync(directory, numbers, metric, token);
+                aggregation.Stop();
                 Report(numbers.LongLength); clock.Stop();
+                if (!compare) timing?.Invoke(new(clock.Elapsed - aggregation.Elapsed, aggregation.Elapsed, TimeSpan.FromTicks(cpuTicks)));
                 return new(result, [], [], clock.Elapsed);
             }
             finally { Directory.Delete(directory, recursive: true); }
@@ -222,7 +249,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
         catch (InvalidOperationException) { }
         catch (System.ComponentModel.Win32Exception) when (process.HasExited) { }
     }
-    private async Task EvaluateAsync(IReadOnlyList<string> arguments, string directory, Action<long> report, CancellationToken token)
+    private async Task EvaluateAsync(IReadOnlyList<string> arguments, string directory, Action<long> report, CancellationToken token, Action<TimeSpan>? cpu = null)
     {
         using var process = Start(arguments, directory);
         using var registration = token.Register(() => Kill(process));
@@ -235,7 +262,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
             token.ThrowIfCancellationRequested();
             if (process.ExitCode != 0) throw new InvalidOperationException($"連続評価に失敗しました（終了コード{process.ExitCode}）。");
         }
-        finally { Kill(process); await process.WaitForExitAsync(CancellationToken.None); await errors; }
+        finally { Kill(process); await process.WaitForExitAsync(CancellationToken.None); await errors; cpu?.Invoke(process.TotalProcessorTime); }
     }
     private async Task<Raster> ReadRasterAsync(string path, CancellationToken token)
     {
@@ -254,7 +281,8 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
         var stream = json.RootElement.GetProperty("streams")[0];
         string Value(string key, string fallback = "unknown") => stream.TryGetProperty(key, out var value) ? value.GetString() ?? fallback : fallback;
         var range = Value("color_range") switch { "tv" => "limited", "pc" => "full", _ => "unknown" };
-        return new(Value("pix_fmt"), double.Parse(Value("start_time", "0"), CultureInfo.InvariantCulture),
+        var knownStart = double.TryParse(Value("start_time", "N/A"), NumberStyles.Float, CultureInfo.InvariantCulture, out var start) && double.IsFinite(start);
+        return new(Value("pix_fmt"), knownStart ? start : null,
             $"setparams=colorspace={Value("color_space")}:range={range}:color_primaries={Value("color_primaries")}:color_trc={Value("color_transfer")}");
     }
 }
