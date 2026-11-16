@@ -75,6 +75,9 @@ public sealed class EvaluationSettingsWindow : Window
         UpdateLayout();
         var initialPosition = metricCards.TranslatePoint(new Point(), this).Y;
         var initialHeight = ActualHeight;
+        if (Math.Abs(metricCards.CardHeight - ranges.CardHeight) > 1 ||
+            Math.Abs(metricCards.CardWidth - ranges.CardWidth) > 1)
+            throw new InvalidOperationException($"評価指標と評価範囲のカードサイズが異なります。指標={metricCards.CardWidth}×{metricCards.CardHeight}、範囲={ranges.CardWidth}×{ranges.CardHeight}");
         foreach (var selection in new[]
         {
             EvaluationSelection.Full,

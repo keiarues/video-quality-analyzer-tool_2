@@ -28,7 +28,10 @@ public sealed class PartialEvaluationSettingsControl : UserControl
     internal VideoDescriptor? previewReference;
     private VideoDescriptor[] comparisonVideos = [];
     private readonly RadioButton fullRange = new() { GroupName = "部分評価方式", Margin = new Thickness(4),
-        HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
+        HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch,
+        MinHeight = UiTheme.EvaluationCardMinimumHeight };
+    internal double CardHeight => fullRange.ActualHeight;
+    internal double CardWidth => fullRange.ActualWidth;
     private readonly IntervalPreviewBar fullBar;
     private readonly TextBlock fullStatus = new() { TextWrapping = TextWrapping.Wrap, MinHeight = 34, Margin = new Thickness(0, 8, 0, 0) };
     public PartialEvaluationSettingsControl()
@@ -134,6 +137,7 @@ public sealed class PartialEvaluationSettingsControl : UserControl
         var radio = new RadioButton { Content = content, GroupName = "部分評価方式", Margin = new Thickness(4),
             BorderBrush = (Brush)FindResource("PanelBrush"),
             Foreground = (Brush)FindResource("TextBrush"),
+            MinHeight = UiTheme.EvaluationCardMinimumHeight,
             HorizontalContentAlignment = HorizontalAlignment.Stretch, VerticalContentAlignment = VerticalAlignment.Stretch };
         ApplyCardAppearance(radio, title);
         modes.Add(mode, radio); modeTitles.Add(mode, title); cards.Children.Add(radio);

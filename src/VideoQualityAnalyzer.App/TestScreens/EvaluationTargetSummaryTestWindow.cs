@@ -38,6 +38,11 @@ public sealed class EvaluationTargetSummaryTestWindow : Window
                             .Append("全6ファイルを評価計算します")))
                             throw new InvalidOperationException("先頭5本と総数の表示が不正です。");
                         settings.VerifyStableRangeLayout();
+                        settings.Width = settings.MinWidth;
+                        settings.UpdateLayout();
+                        settings.VerifyStableRangeLayout();
+                        settings.Width = 1060;
+                        settings.UpdateLayout();
                         var directory = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory,
                             "../../../../../measurement-results/evaluation-target-summary"));
                         System.IO.Directory.CreateDirectory(directory);

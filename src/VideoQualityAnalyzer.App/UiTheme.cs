@@ -5,6 +5,7 @@ namespace VideoQualityAnalyzer.App;
 
 internal static class UiTheme
 {
+    public const double EvaluationCardMinimumHeight = 158;
     public static double Small => (double)Application.Current.FindResource("UiFontSmall");
     public static Brush OnLight => (Brush)Application.Current.FindResource("UiOnLightBrush");
     public static Brush Emphasis => (Brush)Application.Current.FindResource("UiEmphasisBrush");

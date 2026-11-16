@@ -15,6 +15,8 @@ public sealed class QualityMetricSelectionControl : UserControl
     private readonly Dictionary<QualityMetric, CheckBox> metrics = [];
     private readonly TextBlock selectionText = new() { Margin = new Thickness(4, 8, 4, 4), TextWrapping = TextWrapping.Wrap };
     public QualityMetric[] SelectedMetrics => metrics.Where(pair => pair.Value.IsChecked == true).Select(pair => pair.Key).ToArray();
+    internal double CardHeight => metrics.Values.First().ActualHeight;
+    internal double CardWidth => metrics.Values.First().ActualWidth;
 
     public QualityMetricSelectionControl()
     {
@@ -22,14 +24,19 @@ public sealed class QualityMetricSelectionControl : UserControl
         var panel = new StackPanel(); Content = panel;
         panel.Children.Add(new TextBlock { Text = "評価する指標を選択してください（複数選択可）",
             Style = (Style)FindResource("UiSmallTextStyle"), Margin = new Thickness(4, 0, 4, 8) });
-        var cards = new UniformGrid { Columns = 3 }; panel.Children.Add(cards);
+        var cardRow = new Grid();
+        for (var index = 0; index < 8; index++)
+            cardRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var cards = new UniformGrid { Columns = 3 };
+        Grid.SetColumn(cards, 1); Grid.SetColumnSpan(cards, 6);
+        cardRow.Children.Add(cards); panel.Children.Add(cardRow);
         foreach (var metric in Enum.GetValues<QualityMetric>())
         {
             var (summary, detail, note) = metric switch
             {
-                QualityMetric.Vmaf => ("人が感じる映像品質を推定", "一般に0～100。大きいほど高品質。", "libvmaf対応のFFmpegが必要"),
-                QualityMetric.Ssim => ("明るさ・コントラスト・構造を比較", "1に近いほど元動画に似ています。", ""),
-                _ => ("画素の誤差を数値で比較", "単位はdB。大きいほど誤差が小さい。", "完全一致の無限大は平均から除外")
+                QualityMetric.Vmaf => ("人の見た目に近い画質を推定", "0～100／高いほど良好", "計算に時間がかかる場合がある"),
+                QualityMetric.Ssim => ("明るさ・コントラスト・構造を比較", "1に近いほど類似", "動き・ちらつきは直接評価しない"),
+                _ => ("画素ごとの誤差を比較", "dB／高いほど誤差が小さい", "見た目の印象と異なる場合がある")
             };
             var content = new StackPanel();
             content.Children.Add(new TextBlock { Text = summary, TextWrapping = TextWrapping.Wrap,
@@ -39,7 +46,7 @@ public sealed class QualityMetricSelectionControl : UserControl
                 Style = (Style)FindResource("UiSmallTextStyle"), Margin = new Thickness(0, 12, 0, 0) });
             var check = new CheckBox { Content = content, Margin = new Thickness(4),
                 Foreground = (Brush)FindResource("TextBrush"), VerticalContentAlignment = VerticalAlignment.Stretch,
-                HorizontalContentAlignment = HorizontalAlignment.Stretch, MinHeight = 170,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch, MinHeight = UiTheme.EvaluationCardMinimumHeight,
                 Template = CreateCardTemplate(metric.ToString().ToUpperInvariant()) };
             AutomationProperties.SetName(check, metric.ToString().ToUpperInvariant());
             AutomationProperties.SetHelpText(check, QualityMetricHelp.GetText(metric));
@@ -88,7 +95,7 @@ public sealed class QualityMetricSelectionControl : UserControl
         box.AppendChild(mark); heading.AppendChild(box);
         var text = new FrameworkElementFactory(typeof(TextBlock));
         text.SetValue(TextBlock.TextProperty, title);
-        text.SetValue(TextBlock.StyleProperty, FindResource("UiTitleStyle")); heading.AppendChild(text);
+        text.SetValue(TextBlock.StyleProperty, FindResource("UiSectionStyle")); heading.AppendChild(text);
         var presenter = new FrameworkElementFactory(typeof(ContentPresenter));
         presenter.SetValue(ContentPresenter.ContentSourceProperty, "Content"); body.AppendChild(presenter);
         var template = new ControlTemplate(typeof(CheckBox)) { VisualTree = border };
