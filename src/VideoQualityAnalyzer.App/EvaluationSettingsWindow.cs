@@ -32,8 +32,6 @@ public sealed class EvaluationSettingsWindow : Window
         panel.Children.Add(new TextBlock { Text = "評価指標", Style = (Style)FindResource("UiSectionStyle"), Margin = new Thickness(4, 16, 4, 8) });
         metricCards.SetSelectedMetrics(selectedMetrics ?? [QualityMetric.Ssim]);
         panel.Children.Add(metricCards);
-        panel.Children.Add(new TextBlock { Text = "部分評価の平均は評価対象のみの値です。完了済みの同じ条件の結果は再利用します。",
-            TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4, 12, 4, 4) });
         var error = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Warning, Margin = new Thickness(4) };
         panel.Children.Add(error);
         var candidates = (comparisonVideos ?? []).ToArray();
