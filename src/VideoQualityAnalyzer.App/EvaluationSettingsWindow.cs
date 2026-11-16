@@ -22,7 +22,7 @@ public sealed class EvaluationSettingsWindow : Window
         IEnumerable<VideoDescriptor>? comparisonVideos = null)
     {
         Style = (Style)Application.Current.FindResource(typeof(Window));
-        Title = "評価範囲の設定"; Width = 1060; Height = 800; MinWidth = 850; MinHeight = 540;
+        Title = "評価範囲の設定"; Width = 1060; Height = 860; MinWidth = 850; MinHeight = 540;
         Selection = selection;
         selectedVideos = (comparisonVideos ?? []).ToArray();
         var root = new DockPanel { Margin = new Thickness(16), Background = (System.Windows.Media.Brush)FindResource("BackgroundBrush") }; Content = root;
@@ -68,6 +68,8 @@ public sealed class EvaluationSettingsWindow : Window
         start.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
     }
 
+    internal void PreviewSelectionForVerification(EvaluationSelection selection) => ranges.SetSelection(selection);
+
     internal void VerifyStableRangeLayout()
     {
         UpdateLayout();
@@ -86,8 +88,18 @@ public sealed class EvaluationSettingsWindow : Window
             if (ranges.videoDuration.Visibility != (selection.IsPartial ? Visibility.Visible : Visibility.Hidden) ||
                 !ranges.videoDuration.Text.Contains("動画の長さ："))
                 throw new InvalidOperationException("時間範囲指定の動画時間表示が不正です。");
-            if (Math.Abs(metricCards.TranslatePoint(new Point(), this).Y - initialPosition) > 0.5 || ActualHeight != initialHeight)
+            if (Math.Abs(metricCards.TranslatePoint(new Point(), this).Y - initialPosition) > 0.5 || ActualHeight != initialHeight ||
+                contentScroll.ComputedVerticalScrollBarVisibility == Visibility.Visible || contentScroll.ScrollableHeight > 0.5)
                 throw new InvalidOperationException("範囲切り替えで設定欄の高さ・画面配置・スクロール状態が変わりました。");
+            if (selection.Mode is { } mode)
+            {
+                var pairs = ranges.modeInputs[mode].Children.OfType<StackPanel>().ToArray();
+                if (pairs.Length != 2 || pairs.Any(pair => pair.Children.Count != 2 ||
+                    pair.Children[0] is not TextBlock || pair.Children[1] is not TextBox) ||
+                    pairs[1].TranslatePoint(new Point(), ranges.modeInputs[mode]).X -
+                    pairs[0].TranslatePoint(new Point(pairs[0].ActualWidth, 0), ranges.modeInputs[mode]).X < 12)
+                    throw new InvalidOperationException("入力項目の組と間隔が不正です。");
+            }
         }
         ranges.SetSelection(Selection); UpdateLayout();
     }

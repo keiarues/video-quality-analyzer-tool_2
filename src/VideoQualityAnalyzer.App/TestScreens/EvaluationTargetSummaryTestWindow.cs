@@ -37,16 +37,28 @@ public sealed class EvaluationTargetSummaryTestWindow : Window
                             .Concat(videos.Take(5).Select(video => video.Name))
                             .Append("全6ファイルを評価計算します")))
                             throw new InvalidOperationException("先頭5本と総数の表示が不正です。");
-                        settings.UpdateLayout();
-                        var image = new RenderTargetBitmap((int)settings.ActualWidth, (int)settings.ActualHeight,
-                            96, 96, PixelFormats.Pbgra32);
-                        image.Render((Visual)settings.Content);
-                        var encoder = new PngBitmapEncoder();
-                        encoder.Frames.Add(BitmapFrame.Create(image));
+                        settings.VerifyStableRangeLayout();
                         var directory = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory,
                             "../../../../../measurement-results/evaluation-target-summary"));
                         System.IO.Directory.CreateDirectory(directory);
-                        using (var stream = System.IO.File.Create(System.IO.Path.Combine(directory, "settings.png"))) encoder.Save(stream);
+                        foreach (var (name, selection) in new (string Name, EvaluationSelection Selection)[]
+                        {
+                            ("full", EvaluationSelection.Full),
+                            ("time", new(PartialEvaluationMode.TimeRange, 0.2, 0.7)),
+                            ("periodic", new(PartialEvaluationMode.Periodic, PeriodSeconds: 1, LengthSeconds: 0.25)),
+                            ("uniform", new(PartialEvaluationMode.Uniform, LengthSeconds: 0.25, Count: 2))
+                        })
+                        {
+                            settings.PreviewSelectionForVerification(selection);
+                            settings.UpdateLayout();
+                            var image = new RenderTargetBitmap((int)settings.ActualWidth, (int)settings.ActualHeight,
+                                96, 96, PixelFormats.Pbgra32);
+                            image.Render((Visual)settings.Content);
+                            var encoder = new PngBitmapEncoder();
+                            encoder.Frames.Add(BitmapFrame.Create(image));
+                            using var stream = System.IO.File.Create(System.IO.Path.Combine(directory, $"settings-{name}.png"));
+                            encoder.Save(stream);
+                        }
                         settings.ApplyForVerification(EvaluationSelection.Full);
                     }
                     catch (Exception error) { verificationError = error; settings.Close(); }

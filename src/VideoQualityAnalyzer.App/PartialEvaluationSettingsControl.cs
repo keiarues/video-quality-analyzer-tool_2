@@ -149,8 +149,12 @@ public sealed class PartialEvaluationSettingsControl : UserControl
         radio.Unchecked += (_, _) => { inputs.Visibility = Visibility.Hidden; selected.Visibility = Visibility.Hidden; };
         foreach (var field in fields)
         {
-            inputs.Children.Add(new TextBlock { Text = field.Label, Margin = new Thickness(4), VerticalAlignment = VerticalAlignment.Center });
-            field.Input.Width = 85; field.Input.Margin = new Thickness(4); inputs.Children.Add(field.Input);
+            var pair = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 20, 0) };
+            pair.Children.Add(new TextBlock { Text = field.Label, Margin = new Thickness(4, 4, 6, 4),
+                VerticalAlignment = VerticalAlignment.Center });
+            field.Input.Width = 85; field.Input.Margin = new Thickness(0, 4, 0, 4);
+            pair.Children.Add(field.Input);
+            inputs.Children.Add(pair);
         }
         inputArea.Children.Add(inputs);
     }
