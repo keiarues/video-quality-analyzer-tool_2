@@ -109,7 +109,7 @@
                     <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
                             <Button Name="EvaluationClearButton" Content="評価クリア" Click="ClearEvaluation_Click" Margin="0,3,8,3" />
-                            <Button Name="EvaluationRangeButton" Content="評価範囲を設定" Click="Evaluate_Click" Width="220" />
+                            <Button Name="EvaluationRangeButton" Content="評価を開始" Click="Evaluate_Click" Width="220" />
                         </StackPanel>
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Top" Text="評価対象動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />

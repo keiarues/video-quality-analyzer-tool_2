@@ -146,7 +146,7 @@ public partial class MainWindow
     {
         if (running) WindowStatusText.Foreground = UiTheme.Emphasis;
         EvaluationClearButton.IsEnabled = !running;
-        EvaluationRangeButton.Content = running ? "評価を中止" : "評価範囲を設定";
+        EvaluationRangeButton.Content = running ? "評価を中止" : "評価を開始";
         EvaluationRangeButton.IsEnabled = true;
         AddVideoButton.IsEnabled = SetReferenceButton.IsEnabled = RemoveVideoButton.IsEnabled = !running;
     }

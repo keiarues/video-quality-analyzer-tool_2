@@ -104,7 +104,7 @@ public partial class MainWindow
             await evaluationTask;
             var key = (candidate.Descriptor.Id, QualityMetric.Ssim);
             if (!qualityResults.TryGetValue(key, out var completed) || completed.Frames.Count != 30 ||
-                !Equals(EvaluationRangeButton.Content, "評価範囲を設定") || !EvaluationRangeButton.IsEnabled)
+                !Equals(EvaluationRangeButton.Content, "評価を開始") || !EvaluationRangeButton.IsEnabled)
                 throw new InvalidOperationException("主画面で評価結果が確定されません。");
             qualityGraphPanel!.SelectMetric(QualityMetric.Ssim);
             if (qualityGraphPanel.FilePointCount != 1) throw new InvalidOperationException("評価結果が主画面グラフに反映されません。");
@@ -117,7 +117,7 @@ public partial class MainWindow
             await evaluationTask;
             if (qualityResults.ContainsKey((candidate.Descriptor.Id, QualityMetric.Psnr)) ||
                 !ReferenceEquals(completed, qualityResults[key]) || !EvaluationRangeButton.IsEnabled ||
-                !Equals(EvaluationRangeButton.Content, "評価範囲を設定"))
+                !Equals(EvaluationRangeButton.Content, "評価を開始"))
                 throw new InvalidOperationException("評価中止後の結果またはボタン状態が不正です。");
             UpdateLayout();
             var expectedText = ((System.Windows.Media.SolidColorBrush)FindResource("TextBrush")).Color;

@@ -8,7 +8,7 @@ namespace VideoQualityAnalyzer.App;
 public sealed class EvaluationSettingsWindow : Window
 {
     private readonly PartialEvaluationSettingsControl ranges = new();
-    private readonly Button start = new() { Content = "評価を開始", IsDefault = true };
+    private readonly Button start = new() { Content = "実行", IsDefault = true };
     private readonly QualityMetricSelectionControl metricCards = new();
     private readonly ScrollViewer contentScroll = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     public EvaluationSelection Selection { get; private set; }
