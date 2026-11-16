@@ -18,13 +18,14 @@ public partial class MainWindow
         if (evaluationCancellation is not null) return;
         var reference = videos.FirstOrDefault(entry => entry.IsReference)?.Descriptor;
         if (reference is null) { SetWindowStatus("元動画を登録してください。"); return; }
+        var selectedIds = VideoList.SelectedItems.Cast<VideoEntry>().Select(entry => entry.Descriptor.Id).ToArray();
+        if (selectedIds.Length == 0) selectedIds = videos.Where(entry => !entry.IsReference).Select(entry => entry.Descriptor.Id).ToArray();
         var dialog = new EvaluationSettingsWindow(reference, evaluationResults.Selection,
-            evaluationMetrics,
-            SelectedOrAllVideoEntries().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor)) { Owner = this };
+            evaluationMetrics, videos, selectedIds) { Owner = this };
         if (dialog.ShowDialog() != true) return;
         ApplyEvaluationSelection(dialog.Selection);
         evaluationMetrics = dialog.SelectedMetrics;
-        evaluationTask = EvaluateMainSelectionAsync();
+        evaluationTask = EvaluateMainSelectionAsync(dialog.SelectedVideos);
     }
 
     private void ApplyEvaluationSelection(EvaluationSelection selection)
@@ -60,11 +61,11 @@ public partial class MainWindow
         EvaluationRange_Click(sender, e);
     }
 
-    private async Task EvaluateMainSelectionAsync()
+    private async Task EvaluateMainSelectionAsync(VideoDescriptor[]? selectedCandidates = null)
     {
         if (pendingVideoLoads > 0) { SetWindowStatus("動画情報の取得が終わるまでお待ちください。", evaluation: true); return; }
         var reference = videos.FirstOrDefault(entry => entry.Descriptor.Id == referenceId)?.Descriptor;
-        var candidates = SelectedOrAllVideoEntries().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray();
+        var candidates = selectedCandidates ?? SelectedOrAllVideoEntries().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray();
         var selected = evaluationMetrics.ToArray();
         if (reference is null || candidates.Length == 0 || selected.Length == 0)
         { SetWindowStatus("元動画、比較動画と評価指標を選択してください。", evaluation: true); return; }

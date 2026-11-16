@@ -119,6 +119,16 @@ public partial class MainWindow
                 !ReferenceEquals(completed, qualityResults[key]) || !EvaluationRangeButton.IsEnabled ||
                 !Equals(EvaluationRangeButton.Content, "評価を開始"))
                 throw new InvalidOperationException("評価中止後の結果またはボタン状態が不正です。");
+            var other = videos.FirstOrDefault(entry => !entry.IsReference && entry != candidate);
+            if (other is not null)
+            {
+                StartEvaluationForVerification(EvaluationSelection.Full, [QualityMetric.Psnr], [other.Descriptor.Id]);
+                await evaluationTask;
+                if (!qualityResults.ContainsKey((other.Descriptor.Id, QualityMetric.Psnr)) ||
+                    qualityResults.ContainsKey((candidate.Descriptor.Id, QualityMetric.Psnr)) ||
+                    VideoList.SelectedItem != candidate)
+                    throw new InvalidOperationException("設定画面の動画選択が計算対象に反映されません。");
+            }
             UpdateLayout();
             var expectedText = ((System.Windows.Media.SolidColorBrush)FindResource("TextBrush")).Color;
             if (MuteCheck.Foreground is not System.Windows.Media.SolidColorBrush brush || brush.Color != expectedText ||

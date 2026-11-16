@@ -15,6 +15,13 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        if (e.Args.Contains("--test-evaluation-target-list"))
+        {
+            base.OnStartup(e);
+            MainWindow = new EvaluationTargetListTestWindow(e.Args.Contains("--auto"));
+            MainWindow.Show();
+            return;
+        }
         if (e.Args.Contains("--test-evaluated-playback"))
         {
             base.OnStartup(e);
