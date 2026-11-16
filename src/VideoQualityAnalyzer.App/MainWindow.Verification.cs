@@ -122,12 +122,14 @@ public partial class MainWindow
             var other = videos.FirstOrDefault(entry => !entry.IsReference && entry != candidate);
             if (other is not null)
             {
-                StartEvaluationForVerification(EvaluationSelection.Full, [QualityMetric.Psnr], [other.Descriptor.Id]);
+                VideoList.SelectedItem = other;
+                await comparisonChangeTask;
+                StartEvaluationForVerification(EvaluationSelection.Full, [QualityMetric.Psnr]);
                 await evaluationTask;
                 if (!qualityResults.ContainsKey((other.Descriptor.Id, QualityMetric.Psnr)) ||
                     qualityResults.ContainsKey((candidate.Descriptor.Id, QualityMetric.Psnr)) ||
-                    VideoList.SelectedItem != candidate)
-                    throw new InvalidOperationException("設定画面の動画選択が計算対象に反映されません。");
+                    VideoList.SelectedItem != other)
+                    throw new InvalidOperationException("主画面で選んだ動画が設定画面の評価対象に反映されません。");
             }
             UpdateLayout();
             var expectedText = ((System.Windows.Media.SolidColorBrush)FindResource("TextBrush")).Color;

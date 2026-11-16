@@ -15,10 +15,10 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
-        if (e.Args.Contains("--test-evaluation-target-list"))
+        if (e.Args.Contains("--test-evaluation-target-summary"))
         {
             base.OnStartup(e);
-            MainWindow = new EvaluationTargetListTestWindow(e.Args.Contains("--auto"));
+            MainWindow = new EvaluationTargetSummaryTestWindow(e.Args.Contains("--auto"));
             MainWindow.Show();
             return;
         }

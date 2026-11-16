@@ -9,12 +9,11 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
-    private void StartEvaluationForVerification(EvaluationSelection selection, QualityMetric[] metrics, string[]? videoIds = null)
+    private void StartEvaluationForVerification(EvaluationSelection selection, QualityMetric[] metrics)
     {
         _ = Dispatcher.BeginInvoke(new Action(() =>
         {
             var dialog = Application.Current.Windows.OfType<EvaluationSettingsWindow>().Single();
-            if (videoIds is not null) dialog.SelectVideosForVerification(videoIds);
             dialog.ApplyForVerification(selection, metrics);
         }));
         EvaluationRangeButton.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

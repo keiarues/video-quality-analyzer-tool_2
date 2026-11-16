@@ -9,21 +9,22 @@ public sealed class EvaluationSettingsWindow : Window
 {
     private readonly PartialEvaluationSettingsControl ranges = new();
     private readonly Button start = new() { Content = "実行", IsDefault = true };
-    private readonly EvaluationTargetListControl targets = new();
     private readonly QualityMetricSelectionControl metricCards = new();
     private readonly ScrollViewer contentScroll = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-    private readonly TextBlock commonRangeNotice = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(4),
-        Visibility = Visibility.Collapsed };
+    private readonly TextBlock targetSummary = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
+    private readonly VideoDescriptor[] selectedVideos;
     public EvaluationSelection Selection { get; private set; }
     public QualityMetric[] SelectedMetrics => metricCards.SelectedMetrics;
-    public VideoDescriptor[] SelectedVideos => targets.SelectedVideos;
+    public VideoDescriptor[] SelectedVideos => selectedVideos;
+    internal string TargetSummaryText => targetSummary.Text;
 
     public EvaluationSettingsWindow(VideoDescriptor reference, EvaluationSelection selection, IEnumerable<QualityMetric>? selectedMetrics = null,
-        IEnumerable<VideoEntry>? comparisonVideos = null, IEnumerable<string>? selectedVideoIds = null)
+        IEnumerable<VideoDescriptor>? comparisonVideos = null)
     {
         Style = (Style)Application.Current.FindResource(typeof(Window));
         Title = "評価範囲の設定"; Width = 1060; Height = 800; MinWidth = 850; MinHeight = 540;
         Selection = selection;
+        selectedVideos = (comparisonVideos ?? []).ToArray();
         var root = new DockPanel { Margin = new Thickness(16), Background = (System.Windows.Media.Brush)FindResource("BackgroundBrush") }; Content = root;
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         DockPanel.SetDock(actions, Dock.Bottom); root.Children.Add(actions);
@@ -32,29 +33,15 @@ public sealed class EvaluationSettingsWindow : Window
         var panel = new StackPanel();
         contentScroll.Content = panel; root.Children.Add(contentScroll);
         panel.Children.Add(new TextBlock { Text = $"元動画：{reference.Name}", TextWrapping = TextWrapping.Wrap });
-        panel.Children.Add(new TextBlock { Text = "評価対象動画（複数選択可）", Style = (Style)FindResource("UiSectionStyle"), Margin = new Thickness(4, 10, 4, 0) });
-        panel.Children.Add(targets);
-        targets.SetEntries(comparisonVideos ?? [], selectedVideoIds);
+        targetSummary.Text = FormatTargetSummary(selectedVideos);
+        panel.Children.Add(targetSummary);
         panel.Children.Add(ranges);
         panel.Children.Add(new TextBlock { Text = "評価指標", Style = (Style)FindResource("UiSectionStyle"), Margin = new Thickness(4, 16, 4, 8) });
         metricCards.SetSelectedMetrics(selectedMetrics ?? [QualityMetric.Ssim]);
         panel.Children.Add(metricCards);
         var error = new TextBlock { TextWrapping = TextWrapping.Wrap, Foreground = UiTheme.Warning, Margin = new Thickness(4) };
         panel.Children.Add(error);
-        ranges.SetReference(reference); ranges.SetSelection(selection);
-        commonRangeNotice.Foreground = UiTheme.Warning;
-        panel.Children.Add(commonRangeNotice);
-        void UpdateCandidates()
-        {
-            var candidates = SelectedVideos;
-            ranges.SetComparisonVideos(candidates);
-            var common = new EvaluationSelection(PartialEvaluationMode.Uniform).WithComparisonTimeline(reference, candidates);
-            commonRangeNotice.Text = common.FrameLimit is { } limit
-                ? $"部分評価は比較対象との共通範囲（先頭から{limit}フレーム）に配置します。" : "";
-            commonRangeNotice.Visibility = common.FrameLimit is null ? Visibility.Collapsed : Visibility.Visible;
-        }
-        targets.SelectionChanged += (_, _) => UpdateCandidates();
-        UpdateCandidates();
+        ranges.SetReference(reference); ranges.SetComparisonVideos(selectedVideos); ranges.SetSelection(selection);
         start.Click += (_, _) =>
         {
             try
@@ -68,6 +55,11 @@ public sealed class EvaluationSettingsWindow : Window
         };
     }
 
+    private static string FormatTargetSummary(VideoDescriptor[] videos) => videos.Length == 0
+        ? "評価対象動画：未選択"
+        : "評価対象動画：" + string.Join("、", videos.Take(5).Select(video => video.Name)) +
+            (videos.Length > 5 ? $"\n全{videos.Length}ファイルを評価計算します" : "");
+
     internal void ApplyForVerification(EvaluationSelection selection, QualityMetric[]? selectedMetrics = null)
     {
         ranges.SetSelection(selection);
@@ -75,8 +67,6 @@ public sealed class EvaluationSettingsWindow : Window
             metricCards.SetSelectedMetrics(selectedMetrics);
         start.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
     }
-
-    internal void SelectVideosForVerification(IEnumerable<string> videoIds) => targets.SelectIds(videoIds);
 
     internal void VerifyStableRangeLayout()
     {

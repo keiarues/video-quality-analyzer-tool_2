@@ -18,10 +18,9 @@ public partial class MainWindow
         if (evaluationCancellation is not null) return;
         var reference = videos.FirstOrDefault(entry => entry.IsReference)?.Descriptor;
         if (reference is null) { SetWindowStatus("元動画を登録してください。"); return; }
-        var selectedIds = VideoList.SelectedItems.Cast<VideoEntry>().Select(entry => entry.Descriptor.Id).ToArray();
-        if (selectedIds.Length == 0) selectedIds = videos.Where(entry => !entry.IsReference).Select(entry => entry.Descriptor.Id).ToArray();
+        var candidates = SelectedOrAllVideoEntries().Where(entry => !entry.IsReference).Select(entry => entry.Descriptor).ToArray();
         var dialog = new EvaluationSettingsWindow(reference, evaluationResults.Selection,
-            evaluationMetrics, videos, selectedIds) { Owner = this };
+            evaluationMetrics, candidates) { Owner = this };
         if (dialog.ShowDialog() != true) return;
         ApplyEvaluationSelection(dialog.Selection);
         evaluationMetrics = dialog.SelectedMetrics;
