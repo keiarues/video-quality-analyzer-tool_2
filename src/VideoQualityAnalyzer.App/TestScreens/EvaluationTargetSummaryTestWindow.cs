@@ -21,8 +21,8 @@ public sealed class EvaluationTargetSummaryTestWindow : Window
                 var videos = Enumerable.Range(1, 6).Select(index => Video($"video-{index}", $"比較動画{index}.mkv")).ToArray();
                 var shortList = new EvaluationSettingsWindow(reference, EvaluationSelection.Full,
                     comparisonVideos: videos.Take(3));
-                if (!shortList.TargetSummaryText.Contains("比較動画3.mkv") ||
-                    shortList.TargetSummaryText.Contains("全3ファイル"))
+                if (!shortList.TargetSummaryText.Split('\n').SequenceEqual(
+                    new[] { "評価対象動画" }.Concat(videos.Take(3).Select(video => video.Name))))
                     throw new InvalidOperationException("5本以下の表示が不正です。");
                 shortList.Close();
                 var settings = new EvaluationSettingsWindow(reference, EvaluationSelection.Full,
@@ -33,8 +33,9 @@ public sealed class EvaluationTargetSummaryTestWindow : Window
                     try
                     {
                         var summary = settings.TargetSummaryText;
-                        if (!videos.Take(5).All(video => summary.Contains(video.Name)) ||
-                            summary.Contains(videos[5].Name) || !summary.Contains("全6ファイルを評価計算します"))
+                        if (!summary.Split('\n').SequenceEqual(new[] { "評価対象動画" }
+                            .Concat(videos.Take(5).Select(video => video.Name))
+                            .Append("全6ファイルを評価計算します")))
                             throw new InvalidOperationException("先頭5本と総数の表示が不正です。");
                         settings.UpdateLayout();
                         var image = new RenderTargetBitmap((int)settings.ActualWidth, (int)settings.ActualHeight,

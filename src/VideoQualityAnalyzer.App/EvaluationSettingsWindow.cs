@@ -56,8 +56,8 @@ public sealed class EvaluationSettingsWindow : Window
     }
 
     private static string FormatTargetSummary(VideoDescriptor[] videos) => videos.Length == 0
-        ? "評価対象動画：未選択"
-        : "評価対象動画：" + string.Join("、", videos.Take(5).Select(video => video.Name)) +
+        ? "評価対象動画\n未選択"
+        : "評価対象動画\n" + string.Join("\n", videos.Take(5).Select(video => video.Name)) +
             (videos.Length > 5 ? $"\n全{videos.Length}ファイルを評価計算します" : "");
 
     internal void ApplyForVerification(EvaluationSelection selection, QualityMetric[]? selectedMetrics = null)
