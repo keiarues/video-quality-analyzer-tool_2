@@ -75,6 +75,11 @@ public static class QualityCsvExporter
         IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results) =>
         videos.Any(item => HasResult(item.Video, results));
 
+    public static Task SaveAsync(string path, bool frames, VideoDescriptor reference,
+        IEnumerable<QualityCsvItem> videos,
+        IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results) =>
+        SaveAsync(path, frames ? Frames(reference, videos, results) : Summary(reference, videos, results));
+
     public static async Task SaveAsync(string path, string content)
     {
         var fullPath = Path.GetFullPath(path);

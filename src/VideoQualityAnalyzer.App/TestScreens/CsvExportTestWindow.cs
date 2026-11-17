@@ -55,9 +55,7 @@ public sealed class CsvExportTestWindow : Window
     {
         try
         {
-            var text = frames ? QualityCsvExporter.Frames(reference, items, results)
-                : QualityCsvExporter.Summary(reference, items, results);
-            await QualityCsvExporter.SaveAsync(path, text);
+            await QualityCsvExporter.SaveAsync(path, frames, reference, items, results);
             status.Text = "CSVを保存しました。";
         }
         catch (Exception exception) { status.Text = "CSVを保存できません: " + exception.Message; }

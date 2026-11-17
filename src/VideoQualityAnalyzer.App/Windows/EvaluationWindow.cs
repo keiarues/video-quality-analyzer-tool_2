@@ -74,9 +74,7 @@ public sealed class EvaluationWindow : Window
                 if (dialog.ShowDialog(this) != true) return;
                 try
                 {
-                    var text = frameCsv ? QualityCsvExporter.Frames(reference, items, results)
-                        : QualityCsvExporter.Summary(reference, items, results);
-                    await QualityCsvExporter.SaveAsync(dialog.FileName, text);
+                    await QualityCsvExporter.SaveAsync(dialog.FileName, frameCsv, reference, items, results);
                     status.Text = "CSVを保存しました。";
                 }
                 catch (Exception exception) { status.Text = $"CSVを保存できません: {exception.Message}"; }

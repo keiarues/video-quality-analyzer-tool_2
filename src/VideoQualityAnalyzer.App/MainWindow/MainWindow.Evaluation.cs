@@ -160,9 +160,7 @@ public partial class MainWindow
         var results = new Dictionary<(string VideoId, QualityMetric Metric), QualityResult>(qualityResults);
         if (!QualityCsvExporter.HasResults(items, results))
             throw new InvalidOperationException("完了した評価結果がありません。");
-        var text = frames ? QualityCsvExporter.Frames(reference, items, results)
-            : QualityCsvExporter.Summary(reference, items, results);
-        return QualityCsvExporter.SaveAsync(path, text);
+        return QualityCsvExporter.SaveAsync(path, frames, reference, items, results);
     }
 
     private async void ExportFrameCsv_Click(object sender, RoutedEventArgs e) => await ExportCsvFromMenuAsync(true);
