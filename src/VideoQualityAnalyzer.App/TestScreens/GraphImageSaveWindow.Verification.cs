@@ -28,12 +28,12 @@ internal sealed partial class GraphImageSaveWindow
             saveButton.BorderBrush is not SolidColorBrush saveBorder ||
             saveBorder.Color != ((SolidColorBrush)UiTheme.ControlBorder).Color)
             throw new InvalidOperationException("PNG保存ボタンの高さまたは枠線が主画面と一致しません。");
-        if (size.Items.Count != 9 || size.SelectedIndex != 4 || presets[1] != (1024, 768) ||
-            presets[2] != (1280, 960) || presets[3] != (1600, 1200) ||
+        if (size.Items.Count != 10 || size.SelectedIndex != 3 || presets[1] != (1024, 468) ||
+            presets[2] != (1024, 768) || presets[3] != (1280, 960) || presets[4] != (1600, 1200) ||
             metricSelection.Items.Count != 3 || metricSelection.SelectedIndex != 0 ||
             font.Items.Count != 6 || font.Items.Contains("3倍") ||
             fitToWindow || zoom.Value != 100 || zoomLabel.Text != "100%" ||
-            RequirePreview() is not { PixelWidth: 1280, PixelHeight: 960 })
+            RequirePreview() is not { PixelWidth: 1024, PixelHeight: 468 })
             throw new InvalidOperationException("画像サイズまたは表示倍率の初期値が不正です。");
         static Color FirstPixel(BitmapSource image)
         {
@@ -60,6 +60,10 @@ internal sealed partial class GraphImageSaveWindow
         imageTheme.SelectedIndex = (int)GraphImageTheme.Light;
         if (FirstPixel(RequirePreview()) != Colors.White)
             throw new InvalidOperationException("ライト画像へ即時に戻せません。");
+        var fullSource = CreateSampleSource();
+        SetGraph(fullSource.SelectedVideos, fullSource.AllVideos, fullSource.Results,
+            fullSource.Reference.Name, fullSource.Groups);
+        size.SelectedIndex = 5; RefreshPreview();
         foreach (var targetIndex in new[] { 0, 1 })
         foreach (var metric in Enum.GetValues<QualityMetric>())
         {
@@ -90,11 +94,12 @@ internal sealed partial class GraphImageSaveWindow
         {
             size.SelectedIndex = mode; RefreshPreview();
             var expected = ImageSize();
-            if (preview.Source is null && mode is not (3 or 4 or 5) && status.Text.Contains("不足")) continue;
+            if (preview.Source is null && mode is not (4 or 5 or 6) && status.Text.Contains("不足")) continue;
             if (preview.Source is not BitmapSource image || image.PixelWidth != expected.Width || image.PixelHeight != expected.Height)
                 throw new InvalidOperationException("出力寸法が選択に一致しません。");
-            if (mode >= 2 && (expected != presets[mode - 2] || expected.Width * 3 != expected.Height * 4))
-                throw new InvalidOperationException("4:3のプリセットが不正です。");
+            if (mode >= 2 && (expected != presets[mode - 2] ||
+                mode != 3 && expected.Width * 3 != expected.Height * 4))
+                throw new InvalidOperationException("画像サイズのプリセットが不正です。");
             if (mode == 0 && !MatchesWindowRatio(expected))
                 throw new InvalidOperationException("自動サイズがウィンドウの縦横比に合いません。");
         }
@@ -109,7 +114,7 @@ internal sealed partial class GraphImageSaveWindow
             Math.Abs(before.PixelWidth / (double)before.PixelHeight - after.PixelWidth / (double)after.PixelHeight) < 0.01)
             throw new InvalidOperationException("画像サイズがウィンドウの縦横比に追従しません。");
         // 30件の凡例と最大倍率が収まる4K出力で全倍率を照合する。
-        size.SelectedIndex = 8; RefreshPreview();
+        size.SelectedIndex = 9; RefreshPreview();
         for (var index = 0; index < font.Items.Count; index++)
         {
             font.SelectedIndex = index; RefreshPreview();
@@ -131,7 +136,7 @@ internal sealed partial class GraphImageSaveWindow
             var pixels = new byte[bitmap.PixelWidth * bitmap.PixelHeight * 4];
             bitmap.CopyPixels(pixels, bitmap.PixelWidth * 4, 0); return pixels;
         }
-        size.SelectedIndex = 8;
+        size.SelectedIndex = 9;
         var fixedImages = new Dictionary<(int Target, int Font), byte[]>();
         foreach (var targetIndex in new[] { 0, 1 })
         for (var fontIndex = 0; fontIndex < font.Items.Count; fontIndex++)
@@ -162,9 +167,9 @@ internal sealed partial class GraphImageSaveWindow
         font.SelectedIndex = 2;
         foreach (var targetIndex in new[] { 0, 1 })
         {
-            target.SelectedIndex = targetIndex; size.SelectedIndex = 4; RefreshPreview();
+            target.SelectedIndex = targetIndex; size.SelectedIndex = 5; RefreshPreview();
             var title = TitlePixels(RequirePreview());
-            size.SelectedIndex = 5; RefreshPreview();
+            size.SelectedIndex = 6; RefreshPreview();
             if (!title.SequenceEqual(TitlePixels(RequirePreview())))
                 throw new InvalidOperationException("解像度変更で文字のピクセルサイズが変化しました。");
             size.SelectedIndex = 1; dimension.Text = "1280"; heightDimension.Text = "960"; RefreshPreview();
@@ -174,7 +179,7 @@ internal sealed partial class GraphImageSaveWindow
                 throw new InvalidOperationException("最大化した1280×960指定で文字サイズが変化しました。");
             WindowState = WindowState.Normal; UpdateLayout(); await Task.Delay(350);
         }
-        target.SelectedIndex = 1; size.SelectedIndex = 4; font.SelectedIndex = 3; RefreshPreview();
+        target.SelectedIndex = 1; size.SelectedIndex = 5; font.SelectedIndex = 3; RefreshPreview();
         var original = preview.Source;
         fitToWindow = false; zoom.Value = 200; ApplyZoom(); UpdateLayout();
         var dpi = VisualTreeHelper.GetDpi(this); var bitmap = RequirePreview();
@@ -203,18 +208,18 @@ internal sealed partial class GraphImageSaveWindow
         size.SelectedIndex = 1; dimension.Text = "200"; heightDimension.Text = "100"; RefreshPreview();
         if (preview.Source is not null || !status.Text.Contains("不足"))
             throw new InvalidOperationException("描画領域が不足しても文字を縮小せずエラーを表示する必要があります。");
-        size.SelectedIndex = 4; RefreshPreview();
+        size.SelectedIndex = 5; RefreshPreview();
         graph.SelectFile("sample-1"); RefreshPreview();
         if (!graph.DisplayedVideoIds.SequenceEqual(new[] { "sample-1" })) throw new InvalidOperationException("動画選択が反映されません。");
         graph.UpdateData([], [], null); RefreshPreview();
         if (preview.Source is null) throw new InvalidOperationException("空のデータを出力できません。");
-        var production = new GraphImageSaveWindow(CreateSampleSource());
+        var production = new GraphImageSaveWindow(CreateSampleSource(3));
         try
         {
             production.Show(); production.UpdateLayout(); await Task.Delay(150);
             production.RefreshPreview(); production.UpdateLayout();
             if (production.Content is not DockPanel { Children.Count: 3 } ||
-                production.preview.Source is not BitmapSource { PixelWidth: 1280, PixelHeight: 960 } ||
+                production.preview.Source is not BitmapSource { PixelWidth: 1024, PixelHeight: 468 } ||
                 production.referenceFileName != "サンプル基準動画.mkv")
                 throw new InvalidOperationException("本体用の画像保存画面を開けません。");
             production.imageTheme.SelectedIndex = (int)GraphImageTheme.Dark;
@@ -227,7 +232,7 @@ internal sealed partial class GraphImageSaveWindow
             using (var savedStream = File.OpenRead(savedPng))
             {
                 var savedImage = new PngBitmapDecoder(savedStream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-                if (savedImage.Frames[0].PixelWidth != 1280 || savedImage.Frames[0].PixelHeight != 960)
+                if (savedImage.Frames[0].PixelWidth != 1024 || savedImage.Frames[0].PixelHeight != 468)
                     throw new InvalidOperationException("保存したPNGの寸法がプレビューと一致しません。");
                 if (FirstPixel(savedImage.Frames[0]) !=
                     ((SolidColorBrush)GraphPalette.ForExport(GraphImageTheme.Dark).Surface).Color)
@@ -246,27 +251,27 @@ internal sealed partial class GraphImageSaveWindow
             productionEncoder.Save(stream);
         }
         finally { production.Close(); }
-        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：PNGの初期ファイル名、ライト・ダーク画像の即時切り替えと保存、30件、3指標×2対象、評価方式の双方向切り替え、9サイズ選択（1024×768・1600×1200を含む）、初期値1280×960・表示100%、6フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、1280×960指定、200%・100%・全体表示。サンプルは架空データ。");
+        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：PNGの初期ファイル名、ライト・ダーク画像の即時切り替えと保存、30件、3指標×2対象、評価方式の双方向切り替え、10サイズ選択（1024×468・1024×768・1600×1200を含む）、初期値1024×468・表示100%、6フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、1280×960指定、200%・100%・全体表示。サンプルは架空データ。");
         resizeTimer.Stop(); Console.WriteLine("グラフ画像保存テスト：合格");
     }
 
     private void SetSample()
     {
-        var source = CreateSampleSource();
+        var source = CreateSampleSource(3);
         SetGraph(source.SelectedVideos, source.AllVideos, source.Results, source.Reference.Name, source.Groups);
-        status.Text = "30本の架空サンプルを表示中（実測品質ではありません）。実データはSSIM検証用JSONを読み込めます。凡例・選択・指標を変えて保存を確認してください。";
+        status.Text = "3本の架空サンプルを表示中（実測品質ではありません）。実データはSSIM検証用JSONを読み込めます。凡例・選択・指標を変えて保存を確認してください。";
     }
 
-    private static GraphImageSaveSource CreateSampleSource()
+    private static GraphImageSaveSource CreateSampleSource(int count = 30)
     {
-        var videos = Enumerable.Range(0, 30).Select(index => new VideoDescriptor($"sample-{index}",
+        var videos = Enumerable.Range(0, count).Select(index => new VideoDescriptor($"sample-{index}",
             $"サンプル動画{index + 1:00}.mkv", 1920, 1080, "av1", 30, 30, TimeSpan.FromSeconds(30), false, 900, 1,
             1_000_000 + index * 100_000)).ToArray();
         var results = new Dictionary<(string, QualityMetric), QualityResult>();
         foreach (var metric in Enum.GetValues<QualityMetric>())
         for (var index = 0; index < videos.Length; index++)
         {
-            var qualityLevel = index * 3d / (videos.Length - 1);
+            var qualityLevel = index * 3d / Math.Max(1, videos.Length - 1);
             var frames = Enumerable.Range(0, 900).Select(number => new QualityFrame(number,
                 metric switch
                 {

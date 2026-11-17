@@ -25,8 +25,8 @@ internal sealed partial class GraphImageSaveWindow : Window
     private readonly ComboBox metricSelection = new() { Width = 85 };
     private readonly ComboBox imageTheme = new() { Width = 100 };
     private readonly ComboBox size = new() { Width = 160 };
-    private readonly TextBox dimension = new() { Width = 70, Text = "1280" };
-    private readonly TextBox heightDimension = new() { Width = 70, Text = "960" };
+    private readonly TextBox dimension = new() { Width = 70, Text = "1024" };
+    private readonly TextBox heightDimension = new() { Width = 70, Text = "468" };
     private readonly ComboBox font = new() { Width = 80 };
     private readonly Image preview = new() { Stretch = Stretch.Fill };
     private readonly Grid viewport = new() { Background = Brushes.LightSlateGray };
@@ -37,7 +37,7 @@ internal sealed partial class GraphImageSaveWindow : Window
         SmallChange = 10, LargeChange = 10, IsSnapToTickEnabled = true, Width = 230, Value = 100 };
     private readonly TextBlock zoomLabel = new() { Width = 65, VerticalAlignment = VerticalAlignment.Center };
     private readonly DispatcherTimer resizeTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
-    private readonly (int Width, int Height)[] presets = [(800, 600), (1024, 768), (1280, 960),
+    private readonly (int Width, int Height)[] presets = [(800, 600), (1024, 468), (1024, 768), (1280, 960),
         (1600, 1200), (1920, 1440), (2560, 1920), (3840, 2880)];
     private QualityGraphPanel graph = null!;
     private string referenceFileName = "サンプル基準動画.mkv";
@@ -83,7 +83,7 @@ internal sealed partial class GraphImageSaveWindow : Window
         saveOptions.Children.Add(Group(Label("画像のテーマ："), imageTheme));
         foreach (var text in new[] { "現在の表示サイズ", "幅と高さを指定" }) size.Items.Add(text);
         foreach (var preset in presets) size.Items.Add($"{preset.Width} × {preset.Height}");
-        size.SelectedIndex = 4;
+        size.SelectedIndex = 3;
         saveOptions.Children.Add(Group(Label("画像サイズ："), size));
         saveOptions.Children.Add(Group(dimension, Label("×"), heightDimension, Label("px")));
         foreach (var text in new[] { "0.5倍", "0.8倍", "1倍", "1.2倍", "1.5倍", "2倍" }) font.Items.Add(text);
