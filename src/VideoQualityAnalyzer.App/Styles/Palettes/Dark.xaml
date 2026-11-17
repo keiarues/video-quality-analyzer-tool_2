@@ -7,11 +7,15 @@
     <SolidColorBrush x:Key="UiWarningBrush" Color="#F6D37A" />
     <SolidColorBrush x:Key="UiMutedBrush" Color="#BFCBDB" />
     <SolidColorBrush x:Key="UiOnLightBrush" Color="#17202D" />
+    <SolidColorBrush x:Key="UiOnAccentBrush" Color="#17202D" />
     <SolidColorBrush x:Key="UiControlBackgroundBrush" Color="#273345" />
     <SolidColorBrush x:Key="UiControlBorderBrush" Color="#4B5D75" />
     <SolidColorBrush x:Key="UiSelectedBrush" Color="#34516F" />
     <SolidColorBrush x:Key="UiSeparatorBrush" Color="#405066" />
     <SolidColorBrush x:Key="UiVideoOverlayBrush" Color="#CC17202D" />
+    <SolidColorBrush x:Key="UiVideoTextBrush" Color="#F1F5FA" />
+    <SolidColorBrush x:Key="UiVideoMutedBrush" Color="#BFCBDB" />
+    <SolidColorBrush x:Key="UiPreviewChromeBrush" Color="#111920" />
     <SolidColorBrush x:Key="GraphSurfaceBrush" Color="#202837" />
     <SolidColorBrush x:Key="GraphPlotBrush" Color="#17202D" />
     <SolidColorBrush x:Key="GraphTextBrush" Color="#F1F5FA" />

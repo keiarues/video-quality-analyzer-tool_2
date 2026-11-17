@@ -6,6 +6,39 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class SettingsWindow
 {
+    private void VerifyStyle()
+    {
+        try
+        {
+            var modes = DisplayStyleBox.Items.OfType<System.Windows.Controls.ComboBoxItem>()
+                .Select(item => item.Tag as string).ToArray();
+            if (!modes.SequenceEqual(["None", "System", "Light", "Dark"]) ||
+                !Equals(DisplayStyleBox.SelectedValue, DisplayStyleSettings.Load()))
+                throw new InvalidOperationException("表示スタイルの選択肢または保存済み選択が不正です。");
+            foreach (var mode in modes)
+            {
+                DisplayStyleBox.SelectedValue = mode;
+                if (!Equals(DisplayStyleBox.SelectedValue, mode))
+                    throw new InvalidOperationException("表示スタイルを選択できません。");
+            }
+            DisplayStyleBox.SelectedValue = DisplayStyleSettings.Load();
+            UpdateLayout();
+            var image = new System.Windows.Media.Imaging.RenderTargetBitmap((int)ActualWidth, (int)ActualHeight,
+                96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            image.Render((System.Windows.Media.Visual)Content);
+            var directory = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
+                "../../../../../measurement-results/display-style"));
+            Directory.CreateDirectory(directory);
+            var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+            encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(image));
+            using (var stream = File.Create(Path.Combine(directory,
+                "settings-" + DisplayStyleSettings.ActiveMode.ToLowerInvariant() + ".png"))) encoder.Save(stream);
+            Console.WriteLine("設定画面: 4つの表示スタイルの選択と保存済み選択の復元が合格");
+            Application.Current.Shutdown(0);
+        }
+        catch (Exception error) { Console.Error.WriteLine(error); Application.Current.Shutdown(1); }
+    }
+
     private async Task VerifyDetectionAsync()
     {
         try

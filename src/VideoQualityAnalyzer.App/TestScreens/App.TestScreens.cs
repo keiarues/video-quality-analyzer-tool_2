@@ -16,6 +16,8 @@ public partial class App
             createWindow = () => new FluentThemeTestWindow(automatic);
         else if (e.Args.Contains("--test-dark-palette"))
             createWindow = () => new DarkPaletteTestWindow(automatic);
+        else if (e.Args.Contains("--test-display-style"))
+            createWindow = () => new DisplayStyleTestWindow(automatic);
         else if (e.Args.Contains("--test-evaluated-playback"))
             createWindow = () => new EvaluatedPlaybackTestWindow(Files());
         else if (e.Args.Contains("--test-production-partial"))
@@ -46,6 +48,8 @@ public partial class App
             createWindow = () => new SettingsWindow(verifyDownload: true);
         else if (e.Args.Contains("--verify-settings-detection"))
             createWindow = () => new SettingsWindow(verifyDetection: true);
+        else if (e.Args.Contains("--verify-display-style-settings"))
+            createWindow = () => new SettingsWindow(verifyStyle: true);
         else if (e.Args.Contains("--test-ffmpeg-download"))
             createWindow = () => new FfmpegDownloadTestWindow(automatic);
 

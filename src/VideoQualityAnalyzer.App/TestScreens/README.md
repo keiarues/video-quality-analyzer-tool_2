@@ -12,6 +12,8 @@
 | GraphImageSaveWindow.Verification.cs | グラフ画像保存画面のサンプル・画像出力 | `--test-graph-image --auto` |
 | DarkPaletteTestWindow.cs | 共通の暗色配色。実グラフ・操作部品・一覧と、メニュー・選択欄の展開画像を確認 | `--test-dark-palette --auto` |
 | FluentThemeTestWindow.cs | Fluent Darkの標準部品と展開メニュー・コンボボックスの画像を確認 | `--test-fluent-theme --auto` |
+| DisplayStyleTestWindow.cs | 4つのThemeModeと対応パレット、標準部品、グラフ色、設定値の保存・読み込みを確認 | `--test-display-style --auto --theme Light` など |
+| SettingsWindow.Verification.cs | 表示スタイルの選択肢と保存済み選択の復元 | `--verify-display-style-settings` |
 | App.TestScreens.cs | 専用テスト画面の起動分岐 | `--test-*` など |
 | App.Verification.cs | グラフ準備・評価・比較などの検証起動分岐 | `--verify-*` など |
 | MainWindow/ | 主画面の検証専用partialクラス | `--verify-main-*` など |

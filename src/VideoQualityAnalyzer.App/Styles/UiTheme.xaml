@@ -50,6 +50,14 @@
         <Setter Property="FontSize" Value="{StaticResource UiFontSmall}" />
         <Setter Property="Foreground" Value="{StaticResource UiMutedBrush}" />
     </Style>
+    <Style x:Key="UiPreviewTabHeaderStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+        <Setter Property="Foreground" Value="{StaticResource UiVideoTextBrush}" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="True">
+                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
     <Style TargetType="ToolTip">
         <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource UiFontMedium}" />

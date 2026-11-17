@@ -90,7 +90,7 @@ internal sealed class DarkPaletteTestWindow : Window
             try
             {
                 UpdateLayout();
-                graph.VerifyDarkPalette();
+                graph.VerifyScreenPalette();
                 var image = new RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
                 image.Render(this);
                 var output = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,

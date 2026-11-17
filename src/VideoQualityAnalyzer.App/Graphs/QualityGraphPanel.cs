@@ -198,7 +198,7 @@ public sealed partial class QualityGraphPanel : UserControl
     private readonly HashSet<string> displayedVideoIds = [];
     public IReadOnlyCollection<string> DisplayedVideoIds => displayedVideoIds;
     public int FilePointCount => averages.Children.OfType<Ellipse>().Count();
-    internal void VerifyDarkPalette()
+    internal void VerifyScreenPalette()
     {
         static bool SameColor(Brush actual, Brush expected) => actual is SolidColorBrush a &&
             expected is SolidColorBrush b && a.Color == b.Color;
@@ -207,7 +207,7 @@ public sealed partial class QualityGraphPanel : UserControl
             !SameColor(averages.Background, palette.Plot) || !SameColor(playhead.Stroke, palette.Text) ||
             !SameColor(legend.Children.OfType<StackPanel>().First().Children.OfType<TextBlock>().First().Foreground, palette.Text) ||
             timeline.Children.OfType<Line>().Any(line => Equals(line.Tag, "グリッド") && !SameColor(line.Stroke, palette.Grid)))
-            throw new InvalidOperationException("暗色グラフの背景・文字・グリッドが一致しません。");
+            throw new InvalidOperationException("画面内グラフの背景・文字・グリッドがパレットと一致しません。");
     }
     internal int FrameSegmentCount => timeline.Children.OfType<Polyline>().Count(line => line.Tag is null);
     public void UpdateData(VideoDescriptor[] selected, VideoDescriptor[] all, IReadOnlyDictionary<string, string>? groups)

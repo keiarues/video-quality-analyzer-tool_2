@@ -15,6 +15,10 @@ public partial class App : Application
             Shutdown(1);
         };
         RecordStartup("起動開始");
+        var modeIndex = Array.IndexOf(e.Args, "--theme");
+        var mode = modeIndex >= 0 && modeIndex + 1 < e.Args.Length
+            ? e.Args[modeIndex + 1] : DisplayStyleSettings.Load();
+        DisplayStyleSettings.Apply(this, mode);
         if (TryOpenTestWindow(e)) return;
         try
         {

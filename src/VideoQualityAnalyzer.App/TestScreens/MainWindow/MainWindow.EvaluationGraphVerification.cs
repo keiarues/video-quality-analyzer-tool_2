@@ -28,7 +28,7 @@ public partial class MainWindow
                 throw new InvalidOperationException("主画面で評価結果が確定されません。");
             qualityGraphPanel!.SelectMetric(QualityMetric.Ssim);
             if (qualityGraphPanel.FilePointCount != 1) throw new InvalidOperationException("評価結果が主画面グラフに反映されません。");
-            qualityGraphPanel.VerifyDarkPalette();
+            qualityGraphPanel.VerifyScreenPalette();
             if (PreviewLeftSelect.SelectedItem is not VideoEntry left ||
                 PreviewRightSelect.SelectedItem is not VideoEntry right ||
                 PreviewLeftSelect.Text != left.Descriptor.Name || PreviewRightSelect.Text != right.Descriptor.Name)
@@ -58,10 +58,15 @@ public partial class MainWindow
             }
             UpdateLayout();
 #pragma warning disable WPF0001 // .NET 10のFluentテーマは実験的API。
-            if (!Application.Current.ThemeMode.Equals(ThemeMode.Dark) ||
+            var selectedMode = DisplayStyleSettings.ActiveMode switch
+            {
+                "None" => ThemeMode.None, "System" => ThemeMode.System,
+                "Light" => ThemeMode.Light, _ => ThemeMode.Dark
+            };
+            if (!Application.Current.ThemeMode.Equals(selectedMode) ||
 #pragma warning restore WPF0001
                 FontFamily.Source != "Yu Gothic UI" || FontSize != (double)FindResource("UiFontMedium"))
-                throw new InvalidOperationException("Fluent Darkまたは共通フォントが不正です。");
+                throw new InvalidOperationException("表示スタイルまたは共通フォントが不正です。");
             if (Content is not System.Windows.Controls.DockPanel root ||
                 Background is not System.Windows.Media.SolidColorBrush windowBackground ||
                 root.Background is not System.Windows.Media.SolidColorBrush rootBackground ||

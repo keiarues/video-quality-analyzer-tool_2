@@ -8,6 +8,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <Page Include="..\..\src\VideoQualityAnalyzer.App\Styles\Palettes\Dark.xaml" Link="Styles\Palettes\Dark.xaml" />
     <Page Include="..\..\src\VideoQualityAnalyzer.App\Styles\UiTheme.xaml" Link="Styles\UiTheme.xaml" />
     <ProjectReference Include="..\..\src\VideoQualityAnalyzer.Media\VideoQualityAnalyzer.Media.csproj" />
   </ItemGroup>

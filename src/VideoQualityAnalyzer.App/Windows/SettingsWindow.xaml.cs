@@ -14,10 +14,11 @@ public partial class SettingsWindow : Window
     private int generation;
     private CancellationTokenSource? versionCancellation;
 
-    public SettingsWindow(bool verifyDownload = false, bool verifyDetection = false)
+    public SettingsWindow(bool verifyDownload = false, bool verifyDetection = false, bool verifyStyle = false)
     {
         InitializeComponent();
         if (DesignerProperties.GetIsInDesignMode(this)) return;
+        DisplayStyleBox.SelectedValue = DisplayStyleSettings.Load();
         var saved = FfmpegSettings.Load();
         FolderPathBox.Text = File.Exists(saved) ? Path.GetDirectoryName(saved) ?? "" : saved;
         automatic = string.IsNullOrWhiteSpace(saved);
@@ -31,6 +32,7 @@ public partial class SettingsWindow : Window
         Loaded += (_, _) => { if (!verifyDetection) RefreshStatus(); };
         if (verifyDetection) Loaded += async (_, _) => await VerifyDetectionAsync();
         if (verifyDownload) Loaded += async (_, _) => await VerifyDownloadAsync();
+        if (verifyStyle) Loaded += (_, _) => VerifyStyle();
     }
 
     private async void RefreshStatus() => await RefreshStatusAsync();
@@ -98,7 +100,12 @@ public partial class SettingsWindow : Window
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
-        try { FfmpegSettings.Save(automatic ? "" : FolderPathBox.Text); DialogResult = true; }
+        try
+        {
+            FfmpegSettings.Save(automatic ? "" : FolderPathBox.Text);
+            DisplayStyleSettings.Save(DisplayStyleBox.SelectedValue as string ?? "");
+            DialogResult = true;
+        }
         catch (Exception exception) when (exception is ArgumentException or IOException or UnauthorizedAccessException or NotSupportedException)
         { ErrorText.Text = exception.Message; }
     }

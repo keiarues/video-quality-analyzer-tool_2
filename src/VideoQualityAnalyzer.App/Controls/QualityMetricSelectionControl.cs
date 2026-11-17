@@ -88,7 +88,7 @@ public sealed class QualityMetricSelectionControl : UserControl
         box.SetValue(VerticalAlignmentProperty, VerticalAlignment.Center);
         var mark = new FrameworkElementFactory(typeof(TextBlock)) { Name = "CheckMark" };
         mark.SetValue(TextBlock.TextProperty, "✓");
-        mark.SetValue(TextBlock.ForegroundProperty, FindResource("UiOnLightBrush"));
+        mark.SetValue(TextBlock.ForegroundProperty, FindResource("UiOnAccentBrush"));
         mark.SetValue(HorizontalAlignmentProperty, HorizontalAlignment.Center);
         mark.SetValue(VerticalAlignmentProperty, VerticalAlignment.Center);
         mark.SetValue(VisibilityProperty, Visibility.Hidden);

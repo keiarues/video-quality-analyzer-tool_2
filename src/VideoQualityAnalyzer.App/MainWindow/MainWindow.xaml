@@ -150,9 +150,10 @@
                     <RowDefinition Height="20" />
                     <RowDefinition Name="QualityGraphRow" Height="*" MinHeight="200" />
                 </Grid.RowDefinitions>
-                <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0">
+                <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0"
+                            Background="{StaticResource UiPreviewChromeBrush}" Foreground="{StaticResource UiVideoTextBrush}">
                     <TabItem>
-                        <TabItem.Header><TextBlock Text="2画面" /></TabItem.Header>
+                        <TabItem.Header><TextBlock Text="2画面" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                 <Grid Name="LegacyPreviewGrid">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -167,10 +168,10 @@
                             <Image Name="LeftAv1Image" Stretch="Uniform" Visibility="Collapsed" />
                             <Border VerticalAlignment="Top" Background="{StaticResource UiVideoOverlayBrush}" Padding="10,7">
                                 <StackPanel>
-                                    <TextBlock Name="LeftName" Text="左: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+                                    <TextBlock Name="LeftName" Text="左: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" Foreground="{StaticResource UiVideoTextBrush}" />
                                     <ComboBox Name="PreviewLeftSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" />
-                                    <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
-                                    <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" />
+                                    <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiVideoMutedBrush}" />
+                                    <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" Foreground="{StaticResource UiVideoMutedBrush}" />
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -183,10 +184,10 @@
                             <Image Name="RightAv1Image" Stretch="Uniform" Visibility="Collapsed" />
                             <Border VerticalAlignment="Top" Background="{StaticResource UiVideoOverlayBrush}" Padding="10,7">
                                 <StackPanel>
-                                    <TextBlock Name="RightName" Text="右: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
+                                    <TextBlock Name="RightName" Text="右: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" Foreground="{StaticResource UiVideoTextBrush}" />
                                     <ComboBox Name="PreviewRightSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" />
-                                    <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" />
-                                    <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" />
+                                    <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiVideoMutedBrush}" />
+                                    <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" Foreground="{StaticResource UiVideoMutedBrush}" />
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -194,11 +195,11 @@
                 </Grid>
                     </TabItem>
                     <TabItem>
-                        <TabItem.Header><TextBlock Text="ワイプ" /></TabItem.Header>
+                        <TabItem.Header><TextBlock Text="ワイプ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                         <TextBlock Text="比較する動画を2本選択してください。" Margin="12" />
                     </TabItem>
                     <TabItem>
-                        <TabItem.Header><TextBlock Text="差分ヒートマップ" /></TabItem.Header>
+                        <TabItem.Header><TextBlock Text="差分ヒートマップ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                         <TextBlock Text="比較する動画を2本選択してください。" Margin="12" />
                     </TabItem>
                 </TabControl>

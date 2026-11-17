@@ -7,13 +7,31 @@
         Style="{StaticResource {x:Type Window}}"
         Title="設定" Width="1000" Height="597" MinWidth="420" MinHeight="280"
         WindowStartupLocation="CenterOwner" ResizeMode="CanResize">
-    <Grid>
+    <Grid Background="{StaticResource BackgroundBrush}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
         <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="18" Grid.IsSharedSizeScope="True">
+            <TextBlock Text="表示スタイル" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,8" />
+            <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="SettingNames" />
+                    <ColumnDefinition Width="*" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="画面の配色" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,8,0" />
+                <ComboBox x:Name="DisplayStyleBox" Grid.Column="1" Width="260" HorizontalAlignment="Left"
+                          SelectedValuePath="Tag" AutomationProperties.Name="表示スタイル">
+                    <ComboBoxItem Content="標準（None）" Tag="None" />
+                    <ComboBoxItem Content="Windows に合わせる（System）" Tag="System" />
+                    <ComboBoxItem Content="ライト（Light）" Tag="Light" />
+                    <ComboBoxItem Content="ダーク（Dark）" Tag="Dark" />
+                </ComboBox>
+            </Grid>
+            <TextBlock Text="標準は従来のWPF表示です。Windows に合わせる場合は、起動時のWindowsアプリ用配色を使用します。変更は次回起動時に反映されます。"
+                       Style="{StaticResource UiSmallTextStyle}" TextWrapping="Wrap" Margin="0,0,0,18" />
+            <TextBlock Text="FFmpeg" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,4" />
             <Grid Margin="0,8,0,8">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" SharedSizeGroup="SettingNames" />

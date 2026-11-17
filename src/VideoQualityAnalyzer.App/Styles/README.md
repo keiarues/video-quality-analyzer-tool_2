@@ -8,19 +8,20 @@
 | 大・画面見出し | UiFontLarge | 20 |
 | 中・本文、操作、一覧 | UiFontMedium | 13 |
 | 小・補足、状態、目盛り | UiFontSmall | 11 |
-| デフォルト・暗い背景 | TextBrush | 明るい標準文字 |
+| デフォルト文字 | TextBrush | パレットに応じた標準文字 |
 | 強調・処理中や完了通知 | UiEmphasisBrush | 青 |
-| 警告・中止や測定上の注意 | UiWarningBrush | 黄 |
+| 警告・中止や測定上の注意 | UiWarningBrush | パレットに応じた警告色 |
 | 補足 | UiMutedBrush | 控えめな標準文字 |
 | 明るい背景 | UiOnLightBrush | 暗い標準文字 |
+| 強調色上のチェック | UiOnAccentBrush | 強調色と対比する文字 |
 
 見出しは `UiTitleStyle` と `UiSectionStyle`、補足は `UiSmallTextStyle` を利用できる。グラフの系列色や映像ヒートマップは文字色ではないため、この文字色分類とは別に扱う。
 
 派生Window・UserControlには基底型用の共通Styleを明示的に適用する。XAMLでは `Style="{StaticResource {x:Type Window}}"` またはUserControlを指定し、コードで作る画面でも同じ型キーのStyleを設定する。C#からの小文字サイズ・色の取得は `UiTheme` を利用する。
 
-標準コントロールの暗色表示は `Application.ThemeMode="Dark"` のFluentテーマを利用する。ウィンドウの余白、文字、一覧選択行、画面内グラフはパレット辞書の値を `UiTheme.xaml` の共通スタイルから適用する。`App.xaml` ではパレット辞書を共通スタイルより先に読み込む。`UiOnLightBrush` とグラフの画像出力色は白背景PNG用である。新しい色用途が必要になった場合は、両パレットに同じキーを追加する。
+標準コントロールの表示には、保存した `None`・`System`・`Light`・`Dark` を起動時に `Application.ThemeMode` へ設定する。`None` は従来のWPF表示、`System` はWindowsのアプリ用配色を使う。ウィンドウの余白、文字、一覧選択行、画面内グラフは同じ明暗に対応するパレット辞書の値を `UiTheme.xaml` の共通スタイルから適用する。起動時にパレット辞書、次に共通スタイルを読み込む。新しい色用途が必要になった場合は、両パレットに同じキーを追加する。`UiOnLightBrush` とグラフの画像出力色は白背景PNG用である。
 
-`--test-fluent-theme` は標準コントロールとウィンドウ余白、`--test-dark-palette` は独自グラフと標準コントロールを確認する。PNG画像出力は従来の白背景を維持する。現在読み込むのは暗色パレットで、`None`・`System`・`Light` への切り替えと明色画面の検証は次の作業である。
+表示スタイルはオプション画面で保存し、次回起動時から反映する。`System` の独自パレットは起動時のWindowsアプリ用配色に合わせる。`--test-display-style --auto --theme Light` のように4モードを専用画面で検証できる。`--test-fluent-theme` と `--test-dark-palette` は暗色部品とグラフの既存検証に使う。PNG画像出力は従来の白背景を維持する。
 
 ## グラフ画像出力の文字サイズ
 

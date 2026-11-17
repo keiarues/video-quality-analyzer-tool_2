@@ -1,9 +1,11 @@
 <Application x:Class="VideoQualityAnalyzer.GpuPreview.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             ThemeMode="Dark">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles/Palettes/Dark.xaml" />
                 <ResourceDictionary Source="Styles/UiTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
