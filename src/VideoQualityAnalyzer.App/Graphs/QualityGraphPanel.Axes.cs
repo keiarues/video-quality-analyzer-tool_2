@@ -9,11 +9,11 @@ namespace VideoQualityAnalyzer.App;
 
 public sealed partial class QualityGraphPanel
 {
-    private static FrameworkElementFactory MakeLegendHeader()
+    private FrameworkElementFactory MakeLegendHeader()
     {
         var text = new FrameworkElementFactory(typeof(TextBlock));
         text.SetValue(TextBlock.TextProperty, "凡例（移動可）");
-        text.SetValue(TextBlock.ForegroundProperty, UiTheme.OnLight);
+        text.SetValue(TextBlock.ForegroundProperty, palette.Text);
         text.SetValue(TextBlock.BackgroundProperty, Brushes.Transparent);
         return text;
     }
@@ -44,28 +44,28 @@ public sealed partial class QualityGraphPanel
             var x = area.Left + fraction * area.Width;
             var y = area.Bottom - fraction * area.Height;
             canvas.Children.Add(new Line { X1 = x, X2 = x, Y1 = area.Top, Y2 = area.Bottom,
-                Stroke = Brushes.LightGray, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
+                Stroke = palette.Grid, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
             canvas.Children.Add(new Line { X1 = area.Left, X2 = area.Right, Y1 = y, Y2 = y,
-                Stroke = Brushes.LightGray, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
+                Stroke = palette.Grid, StrokeThickness = 1, Tag = "グリッド", IsHitTestVisible = false });
             AddTick(canvas, (maximumX * fraction).ToString(unit == "kbps" ? "N0" : "0.##") + (unit == "kbps" ? " kbps" : "秒"), x, area.Bottom + 6, true);
             AddTick(canvas, (minimumY + (maximumY - minimumY) * fraction).ToString("G4"), area.Left - 7, y, false);
         }
-        canvas.Children.Add(new Polyline { Stroke = Brushes.DimGray, StrokeThickness = 1,
+        canvas.Children.Add(new Polyline { Stroke = palette.Axis, StrokeThickness = 1,
             IsHitTestVisible = false, Tag = "軸", Points = new PointCollection
                 { new(area.Left, area.Top), new(area.Left, area.Bottom), new(area.Right, area.Bottom) } });
         var axisName = new TextBlock { Text = selected.ToString().ToUpperInvariant(),
-            FontSize = (double)FindResource("UiFontMedium"), Foreground = UiTheme.OnLight,
+            FontSize = (double)FindResource("UiFontMedium"), Foreground = palette.Text,
             RenderTransform = new RotateTransform(-90), Tag = "縦軸名", IsHitTestVisible = false };
         axisName.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(axisName, 6);
         Canvas.SetTop(axisName, area.Top + (area.Height + axisName.DesiredSize.Width) / 2);
         canvas.Children.Add(axisName);
         var qualityGuide = new TextBlock { Text = "↑ 高画質", FontSize = UiTheme.Small,
-            Foreground = UiTheme.OnLight, Tag = "品質方向", IsHitTestVisible = false };
+            Foreground = palette.Text, Tag = "品質方向", IsHitTestVisible = false };
         Canvas.SetLeft(qualityGuide, area.Left + 4);
         Canvas.SetTop(qualityGuide, 2);
         canvas.Children.Add(qualityGuide);
-        var caption = new TextBlock { Text = unit, FontSize = (double)FindResource("UiFontMedium"), Foreground = UiTheme.OnLight, IsHitTestVisible = false };
+        var caption = new TextBlock { Text = unit, FontSize = (double)FindResource("UiFontMedium"), Foreground = palette.Text, IsHitTestVisible = false };
         caption.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(caption, area.Left + (area.Width - caption.DesiredSize.Width) / 2);
         Canvas.SetTop(caption, area.Bottom + 28);
@@ -74,7 +74,7 @@ public sealed partial class QualityGraphPanel
 
     private void AddTick(Canvas canvas, string text, double x, double y, bool horizontal)
     {
-        var label = new TextBlock { Text = text, Foreground = UiTheme.OnLight, FontSize = UiTheme.Small,
+        var label = new TextBlock { Text = text, Foreground = palette.Text, FontSize = UiTheme.Small,
             Tag = "目盛り", IsHitTestVisible = false };
         label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
         Canvas.SetLeft(label, horizontal ? Math.Clamp(x - label.DesiredSize.Width / 2, 0,

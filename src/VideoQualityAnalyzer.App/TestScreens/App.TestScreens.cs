@@ -12,6 +12,8 @@ public partial class App
 
         if (e.Args.Contains("--test-evaluation-target-summary"))
             createWindow = () => new EvaluationTargetSummaryTestWindow(automatic);
+        else if (e.Args.Contains("--test-dark-palette"))
+            createWindow = () => new DarkPaletteTestWindow(automatic);
         else if (e.Args.Contains("--test-evaluated-playback"))
             createWindow = () => new EvaluatedPlaybackTestWindow(Files());
         else if (e.Args.Contains("--test-production-partial"))

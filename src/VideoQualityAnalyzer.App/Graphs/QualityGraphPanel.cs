@@ -15,6 +15,7 @@ public sealed partial class QualityGraphPanel : UserControl
     private VideoDescriptor[]? allVideos;
     private IReadOnlyDictionary<string, string>? groups;
     private readonly HashSet<string> selectedIds;
+    private readonly GraphPalette palette;
     private readonly StackPanel legend = new();
     private readonly Canvas playbackCanvas;
     private readonly QualityGraphLegendController legendController;
@@ -46,8 +47,19 @@ public sealed partial class QualityGraphPanel : UserControl
         IDictionary<(string VideoId, QualityMetric Metric), QualityResult> results,
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
         VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null,
-        bool frameOnly = false, bool separatePlaybackLayer = false, bool cacheStaticGraph = false, Action? clearSelection = null)
+        bool frameOnly = false, bool separatePlaybackLayer = false, bool cacheStaticGraph = false, Action? clearSelection = null,
+        bool darkPalettePreview = false)
     {
+        palette = darkPalettePreview ? GraphPalette.Dark : GraphPalette.Light;
+        colors = palette.Series;
+        timeline.Background = palette.Plot;
+        averages.Background = palette.Plot;
+        playhead.Stroke = palette.Text;
+        foreach (var label in new[] { leftPlaybackStatus, rightPlaybackStatus, playbackTimeLabel })
+        {
+            label.Foreground = palette.Text;
+            label.Background = palette.Plot;
+        }
         playbackResults = results;
         seekRequested = seek;
         selectVideoRequested = select;
@@ -56,8 +68,8 @@ public sealed partial class QualityGraphPanel : UserControl
         this.groups = groups;
         selectedIds = videos.Select(video => video.Id).ToHashSet();
         Style = (Style)Application.Current.FindResource(typeof(UserControl));
-        Background = Brushes.White;
-        Foreground = UiTheme.OnLight;
+        Background = palette.Surface;
+        Foreground = palette.Text;
         var panel = new DockPanel { Margin = new Thickness(4) };
         Content = panel;
         foreach (var value in Enum.GetValues<QualityMetric>())
@@ -99,7 +111,7 @@ public sealed partial class QualityGraphPanel : UserControl
         DockPanel.SetDock(legendHeader, Dock.Top);
         legendBody.Children.Add(legendHeader);
         legendBody.Children.Add(legendScroll);
-        var legendBox = new Border { Width = 350, Background = Brushes.WhiteSmoke, BorderBrush = Brushes.Gray,
+        var legendBox = new Border { Width = 350, Background = palette.Plot, BorderBrush = palette.Grid,
             BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(5), Child = legendBody };
         var overlay = new Canvas { ClipToBounds = true };
         overlay.Children.Add(legendBox);
@@ -185,6 +197,17 @@ public sealed partial class QualityGraphPanel : UserControl
     private readonly HashSet<string> displayedVideoIds = [];
     public IReadOnlyCollection<string> DisplayedVideoIds => displayedVideoIds;
     public int FilePointCount => averages.Children.OfType<Ellipse>().Count();
+    internal void VerifyDarkPalettePreview()
+    {
+        static bool SameColor(Brush actual, Brush expected) => actual is SolidColorBrush a &&
+            expected is SolidColorBrush b && a.Color == b.Color;
+        if (!SameColor(palette.Surface, GraphPalette.Dark.Surface) ||
+            !SameColor(Background, palette.Surface) || !SameColor(timeline.Background, palette.Plot) ||
+            !SameColor(averages.Background, palette.Plot) || !SameColor(playhead.Stroke, palette.Text) ||
+            !SameColor(legend.Children.OfType<StackPanel>().First().Children.OfType<TextBlock>().First().Foreground, palette.Text) ||
+            timeline.Children.OfType<Line>().Any(line => Equals(line.Tag, "グリッド") && !SameColor(line.Stroke, palette.Grid)))
+            throw new InvalidOperationException("暗色グラフの背景・文字・グリッドが一致しません。");
+    }
     internal int FrameSegmentCount => timeline.Children.OfType<Polyline>().Count(line => line.Tag is null);
     public void UpdateData(VideoDescriptor[] selected, VideoDescriptor[] all, IReadOnlyDictionary<string, string>? groups)
     {

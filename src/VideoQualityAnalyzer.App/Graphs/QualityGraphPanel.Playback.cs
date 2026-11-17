@@ -82,9 +82,9 @@ public sealed partial class QualityGraphPanel
         playhead.Y1 = area.Top;
         playhead.Y2 = area.Bottom;
         leftPlaybackStatus.Foreground = playbackLeft is not null && videoColors.TryGetValue(playbackLeft.Id, out var leftColor)
-            ? leftColor : UiTheme.OnLight;
+            ? leftColor : palette.Text;
         rightPlaybackStatus.Foreground = playbackRight is not null && videoColors.TryGetValue(playbackRight.Id, out var rightColor)
-            ? rightColor : UiTheme.OnLight;
+            ? rightColor : palette.Text;
         leftPlaybackStatus.Text = $"{PlaybackValue(playbackLeft)}\n{playbackLeft?.Name ?? "--"}";
         rightPlaybackStatus.Text = $"{PlaybackValue(playbackRight)}\n{playbackRight?.Name ?? "--"}";
         playbackTimeLabel.Text = $"{playbackPosition.TotalSeconds:0.##}秒";

@@ -84,7 +84,7 @@ public sealed partial class QualityGraphPanel
             }
             if (isSelected) { timeline.Children.Add(line); displayedVideoIds.Add(video.Id); }
             var point = new Ellipse { Width = 12, Height = 12, Fill = color,
-                Stroke = isSelected ? Brushes.Black : null, StrokeThickness = 2,
+                Stroke = isSelected ? palette.Selection : null, StrokeThickness = 2,
                 Tag = video.Id, ToolTip = $"{video.Name}: {result.Average:F4} / {rates[index]:N0} kbps\n{result.Selection.Description}" +
                     (result.Selection.IsPartial ? "（評価対象のみの平均）" : ""), Cursor = System.Windows.Input.Cursors.Hand };
             Canvas.SetLeft(point, fileArea.Left + rates[index] / maxRate * fileArea.Width - 6);
@@ -95,12 +95,12 @@ public sealed partial class QualityGraphPanel
                 var center = new Point(Canvas.GetLeft(point) + 6, Canvas.GetTop(point) + 6);
                 if (previousPoints.TryGetValue(group, out var previous))
                     averages.Children.Add(new Line { X1 = previous.X, Y1 = previous.Y,
-                        X2 = center.X, Y2 = center.Y, Stroke = Brushes.Gray, StrokeThickness = 1, IsHitTestVisible = false });
+                        X2 = center.X, Y2 = center.Y, Stroke = palette.Connection, StrokeThickness = 1, IsHitTestVisible = false });
                 previousPoints[group] = center;
             }
             averages.Children.Add(point);
             var label = new TextBlock { Text = $"{result.Average:F4} / {rates[index]:N0} kbps",
-                FontSize = UiTheme.Small, Foreground = UiTheme.OnLight, Background = Brushes.WhiteSmoke,
+                FontSize = UiTheme.Small, Foreground = palette.Text, Background = palette.Plot,
                 IsHitTestVisible = false, Tag = "点の評価値" };
             label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
             Canvas.SetLeft(label, Math.Clamp(Canvas.GetLeft(point) + 14, fileArea.Left,
@@ -112,9 +112,9 @@ public sealed partial class QualityGraphPanel
                 ToolTip = $"{video.Name} / {result.Average:F4} / {rates[index]:N0} kbps" };
             legendItem.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = color, Margin = new Thickness(0, 0, 5, 0) });
             legendItem.Children.Add(new TextBlock { Text = video.Name, FontSize = UiTheme.Small,
-                Foreground = UiTheme.OnLight, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis });
+                Foreground = palette.Text, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis });
             legendItem.Children.Add(new TextBlock { Text = $"  {result.Average:F4} / {rates[index]:N0} kbps",
-                FontSize = UiTheme.Small, Foreground = UiTheme.OnLight });
+                FontSize = UiTheme.Small, Foreground = palette.Text });
             legendItem.Background = Brushes.Transparent;
             legendItem.Cursor = System.Windows.Input.Cursors.Hand;
             legendItem.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); e.Handled = true; };
