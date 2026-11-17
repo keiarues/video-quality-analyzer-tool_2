@@ -29,7 +29,9 @@ $blue = Join-Path $workspace 'measurement-results/quality-smoke/blue.mkv'
 if ($LASTEXITCODE -ne 0) { throw '主画面の評価開始・中止の試験に失敗しました。' }
 & $dotnet $app --verify-evaluation $red $blue
 if ($LASTEXITCODE -ne 0) { throw '評価結果の再利用・グラフ画面の試験に失敗しました。' }
-$videos = Get-ChildItem -LiteralPath (Join-Path $workspace 'test-data') -File | Select-Object -ExpandProperty FullName
+$videos = Get-ChildItem -LiteralPath (Join-Path $workspace 'test-data') -File |
+    Where-Object { $_.Extension -in '.mkv', '.mp4' } |
+    Select-Object -ExpandProperty FullName
 & $dotnet $app --verify-main-features @videos
 if ($LASTEXITCODE -ne 0) { throw '主画面の選択・結果破棄の試験に失敗しました。' }
 & $dotnet $app --verify-main-seek @videos
