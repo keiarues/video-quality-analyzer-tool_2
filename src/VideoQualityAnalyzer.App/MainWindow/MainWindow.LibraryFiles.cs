@@ -11,6 +11,7 @@ public partial class MainWindow
     private long libraryLoadGeneration;
     private CancellationTokenSource libraryLoadCancellation = new();
     private Func<string, Task>? beforeVideoProbeForVerification;
+    private Func<Task>? beforeDropRegistrationForVerification;
 
     private void CancelPendingLibraryLoads()
     {
@@ -122,20 +123,30 @@ public partial class MainWindow
         if (e.Data.GetData(DataFormats.FileDrop) is string[] paths)
         {
             e.Handled = true;
-            try
-            {
-                var folders = paths.Where(Directory.Exists).ToArray();
-                var files = await Task.Run(() => VideoDropFiles.Expand(paths, () =>
-                    Dispatcher.Invoke(() => !closing && MessageBox.Show(this,
-                        "読み込む動画が100本以上あります。処理を続けますか？\n「いいえ」を選ぶと今回の登録を中止します。",
-                        "動画の一括登録", MessageBoxButton.YesNo, MessageBoxImage.Warning,
-                        MessageBoxResult.No) == MessageBoxResult.Yes)));
-                if (!closing && files.Length > 0) await AddFilesAsync(files, folders);
-            }
-            catch (Exception exception)
-            {
+            await AddDroppedFilesAsync(paths);
+        }
+    }
+
+    private async Task AddDroppedFilesAsync(string[] paths)
+    {
+        var generation = libraryLoadGeneration;
+        try
+        {
+            var folders = paths.Where(Directory.Exists).ToArray();
+            var files = await Task.Run(() => VideoDropFiles.Expand(paths, () =>
+                Dispatcher.Invoke(() => !closing && MessageBox.Show(this,
+                    "読み込む動画が100本以上あります。処理を続けますか？\n「いいえ」を選ぶと今回の登録を中止します。",
+                    "動画の一括登録", MessageBoxButton.YesNo, MessageBoxImage.Warning,
+                    MessageBoxResult.No) == MessageBoxResult.Yes)));
+            if (beforeDropRegistrationForVerification is not null)
+                await beforeDropRegistrationForVerification();
+            if (!closing && generation == libraryLoadGeneration && files.Length > 0)
+                await AddFilesAsync(files, folders);
+        }
+        catch (Exception exception)
+        {
+            if (generation == libraryLoadGeneration)
                 SetWindowStatus($"フォルダーを読み込めません: {exception.GetType().Name}");
-            }
         }
     }
 

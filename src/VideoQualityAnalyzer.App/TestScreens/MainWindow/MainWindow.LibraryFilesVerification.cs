@@ -68,14 +68,29 @@ public partial class MainWindow
                 await newLoad;
                 if (videos.Count != 1 || loadingVideoPaths.Count != 0 || pendingVideoLoads != 0)
                     throw new InvalidOperationException("全削除後の再登録が不正です。");
+
+                RemoveAll_Click(this, new RoutedEventArgs());
+                var dropGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                beforeDropRegistrationForVerification = () => dropGate.Task;
+                var oldDrop = AddDroppedFilesAsync([path]);
+                RemoveAll_Click(this, new RoutedEventArgs());
+                dropGate.SetResult();
+                await oldDrop;
+                if (videos.Count != 0)
+                    throw new InvalidOperationException("全削除前のドロップ展開結果が登録されました。");
+                beforeDropRegistrationForVerification = null;
+                await AddDroppedFilesAsync([path]);
+                if (videos.Count != 1)
+                    throw new InvalidOperationException("全削除後のドロップ登録が不正です。");
             }
             finally
             {
                 beforeVideoProbeForVerification = null;
+                beforeDropRegistrationForVerification = null;
                 if (File.Exists(candidatePath)) File.Delete(candidatePath);
                 if (File.Exists(latePath)) File.Delete(latePath);
             }
-            Console.WriteLine("動画登録: 同時追加、失敗時の予約解除、選択維持、全削除後の古い結果破棄が合格");
+            Console.WriteLine("動画登録: 同時追加、失敗時の予約解除、選択維持、全削除後の古い読み込みとドロップ結果の破棄が合格");
             Application.Current.Shutdown(0);
         }
         catch (Exception exception)
