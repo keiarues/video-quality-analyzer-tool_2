@@ -18,12 +18,14 @@
         </StackPanel>
         <StackPanel Name="ZoomControls" DockPanel.Dock="Top" Margin="0,0,0,8" />
         <Grid>
-            <TabControl Name="ViewSelect" SelectionChanged="ViewSelect_SelectionChanged" Background="{StaticResource UiPreviewChromeBrush}">
-                <TabItem Name="TwoScreenTab">
+            <TabControl Name="ViewSelect" SelectionChanged="ViewSelect_SelectionChanged"
+                        Background="{StaticResource UiPreviewChromeBrush}"
+                        BorderBrush="{StaticResource UiPanelBorderBrush}" BorderThickness="1">
+                <TabItem Name="TwoScreenTab" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                     <TabItem.Header><TextBlock Text="2画面" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                     <ContentControl Name="TwoScreenContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 </TabItem>
-                <TabItem Name="WipeTab">
+                <TabItem Name="WipeTab" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                     <TabItem.Header><TextBlock Text="ワイプ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
             <DockPanel Name="WipeViewGrid" Visibility="Collapsed">
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
@@ -57,7 +59,7 @@
             </DockPanel>
                 </TabItem>
 
-                <TabItem Name="HeatmapTab">
+                <TabItem Name="HeatmapTab" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                     <TabItem.Header><TextBlock Text="差分ヒートマップ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                     <DockPanel>
                         <WrapPanel Name="HeatmapOptions" TextElement.Foreground="{StaticResource TextBrush}" DockPanel.Dock="Top" Margin="0,8,0,8">

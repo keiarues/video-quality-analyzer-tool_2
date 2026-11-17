@@ -30,16 +30,32 @@ internal sealed class DisplayStyleTestWindow : Window
         var list = new ListBox { ItemsSource = new[] { "比較動画 A", "比較動画 B" }, SelectedIndex = 0,
             Height = 95, Margin = new Thickness(0, 12, 0, 12) };
         DockPanel.SetDock(list, Dock.Top); root.Children.Add(list);
+        var preview = new TabControl { Height = 118,
+            Background = (Brush)FindResource("UiPreviewChromeBrush"),
+            BorderBrush = (Brush)FindResource("UiPanelBorderBrush"), BorderThickness = new Thickness(1) };
+        foreach (var name in new[] { "2画面", "ワイプ", "差分ヒートマップ" })
+        {
+            var tab = new TabItem { BorderBrush = (Brush)FindResource("UiControlBorderBrush"),
+                BorderThickness = new Thickness(1),
+                Header = new TextBlock { Text = name, Style = (Style)FindResource("UiPreviewTabHeaderStyle") } };
+            tab.Content = new Border { Background = (Brush)FindResource("UiVideoOverlayBrush"),
+                Padding = new Thickness(10),
+                Child = new TextBlock { Text = "動画名 / 1920×1080 / 30 fps",
+                    Foreground = (Brush)FindResource("UiVideoMutedBrush") } };
+            preview.Items.Add(tab);
+        }
+        preview.SelectedIndex = 0;
+        DockPanel.SetDock(preview, Dock.Top); root.Children.Add(preview);
         var panel = new Border { Background = (Brush)FindResource("GraphSurfaceBrush"),
             BorderBrush = (Brush)FindResource("UiPanelBorderBrush"), BorderThickness = new Thickness(1),
             Padding = new Thickness(12) };
         panel.Child = new TextBlock { Text = "画面内グラフの文字", Foreground = (Brush)FindResource("GraphTextBrush") };
         root.Children.Add(panel);
 
-        if (automatic) Loaded += (_, _) => Dispatcher.BeginInvoke(() => Verify(root, title, button));
+        if (automatic) Loaded += (_, _) => Dispatcher.BeginInvoke(() => Verify(root, title, button, preview));
     }
 
-    private void Verify(DockPanel root, TextBlock title, Button button)
+    private void Verify(DockPanel root, TextBlock title, Button button, TabControl preview)
     {
         try
         {
@@ -61,6 +77,12 @@ internal sealed class DisplayStyleTestWindow : Window
                 (button.BorderBrush is not SolidColorBrush border ||
                  border.Color != ((SolidColorBrush)FindResource("UiControlBorderBrush")).Color))
                 throw new InvalidOperationException("ライト表示のボタン罫線が適用されていません。");
+            var previewBackground = ((SolidColorBrush)preview.Background).Color;
+            var previewText = ((SolidColorBrush)((TextBlock)((TabItem)preview.Items[1]).Header).Foreground).Color;
+            if (previewBackground != ((SolidColorBrush)FindResource("UiPreviewChromeBrush")).Color ||
+                previewText != ((SolidColorBrush)FindResource("UiVideoTextBrush")).Color ||
+                ((TabItem)preview.Items[1]).BorderThickness.Left != 1)
+                throw new InvalidOperationException("プレビューのタブ文字・背景・枠線が不正です。");
 #pragma warning disable WPF0001 // .NET 10のFluentテーマは実験的API。
             var actualMode = Application.Current.ThemeMode;
             var expectedMode = mode switch
