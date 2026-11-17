@@ -15,7 +15,7 @@ public partial class MainWindow
             var second = AddFilesAsync([path]);
             await Task.WhenAll(first, second);
             if (videos.Count(entry => string.Equals(entry.Descriptor.Path, path, StringComparison.OrdinalIgnoreCase)) != 1 ||
-                loadingVideoPaths.Count != 0 || pendingVideoLoads != 0)
+                libraryLoads.ReservedCount != 0 || pendingVideoLoads != 0)
                 throw new InvalidOperationException("同時追加で同じ動画が重複登録されました。");
             var selectionBeforeDuplicate = selectionGeneration;
             await AddFilesAsync([path]);
@@ -24,7 +24,7 @@ public partial class MainWindow
 
             var missing = Path.Combine(Path.GetDirectoryName(path)!, Guid.NewGuid().ToString("N") + ".mkv");
             await AddFilesAsync([missing]);
-            if (loadingVideoPaths.Count != 0 || pendingVideoLoads != 0)
+            if (libraryLoads.ReservedCount != 0 || pendingVideoLoads != 0)
                 throw new InvalidOperationException("読み込み失敗後にパスの予約が残っています。");
 
             var invalid = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".mkv");
@@ -32,7 +32,7 @@ public partial class MainWindow
             {
                 await File.WriteAllTextAsync(invalid, "invalid video");
                 await AddFilesAsync([invalid]);
-                if (loadingVideoPaths.Count != 0 || pendingVideoLoads != 0 ||
+                if (libraryLoads.ReservedCount != 0 || pendingVideoLoads != 0 ||
                     videos.Any(entry => string.Equals(entry.Descriptor.Path, invalid, StringComparison.OrdinalIgnoreCase)))
                     throw new InvalidOperationException("FFprobe失敗後の予約解除が不正です。");
             }
@@ -78,11 +78,11 @@ public partial class MainWindow
                 var newLoad = AddFilesAsync([path]);
                 oldGate.SetResult();
                 await oldLoad;
-                if (videos.Count != 0 || loadingVideoPaths.Count != 1 || pendingVideoLoads != 1)
+                if (videos.Count != 0 || libraryLoads.ReservedCount != 1 || pendingVideoLoads != 1)
                     throw new InvalidOperationException("全削除前の読み込み結果が復活したか、新しい予約が解除されました。");
                 newGate.SetResult();
                 await newLoad;
-                if (videos.Count != 1 || loadingVideoPaths.Count != 0 || pendingVideoLoads != 0)
+                if (videos.Count != 1 || libraryLoads.ReservedCount != 0 || pendingVideoLoads != 0)
                     throw new InvalidOperationException("全削除後の再登録が不正です。");
 
                 RemoveAll_Click(this, new RoutedEventArgs());

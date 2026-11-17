@@ -135,6 +135,7 @@ public partial class MainWindow : Window
             return;
         }
         closing = true;
+        libraryLoads.Dispose();
         comparisonPanel?.Dispose();
         displayTimer.Stop();
         seekTimer.Stop();

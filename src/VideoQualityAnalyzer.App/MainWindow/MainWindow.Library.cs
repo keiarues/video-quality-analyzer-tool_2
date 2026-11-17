@@ -44,7 +44,7 @@ public partial class MainWindow
     {
         if (removed.Any(item => item.Descriptor.Id == referenceId) && evaluationResults.HasResults &&
             !ConfirmEvaluationReset("基準動画を削除すると、計算済みの評価値がすべて削除されます。続行しますか？")) return;
-        if (cancelPendingLoads) CancelPendingLibraryLoads();
+        if (cancelPendingLoads) libraryLoads.CancelPending();
         WithSelectionSuppressed(() =>
         {
             foreach (var item in removed)

@@ -7,20 +7,9 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
-    private readonly Dictionary<string, long> loadingVideoPaths = new(StringComparer.OrdinalIgnoreCase);
-    private long libraryLoadGeneration;
-    private CancellationTokenSource libraryLoadCancellation = new();
+    private readonly LibraryLoadState libraryLoads = new();
     private Func<string, Task>? beforeVideoProbeForVerification;
     private Func<Task>? beforeDropRegistrationForVerification;
-
-    private void CancelPendingLibraryLoads()
-    {
-        libraryLoadGeneration++;
-        libraryLoadCancellation.Cancel();
-        libraryLoadCancellation.Dispose();
-        libraryLoadCancellation = new CancellationTokenSource();
-        loadingVideoPaths.Clear();
-    }
 
     private async void Add_Click(object sender, RoutedEventArgs e)
     {
@@ -36,6 +25,7 @@ public partial class MainWindow
 
     private async Task AddFilesAsync(IEnumerable<string> paths, string[]? droppedFolders = null)
     {
+        if (closing) return;
         if (probe is null)
         {
             SetWindowStatus("動画を読み込むにはFFmpegとFFprobeが必要です。オプション → 設定でフォルダーを指定し、再起動してください。");
@@ -47,19 +37,18 @@ public partial class MainWindow
             return;
         }
 
-        var generation = libraryLoadGeneration;
-        var cancellationToken = libraryLoadCancellation.Token;
+        var generation = libraryLoads.Generation;
+        var cancellationToken = libraryLoads.Token;
         var addedVideo = false;
         pendingVideoLoads++;
         try
         {
             foreach (var input in paths)
             {
-                if (generation != libraryLoadGeneration) break;
+                if (!libraryLoads.IsCurrent(generation)) break;
                 var path = Path.GetFullPath(input);
                 if (videos.Any(item => string.Equals(item.Descriptor.Path, path, StringComparison.OrdinalIgnoreCase)) ||
-                    loadingVideoPaths.ContainsKey(path)) continue;
-                loadingVideoPaths.Add(path, generation);
+                    !libraryLoads.TryReserve(path, generation)) continue;
                 try
                 {
                     if (!File.Exists(path))
@@ -73,9 +62,9 @@ public partial class MainWindow
                     {
                         if (beforeVideoProbeForVerification is not null)
                             await beforeVideoProbeForVerification(path);
-                        if (generation != libraryLoadGeneration) break;
+                        if (!libraryLoads.IsCurrent(generation)) break;
                         var descriptor = await probe.ProbeAsync(path, cancellationToken);
-                        if (generation != libraryLoadGeneration) break;
+                        if (!libraryLoads.IsCurrent(generation)) break;
                         var entry = new VideoEntry(descriptor);
                         videos.Add(entry);
                         addedVideo = true;
@@ -87,24 +76,20 @@ public partial class MainWindow
                         log.Record("file_added", "none", descriptor.Id, "ok",
                             detail: $"codec={descriptor.Codec};resolution={descriptor.Width}x{descriptor.Height};fps={descriptor.AverageFrameRate:F3}");
                     }
-                    catch (OperationCanceledException) when (generation != libraryLoadGeneration) { break; }
+                    catch (OperationCanceledException) when (!libraryLoads.IsCurrent(generation)) { break; }
                     catch (Exception exception)
                     {
-                        if (generation == libraryLoadGeneration)
+                        if (libraryLoads.IsCurrent(generation))
                         {
                             SetWindowStatus($"動画情報を取得できません: {Path.GetFileName(path)} ({exception.GetType().Name})");
                             log.Record("probe_failed", "none", null, "failed", detail: exception.GetType().Name);
                         }
                     }
                 }
-                finally
-                {
-                    if (loadingVideoPaths.TryGetValue(path, out var reservedGeneration) && reservedGeneration == generation)
-                        loadingVideoPaths.Remove(path);
-                }
+                finally { libraryLoads.Release(path, generation); }
             }
 
-            if (generation != libraryLoadGeneration) return;
+            if (!libraryLoads.IsCurrent(generation)) return;
             if (addedVideo)
             {
                 if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
@@ -134,7 +119,7 @@ public partial class MainWindow
 
     private async Task AddDroppedFilesAsync(string[] paths)
     {
-        var generation = libraryLoadGeneration;
+        var generation = libraryLoads.Generation;
         try
         {
             var folders = paths.Where(Directory.Exists).ToArray();
@@ -145,12 +130,12 @@ public partial class MainWindow
                     MessageBoxResult.No) == MessageBoxResult.Yes)));
             if (beforeDropRegistrationForVerification is not null)
                 await beforeDropRegistrationForVerification();
-            if (!closing && generation == libraryLoadGeneration && files.Length > 0)
+            if (!closing && libraryLoads.IsCurrent(generation) && files.Length > 0)
                 await AddFilesAsync(files, folders);
         }
         catch (Exception exception)
         {
-            if (generation == libraryLoadGeneration)
+            if (libraryLoads.IsCurrent(generation))
                 SetWindowStatus($"フォルダーを読み込めません: {exception.GetType().Name}");
         }
     }
