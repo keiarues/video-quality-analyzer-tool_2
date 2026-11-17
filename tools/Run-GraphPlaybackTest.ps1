@@ -1,4 +1,4 @@
-param([switch]$Prepare, [switch]$Auto)
+param([switch]$Prepare, [switch]$Auto, [switch]$VerifyOperations)
 $ErrorActionPreference = 'Stop'
 $workspace = Split-Path $PSScriptRoot -Parent
 $dotnet = Join-Path $workspace 'tools/dotnet/dotnet.exe'
@@ -13,6 +13,7 @@ if ($Prepare) {
 } else {
     $arguments = @($app, '--graph-playback-test', $cache)
     if ($Auto) { $arguments += '--auto' }
+    if ($VerifyOperations) { $arguments += '--verify-operations' }
     & $dotnet @arguments
 }
 if ($LASTEXITCODE -ne 0) { throw "グラフ検証に失敗しました。保存先の.error.txtも確認してください。" }
