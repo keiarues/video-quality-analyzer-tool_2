@@ -60,8 +60,8 @@ public partial class MainWindow
         var leftVideo = ordered.FirstOrDefault(video => video.Id == choice.LeftVideoId);
         var rightVideo = ordered.FirstOrDefault(video => video.Id == choice.RightVideoId);
         comparisonActive = CanCompare(leftVideo, rightVideo);
-        SetSlot(left, leftVideo, choice.Generation);
-        SetSlot(right, rightVideo, choice.Generation);
+        SetSlot(left, leftVideo);
+        SetSlot(right, rightVideo);
         RefreshEvaluatedPlayback(seekOnChange: false);
         resume = isPlaying;
         UpdateEmbeddedComparison(leftVideo, rightVideo, position, resume);

@@ -8,7 +8,7 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
-    private void SetSlot(SlotState slot, VideoDescriptor? video, long generation)
+    private void SetSlot(SlotState slot, VideoDescriptor? video)
     {
         if (slot.Video?.Id == video?.Id)
             return;
@@ -18,7 +18,6 @@ public partial class MainWindow
         slot.Media.Source = null;
         slot.Video = video;
         slot.LastShownPosition = null;
-        slot.Generation = generation;
         slot.Ready = false;
         slot.FpsSampleStamp = 0;
         slot.PlaybackFps = null;
@@ -282,7 +281,6 @@ public partial class MainWindow
         public Av1PreviewPlayer Av1 { get; } = new(av1Image);
         public TextBlock Name { get; } = name;
         public VideoDescriptor? Video { get; set; }
-        public long Generation { get; set; }
         public bool Ready { get; set; }
         public TimeSpan? LastShownPosition { get; set; }
         public long OpenStarted { get; set; }
