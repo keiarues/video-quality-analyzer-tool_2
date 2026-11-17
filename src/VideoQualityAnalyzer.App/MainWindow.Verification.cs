@@ -44,6 +44,14 @@ public partial class MainWindow
             PreviewLeftSelect.SelectedItem = candidate;
             await comparisonChangeTask;
             if (left.Video != candidate.Descriptor) throw new InvalidOperationException("通常画面の選択連動が不正です。");
+            var status = WindowStatusText.Text;
+            ReportComparisonFailure(comparisonGeneration - 1, new InvalidOperationException());
+            if (WindowStatusText.Text != status)
+                throw new InvalidOperationException("古い比較読み込みの失敗が現在の状態表示を上書きしました。");
+            ReportComparisonFailure(comparisonGeneration, new InvalidOperationException());
+            if (!WindowStatusText.Text.Contains("比較映像を準備できません"))
+                throw new InvalidOperationException("現在の比較読み込み失敗を表示できません。");
+            SetWindowStatus(status);
             var outputDirectory = System.IO.Path.GetFullPath(System.IO.Path.Combine(AppContext.BaseDirectory, "../../../../../measurement-results"));
             foreach (var mode in new[] { 0, 1, 2 })
             {

@@ -89,11 +89,20 @@ public partial class MainWindow
         {
             if (evaluatedPlaybackPlan is not null && isPlaying) BeginEvaluatedAudioTransition(position);
             await comparisonPanel!.SetSourcesAsync(leftVideo, rightVideo, position, false);
-            if (generation != comparisonGeneration || !comparisonActive || closing) return;
+            if (!IsCurrentComparisonRequest(generation)) return;
             left.Ready = right.Ready = comparisonPanel.IsReady;
             if (isPlaying && comparisonPanel.IsReady) comparisonPanel.Play();
             UpdateTimeDisplay();
         }
-        catch (Exception exception) { if (!closing) SetWindowStatus($"比較映像を準備できません: {exception.GetType().Name}"); }
+        catch (Exception exception) { ReportComparisonFailure(generation, exception); }
+    }
+
+    private bool IsCurrentComparisonRequest(long generation) =>
+        generation == comparisonGeneration && comparisonActive && !closing;
+
+    private void ReportComparisonFailure(long generation, Exception exception)
+    {
+        if (IsCurrentComparisonRequest(generation))
+            SetWindowStatus($"比較映像を準備できません: {exception.GetType().Name}");
     }
 }
