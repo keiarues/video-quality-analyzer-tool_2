@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO.Pipes;
 using System.Runtime.ExceptionServices;
 using System.Security.Cryptography;
-using System.Text.Json;
 using VideoQualityAnalyzer.Core;
 
 namespace VideoQualityAnalyzer.Media;
@@ -12,8 +11,6 @@ namespace VideoQualityAnalyzer.Media;
 // 復号器2本から有界のパイプへ送り、一つの評価器の時間特徴を維持する。
 public sealed class ContinuousInputEvaluationService(string executable, string probeExecutable, Action<QualityEvaluationTiming>? timing = null)
 {
-    private sealed record Raster(string PixelFormat, double? Start, string Parameters);
-
     public async Task<QualityResult> EvaluatePartialAsync(VideoDescriptor reference, VideoDescriptor candidate,
         IReadOnlyList<EvaluationFrameRange> ranges, QualityMetric metric, IProgress<InputSeekProgress>? progress, CancellationToken token)
         => (await ExecuteCoreAsync(reference, candidate, ranges, metric, false, progress, token, compare: false)).Run.Result;
@@ -34,10 +31,9 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
         if (compare && (reference.Width % 2 != 0 || reference.Height % 2 != 0))
             throw new NotSupportedException("連続入力の試作は、偶数解像度のyuv420p素材が対象です。");
         var snapshot = ranges.ToArray();
-        var referenceRaster = await ReadRasterAsync(reference.Path, token);
-        var candidateRaster = await ReadRasterAsync(candidate.Path, token);
-        var usePipes = OperatingSystem.IsWindows() && reference.Width % 2 == 0 && reference.Height % 2 == 0 &&
-            referenceRaster.PixelFormat == "yuv420p" && candidateRaster.PixelFormat == "yuv420p" && referenceRaster.Start is not null && candidateRaster.Start is not null;
+        var referenceRaster = await EvaluationRaster.ReadAsync(probeExecutable, reference.Path, token);
+        var candidateRaster = await EvaluationRaster.ReadAsync(probeExecutable, candidate.Path, token);
+        var usePipes = EvaluationRaster.CanUsePipes(reference, referenceRaster, candidateRaster);
         if (compare && !usePipes)
             throw new NotSupportedException("連続入力の試作は、偶数解像度のyuv420p素材が対象です。");
         var numbers = snapshot.SelectMany(range => Enumerable.Range(0, checked((int)(range.End - range.Start))).Select(offset => range.Start + offset)).ToArray();
@@ -106,7 +102,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
                 if (!compare) timing?.Invoke(new(clock.Elapsed - aggregation.Elapsed, aggregation.Elapsed, TimeSpan.FromTicks(cpuTicks)));
                 return new(result, referenceHashes, candidateHashes, clock.Elapsed);
 
-                async Task FeedAsync(VideoDescriptor video, Raster raster, NamedPipeServerStream pipe, List<EvaluationFrameDigest> hashes, CancellationToken stop)
+                async Task FeedAsync(VideoDescriptor video, EvaluationRaster raster, NamedPipeServerStream pipe, List<EvaluationFrameDigest> hashes, CancellationToken stop)
                 {
                     await pipe.WaitForConnectionAsync(stop);
                     var frameBytes = checked(video.Width * video.Height * 3 / 2);
@@ -221,24 +217,5 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
             if (process.ExitCode != 0) throw new InvalidOperationException($"連続評価に失敗しました（終了コード{process.ExitCode}）。");
         }
         finally { EvaluationProcess.Kill(process); await process.WaitForExitAsync(CancellationToken.None); await errors; cpu?.Invoke(process.TotalProcessorTime); }
-    }
-    private async Task<Raster> ReadRasterAsync(string path, CancellationToken token)
-    {
-        var arguments = new[] { "-v", "error", "-select_streams", "v:0", "-show_entries",
-            "stream=pix_fmt,start_time,color_space,color_range,color_primaries,color_transfer", "-of", "json", "-i", path };
-        using var process = EvaluationProcess.Start(probeExecutable, arguments, null, "映像情報を取得できません。");
-        using var registration = token.Register(() => EvaluationProcess.Kill(process));
-        var output = process.StandardOutput.ReadToEndAsync(); var errors = process.StandardError.ReadToEndAsync();
-        try { await process.WaitForExitAsync(token); }
-        finally { EvaluationProcess.Kill(process); await process.WaitForExitAsync(CancellationToken.None); await errors; }
-        token.ThrowIfCancellationRequested();
-        if (process.ExitCode != 0) throw new InvalidOperationException("映像形式の取得に失敗しました。");
-        using var json = JsonDocument.Parse(await output);
-        var stream = json.RootElement.GetProperty("streams")[0];
-        string Value(string key, string fallback = "unknown") => stream.TryGetProperty(key, out var value) ? value.GetString() ?? fallback : fallback;
-        var range = Value("color_range") switch { "tv" => "limited", "pc" => "full", _ => "unknown" };
-        var knownStart = double.TryParse(Value("start_time", "N/A"), NumberStyles.Float, CultureInfo.InvariantCulture, out var start) && double.IsFinite(start);
-        return new(Value("pix_fmt"), knownStart ? start : null,
-            $"setparams=colorspace={Value("color_space")}:range={range}:color_primaries={Value("color_primaries")}:color_trc={Value("color_transfer")}");
     }
 }
