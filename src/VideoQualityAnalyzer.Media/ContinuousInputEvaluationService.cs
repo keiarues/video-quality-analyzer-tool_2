@@ -28,7 +28,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
         IProgress<InputSeekProgress>? progress, CancellationToken token, bool compare)
     {
         token.ThrowIfCancellationRequested();
-        InputSeekEvaluationService.Validate(reference, candidate, ranges, QualityMetric.Ssim);
+        EvaluationRangeValidator.ValidateCfrPair(reference, candidate, ranges);
         if (!Enum.IsDefined(metric)) throw new ArgumentException("評価指標が不正です。");
         if (reference.Width <= 0 || reference.Height <= 0) throw new ArgumentException("動画の解像度が不正です。");
         if (compare && (reference.Width % 2 != 0 || reference.Height % 2 != 0))
