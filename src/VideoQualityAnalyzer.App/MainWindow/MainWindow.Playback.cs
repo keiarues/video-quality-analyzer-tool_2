@@ -56,8 +56,7 @@ public partial class MainWindow
             slot.Media.Play();
         else
             slot.Media.Pause();
-        if (slot.Side == "right")
-            slot.Media.IsMuted = true;
+        ApplyAudioSettings();
         var elapsed = Stopwatch.GetElapsedTime(slot.OpenStarted).TotalMilliseconds;
         log.Record("media_opened", slot.Side, video.Id, "ready_not_presented", elapsed,
             detail: "decode_mode=unknown;first_presented_at=unmeasured");
@@ -201,17 +200,21 @@ public partial class MainWindow
         UpdateTimeDisplay();
     }
 
+    private void ApplyAudioSettings()
+    {
+        LeftMedia.Volume = VolumeSlider.Value;
+        LeftMedia.IsMuted = MuteCheck.IsChecked == true;
+        RightMedia.IsMuted = true;
+    }
+
     private void VolumeSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        if (initialized)
-            LeftMedia.Volume = VolumeSlider.Value;
+        if (initialized) ApplyAudioSettings();
     }
 
     private void MuteCheck_Changed(object sender, RoutedEventArgs e)
     {
-        if (initialized)
-            LeftMedia.IsMuted = MuteCheck.IsChecked == true;
-        RightMedia.IsMuted = true;
+        if (initialized) ApplyAudioSettings();
     }
 
     private sealed class SlotState(string side, MediaElement media, Image av1Image, TextBlock name)

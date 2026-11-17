@@ -92,8 +92,7 @@ public partial class MainWindow : Window
             new System.Windows.Controls.Primitives.DragStartedEventHandler(SeekSlider_DragStarted), true);
         SeekSlider.AddHandler(System.Windows.Controls.Primitives.Thumb.DragCompletedEvent,
             new System.Windows.Controls.Primitives.DragCompletedEventHandler(SeekSlider_DragCompleted), true);
-        LeftMedia.Volume = VolumeSlider.Value;
-        RightMedia.IsMuted = true;
+        ApplyAudioSettings();
         initialized = true;
         InitializeEmbeddedGraphs();
         // FFmpeg未配置でも本体と設定画面を開けるよう、比較画面の初期化を保留する。

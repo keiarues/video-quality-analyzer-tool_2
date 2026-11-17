@@ -15,6 +15,13 @@ public partial class MainWindow
             VideoList.SelectedItem = candidate;
             await comparisonChangeTask;
             PausePlayback();
+            VolumeSlider.Value = 0.25;
+            MuteCheck.IsChecked = true;
+            if (Math.Abs(LeftMedia.Volume - 0.25) > 0.001 || !LeftMedia.IsMuted || !RightMedia.IsMuted)
+                throw new InvalidOperationException("左右の音量・消音設定が不正です。");
+            MuteCheck.IsChecked = false;
+            if (LeftMedia.IsMuted || !RightMedia.IsMuted)
+                throw new InvalidOperationException("左の消音解除時に右音声も解除されました。");
             var graphHeight = QualityGraphRow.Height;
             GraphToggle_Click(this, new RoutedEventArgs());
             UpdateLayout();
@@ -29,12 +36,17 @@ public partial class MainWindow
                 ApplySeek(TimeSpan.FromSeconds(0.2));
                 await comparisonChangeTask;
                 if (playing) Play_Click(this, new RoutedEventArgs()); else PausePlayback();
+                var positionBeforeChange = CurrentPosition();
                 comparisonPanel.SelectPreviewSource(true, candidate.Descriptor.Path);
                 await comparisonChangeTask;
                 comparisonPanel.SelectPreviewSource(false, reference.Descriptor.Path);
                 await comparisonChangeTask;
                 if (left.Video != candidate.Descriptor || right.Video != reference.Descriptor || referenceId != reference.Descriptor.Id || isPlaying != playing)
                     throw new InvalidOperationException("プレビューの動画変更、元動画維持または再生状態が不正です。");
+                if (!RightMedia.IsMuted)
+                    throw new InvalidOperationException("動画切り替え後に右音声の消音が解除されました。");
+                if (!playing && Math.Abs((CurrentPosition() - positionBeforeChange).TotalSeconds) > 0.05)
+                    throw new InvalidOperationException("動画切り替えで共通再生時刻が変わりました。");
                 comparisonPanel.SelectPreviewSource(true, reference.Descriptor.Path);
                 await comparisonChangeTask;
                 comparisonPanel.SelectPreviewSource(false, candidate.Descriptor.Path);
@@ -64,7 +76,7 @@ public partial class MainWindow
                 using var stream = System.IO.File.Create(System.IO.Path.Combine(outputDirectory, $"preview-controls-{mode}.png"));
                 encoder.Save(stream);
             }
-            Console.WriteLine("プレビュー操作: グラフ最小化復元、3モードの左右選択、一時停止・再生状態・元動画設定の維持が合格");
+            Console.WriteLine("プレビュー操作: 左右選択、共通時刻、右音声消音、再生状態、グラフ最小化復元が合格");
             Application.Current.Shutdown(0);
         }
         catch (Exception exception) { Console.Error.WriteLine(exception.Message); Application.Current.Shutdown(1); }

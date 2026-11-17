@@ -65,7 +65,7 @@ public partial class MainWindow
         RefreshEvaluatedPlayback(seekOnChange: false);
         resume = isPlaying;
         UpdateEmbeddedComparison(leftVideo, rightVideo, position, resume);
-        RightMedia.IsMuted = true;
+        ApplyAudioSettings();
         UpdateInfo();
         SyncPreviewSelectors();
         RefreshEmbeddedGraphs();
