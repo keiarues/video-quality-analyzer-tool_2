@@ -26,7 +26,7 @@ internal sealed partial class GraphImageSaveWindow : Window
     private readonly ComboBox imageTheme = new() { Width = 100 };
     private readonly ComboBox size = new() { Width = 160 };
     private readonly TextBox dimension = new() { Width = 70, Text = "1024" };
-    private readonly TextBox heightDimension = new() { Width = 70, Text = "468" };
+    private readonly TextBox heightDimension = new() { Width = 70, Text = "768" };
     private readonly ComboBox font = new() { Width = 80 };
     private readonly Image preview = new() { Stretch = Stretch.Fill };
     private readonly Grid viewport = new() { Background = Brushes.LightSlateGray };
@@ -37,7 +37,7 @@ internal sealed partial class GraphImageSaveWindow : Window
         SmallChange = 10, LargeChange = 10, IsSnapToTickEnabled = true, Width = 230, Value = 100 };
     private readonly TextBlock zoomLabel = new() { Width = 65, VerticalAlignment = VerticalAlignment.Center };
     private readonly DispatcherTimer resizeTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
-    private readonly (int Width, int Height)[] presets = [(800, 600), (1024, 468), (1024, 768), (1280, 960),
+    private readonly (int Width, int Height)[] presets = [(800, 600), (1024, 768), (1280, 960),
         (1600, 1200), (1920, 1440), (2560, 1920), (3840, 2880)];
     private QualityGraphPanel graph = null!;
     private string referenceFileName = "サンプル基準動画.mkv";

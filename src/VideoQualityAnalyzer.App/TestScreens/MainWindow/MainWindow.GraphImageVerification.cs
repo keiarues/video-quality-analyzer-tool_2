@@ -26,7 +26,7 @@ public partial class MainWindow
                     await Task.Delay(400);
                     window = Application.Current.Windows.OfType<GraphImageSaveWindow>().Single();
                     window.UpdateLayout();
-                    if (window.CurrentPreviewImage is not { PixelWidth: 1024, PixelHeight: 468 } ||
+                    if (window.CurrentPreviewImage is not { PixelWidth: 1024, PixelHeight: 768 } ||
                         window.ReferenceFileName != reference.Name || window.CurrentMetric != QualityMetric.Ssim ||
                         window.FilePointCount != 1 || window.SelectedVideoCount != 1)
                         throw new InvalidOperationException("基準動画・評価結果・選択が保存画面に反映されません。");
