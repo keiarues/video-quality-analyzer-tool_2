@@ -47,5 +47,22 @@ public sealed class SelectionTests
         Assert.AreEqual(new PreviewSelection("ref", null, 7), SelectionService.Resolve([Videos[0]], "ref", ["ref"], null, 7));
     }
 
+    [TestMethod]
+    public void ValidPreviewOverridesChangeOnlyRequestedSides()
+    {
+        var resolved = SelectionService.Resolve(Videos, "ref", [], null, 8);
+        Assert.AreEqual(new PreviewSelection("b", "a", 8),
+            SelectionService.ApplyOverrides(resolved, Videos, "b", null));
+        Assert.AreEqual(new PreviewSelection("ref", "b", 8),
+            SelectionService.ApplyOverrides(resolved, Videos, null, "b"));
+    }
+
+    [TestMethod]
+    public void MissingPreviewOverridesPreserveResolvedVideos()
+    {
+        var resolved = new PreviewSelection("ref", "a", 9);
+        Assert.AreEqual(resolved, SelectionService.ApplyOverrides(resolved, Videos, "missing", "deleted"));
+    }
+
     private static VideoDescriptor Create(string id) => new(id, $"{id}.mkv", 1440, 1080, "ffv1", 60, 60, TimeSpan.FromSeconds(10), false, 600, 1);
 }

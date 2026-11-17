@@ -4,6 +4,17 @@ public sealed record PreviewSelection(string? LeftVideoId, string? RightVideoId,
 
 public static class SelectionService
 {
+    public static PreviewSelection ApplyOverrides(PreviewSelection selection,
+        IReadOnlyList<VideoDescriptor> videos, string? leftOverride, string? rightOverride)
+    {
+        var ids = videos.Select(video => video.Id).ToHashSet();
+        return selection with
+        {
+            LeftVideoId = leftOverride is not null && ids.Contains(leftOverride) ? leftOverride : selection.LeftVideoId,
+            RightVideoId = rightOverride is not null && ids.Contains(rightOverride) ? rightOverride : selection.RightVideoId
+        };
+    }
+
     public static PreviewSelection Resolve(
         IReadOnlyList<VideoDescriptor> videos,
         string? referenceId,

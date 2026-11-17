@@ -271,9 +271,9 @@ public partial class MainWindow
         foreach (var item in videos)
             item.IsReference = item.Descriptor.Id == referenceId;
         var selected = VideoList.SelectedItems.Cast<VideoEntry>().Select(item => item.Descriptor.Id).ToArray();
-        var choice = SelectionService.Resolve(ordered, referenceId, selected, previousRightId, ++selectionGeneration);
-        if (videos.Any(entry => entry.Descriptor.Id == previewLeftOverride)) choice = choice with { LeftVideoId = previewLeftOverride };
-        if (videos.Any(entry => entry.Descriptor.Id == previewRightOverride)) choice = choice with { RightVideoId = previewRightOverride };
+        var choice = SelectionService.ApplyOverrides(
+            SelectionService.Resolve(ordered, referenceId, selected, previousRightId, ++selectionGeneration),
+            ordered, previewLeftOverride, previewRightOverride);
         log.Record("selection_requested", "both", choice.LeftVideoId, "requested",
             detail: $"right_video_id={choice.RightVideoId ?? "none"};generation={choice.Generation}");
         previousRightId = choice.RightVideoId;
