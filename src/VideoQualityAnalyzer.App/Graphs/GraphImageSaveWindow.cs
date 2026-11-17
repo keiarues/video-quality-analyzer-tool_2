@@ -1,4 +1,4 @@
-﻿using System.IO;
+using System.IO;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -195,107 +195,6 @@ internal sealed partial class GraphImageSaveWindow : Window
         Padding = new Thickness(4, 0, 4, 0), Margin = new Thickness(3, 2, 3, 2),
         VerticalContentAlignment = VerticalAlignment.Center
     };
-    private static string PngFileName(DateTime savedAt, string referenceName, QualityMetric metric, GraphImageTarget target)
-    {
-        var graphType = target == GraphImageTarget.Frames ? "フレームグラフ" : "ファイルグラフ";
-        return $"{savedAt.ToString("yyyyMMdd-HHmmss", CultureInfo.InvariantCulture)}_{referenceName}_" +
-            $"{graphType}_{metric.ToString().ToUpperInvariant()}.png";
-    }
-    private SaveFileDialog CreateSaveDialog(DateTime savedAt) => new()
-    {
-        Filter = "PNG画像 (*.png)|*.png", DefaultExt = ".png", AddExtension = true,
-        InitialDirectory = Environment.GetFolderPath(Environment.SpecialFolder.MyPictures),
-        FileName = PngFileName(savedAt, referenceFileName, graph.SelectedMetric,
-            (GraphImageTarget)target.SelectedIndex)
-    };
-    private double FontScale() => new[] { 0.5, 0.8, 1, 1.2, 1.5, 2 }[font.SelectedIndex];
-    private void UpdateSizeInputs()
-    {
-        dimension.IsEnabled = size.SelectedIndex == 1;
-        heightDimension.IsEnabled = size.SelectedIndex == 1;
-    }
-    private void QueueRefresh()
-    {
-        resizeTimer.Stop(); resizeTimer.Start();
-    }
-    private Size AvailableSize() => new(Math.Max(300, viewport.ActualWidth - 28),
-        Math.Max(300, viewport.ActualHeight - 28));
-    private (int Width, int Height) ImageSize()
-    {
-        var available = AvailableSize();
-        var dpi = VisualTreeHelper.GetDpi(this);
-        double width, height;
-        if (size.SelectedIndex >= 2) return presets[size.SelectedIndex - 2];
-        if (size.SelectedIndex == 0)
-        {
-            width = available.Width * dpi.DpiScaleX;
-            height = available.Height * dpi.DpiScaleY;
-        }
-        else
-        {
-            static int Parse(string text)
-            {
-                if (!int.TryParse(text, out var value) || value < 1 || value > 16384)
-                    throw new InvalidOperationException("幅と高さは1～16384ピクセルの整数で入力してください。");
-                return value;
-            }
-            width = Parse(dimension.Text);
-            height = Parse(heightDimension.Text);
-        }
-        if (width > 16384 || height > 16384 || width * height > 40_000_000)
-            throw new InvalidOperationException("画像は各辺16384ピクセル、総画素数4000万以下にしてください。");
-        return (Math.Max(1, (int)Math.Round(width)), Math.Max(1, (int)Math.Round(height)));
-    }
-    private BitmapSource CreateImage()
-    {
-        var (width, height) = ImageSize();
-        return graph.CreateExportImage((GraphImageTarget)target.SelectedIndex, width, height, FontScale());
-    }
-    private BitmapSource SavePng(string path)
-    {
-        // ズームは表示だけに使用し、保存には元の出力画像を使う。
-        RefreshPreview();
-        var bitmap = preview.Source as BitmapSource ?? CreateImage();
-        var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
-        using var stream = File.Create(path); encoder.Save(stream);
-        return bitmap;
-    }
-    private void RefreshPreview()
-    {
-        if (viewport.ActualWidth <= 0 || viewport.ActualHeight <= 0) return;
-        try
-        {
-            preview.Source = CreateImage(); ApplyZoom();
-            var bitmap = RequirePreview();
-            updatingSizeInputs = true;
-            if (!dimension.IsEnabled) dimension.Text = bitmap.PixelWidth.ToString();
-            if (!heightDimension.IsEnabled) heightDimension.Text = bitmap.PixelHeight.ToString();
-            updatingSizeInputs = false;
-            status.Text = $"出力予定の画像：{target.SelectedItem}（{bitmap.PixelWidth} × {bitmap.PixelHeight}）";
-        }
-        catch (Exception error) { preview.Source = null; status.Text = "プレビューを作成できませんでした：" + error.Message; }
-    }
-    private BitmapSource RequirePreview() => preview.Source as BitmapSource
-        ?? throw new InvalidOperationException("プレビュー画像が生成されていません。" + status.Text);
-
-    private void ApplyZoom()
-    {
-        if (preview.Source is not BitmapSource bitmap) return;
-        var dpi = VisualTreeHelper.GetDpi(this);
-        var available = AvailableSize();
-        displayScale = fitToWindow ? Math.Min(available.Width * dpi.DpiScaleX / bitmap.PixelWidth,
-            available.Height * dpi.DpiScaleY / bitmap.PixelHeight) : zoom.Value / 100;
-        preview.Width = bitmap.PixelWidth * displayScale / dpi.DpiScaleX;
-        preview.Height = bitmap.PixelHeight * displayScale / dpi.DpiScaleY;
-        zoomLabel.Text = $"{displayScale * 100:0}%";
-        if (fitToWindow)
-        {
-            updatingZoom = true;
-            zoom.Value = Math.Clamp(Math.Round(displayScale * 10) * 10, zoom.Minimum, zoom.Maximum);
-            updatingZoom = false;
-        }
-    }
-
     private void SetGraph(VideoDescriptor[] selectedVideos, VideoDescriptor[] allVideos,
         Dictionary<(string VideoId, QualityMetric Metric), QualityResult> results, string referenceName,
         IReadOnlyDictionary<string, string>? groups = null)
