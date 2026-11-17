@@ -11,8 +11,8 @@ internal static class DisplayStyleSettings
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "VideoQualityAnalyzer", "display-style.txt");
 
-    public static string ActiveMode { get; private set; } = "Dark";
-    public static string ActivePalette { get; private set; } = "Dark";
+    public static string ActiveMode { get; private set; } = "System";
+    public static string ActivePalette { get; private set; } = PaletteFor("System", SystemUsesLightTheme());
 
     public static string Load() => Load(SettingsPath);
 
@@ -20,11 +20,11 @@ internal static class DisplayStyleSettings
     {
         try
         {
-            var value = File.Exists(path) ? File.ReadAllText(path).Trim() : "Dark";
-            return Modes.Contains(value, StringComparer.Ordinal) ? value : "Dark";
+            var value = File.Exists(path) ? File.ReadAllText(path).Trim() : "System";
+            return Modes.Contains(value, StringComparer.Ordinal) ? value : "System";
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
-        { return "Dark"; }
+        { return "System"; }
     }
 
     public static void Save(string mode) => Save(mode, SettingsPath);

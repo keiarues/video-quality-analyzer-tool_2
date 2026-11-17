@@ -95,9 +95,14 @@ internal sealed class DisplayStyleTestWindow : Window
             var path = Path.Combine(Path.GetTempPath(), "display-style-test-" + Guid.NewGuid().ToString("N"));
             try
             {
+                if (DisplayStyleSettings.Load(path) != "System")
+                    throw new InvalidOperationException("設定ファイルがない場合の既定表示スタイルが不正です。");
                 DisplayStyleSettings.Save(mode, path);
                 if (DisplayStyleSettings.Load(path) != mode)
                     throw new InvalidOperationException("表示スタイルの保存・読み込みが不正です。");
+                File.WriteAllText(path, "不正な値");
+                if (DisplayStyleSettings.Load(path) != "System")
+                    throw new InvalidOperationException("不正な設定値の既定表示スタイルが不正です。");
             }
             finally { if (File.Exists(path)) File.Delete(path); }
             UpdateLayout();

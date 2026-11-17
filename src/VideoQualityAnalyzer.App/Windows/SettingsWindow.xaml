@@ -30,7 +30,7 @@
                     <ComboBoxItem Content="ダーク（Dark）" Tag="Dark" />
                 </ComboBox>
             </Grid>
-            <TextBlock Text="標準は従来のWPF表示です。Windows に合わせる場合は、起動時のWindowsアプリ用配色を使用します。変更は次回起動時に反映されます。"
+            <TextBlock Text="初期設定ではWindowsの配色に合わせます。標準（None）は従来のWPF表示です。システム配色は起動時のWindowsアプリ用配色を使用します。変更は次回起動時に反映されます。"
                        Style="{StaticResource UiSmallTextStyle}" TextWrapping="Wrap" Margin="0,0,0,18" />
             <TextBlock Text="FFmpeg" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,4" />
             <Grid Margin="0,8,0,8">
