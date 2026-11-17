@@ -33,17 +33,18 @@ public partial class MainWindow
     private void RemoveAll_Click(object sender, RoutedEventArgs e)
     {
         if (evaluationCancellation is not null) return;
-        RemoveVideos(videos.ToArray());
+        RemoveVideos(videos.ToArray(), cancelPendingLoads: true);
     }
 
     private void Exit_Click(object sender, RoutedEventArgs e) => Close();
     private void Settings_Click(object sender, RoutedEventArgs e) => new SettingsWindow { Owner = this }.ShowDialog();
     private void About_Click(object sender, RoutedEventArgs e) => new AboutWindow { Owner = this }.ShowDialog();
 
-    private void RemoveVideos(VideoEntry[] removed)
+    private void RemoveVideos(VideoEntry[] removed, bool cancelPendingLoads = false)
     {
         if (removed.Any(item => item.Descriptor.Id == referenceId) && evaluationResults.HasResults &&
             !ConfirmEvaluationReset("基準動画を削除すると、計算済みの評価値がすべて削除されます。続行しますか？")) return;
+        if (cancelPendingLoads) CancelPendingLibraryLoads();
         WithSelectionSuppressed(() =>
         {
             foreach (var item in removed)

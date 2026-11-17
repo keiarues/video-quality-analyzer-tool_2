@@ -7,7 +7,19 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
-    private readonly HashSet<string> loadingVideoPaths = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, long> loadingVideoPaths = new(StringComparer.OrdinalIgnoreCase);
+    private long libraryLoadGeneration;
+    private CancellationTokenSource libraryLoadCancellation = new();
+    private Func<string, Task>? beforeVideoProbeForVerification;
+
+    private void CancelPendingLibraryLoads()
+    {
+        libraryLoadGeneration++;
+        libraryLoadCancellation.Cancel();
+        libraryLoadCancellation.Dispose();
+        libraryLoadCancellation = new CancellationTokenSource();
+        loadingVideoPaths.Clear();
+    }
 
     private async void Add_Click(object sender, RoutedEventArgs e)
     {
@@ -34,14 +46,18 @@ public partial class MainWindow
             return;
         }
 
+        var generation = libraryLoadGeneration;
+        var cancellationToken = libraryLoadCancellation.Token;
         pendingVideoLoads++;
         try
         {
             foreach (var input in paths)
             {
+                if (generation != libraryLoadGeneration) break;
                 var path = Path.GetFullPath(input);
                 if (videos.Any(item => string.Equals(item.Descriptor.Path, path, StringComparison.OrdinalIgnoreCase)) ||
-                    !loadingVideoPaths.Add(path)) continue;
+                    loadingVideoPaths.ContainsKey(path)) continue;
+                loadingVideoPaths.Add(path, generation);
                 try
                 {
                     if (!File.Exists(path))
@@ -53,7 +69,11 @@ public partial class MainWindow
                     SetWindowStatus("動画情報を取得中: " + Path.GetFileName(path));
                     try
                     {
-                        var descriptor = await probe.ProbeAsync(path, CancellationToken.None);
+                        if (beforeVideoProbeForVerification is not null)
+                            await beforeVideoProbeForVerification(path);
+                        if (generation != libraryLoadGeneration) break;
+                        var descriptor = await probe.ProbeAsync(path, cancellationToken);
+                        if (generation != libraryLoadGeneration) break;
                         var entry = new VideoEntry(descriptor);
                         videos.Add(entry);
                         referenceId ??= descriptor.Id;
@@ -64,19 +84,26 @@ public partial class MainWindow
                         log.Record("file_added", "none", descriptor.Id, "ok",
                             detail: $"codec={descriptor.Codec};resolution={descriptor.Width}x{descriptor.Height};fps={descriptor.AverageFrameRate:F3}");
                     }
+                    catch (OperationCanceledException) when (generation != libraryLoadGeneration) { break; }
                     catch (Exception exception)
                     {
-                        SetWindowStatus($"動画情報を取得できません: {Path.GetFileName(path)} ({exception.GetType().Name})");
-                        log.Record("probe_failed", "none", null, "failed", detail: exception.GetType().Name);
+                        if (generation == libraryLoadGeneration)
+                        {
+                            SetWindowStatus($"動画情報を取得できません: {Path.GetFileName(path)} ({exception.GetType().Name})");
+                            log.Record("probe_failed", "none", null, "failed", detail: exception.GetType().Name);
+                        }
                     }
                 }
-                finally { loadingVideoPaths.Remove(path); }
+                finally
+                {
+                    if (loadingVideoPaths.TryGetValue(path, out var reservedGeneration) && reservedGeneration == generation)
+                        loadingVideoPaths.Remove(path);
+                }
             }
 
-            ClearLibrarySelection();
+            if (generation != libraryLoadGeneration) return;
             UpdateSelection();
             if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
-            ClearLibrarySelection();
             var groupCount = videos.Where(entry => !entry.IsReference && !string.IsNullOrWhiteSpace(entry.Group))
                 .Select(entry => entry.Group).Distinct().Count();
             SetWindowStatus($"読み込み済み：{videos.Count}ファイル／{groupCount}グループ");
