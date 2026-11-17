@@ -23,7 +23,7 @@
             <Setter Property="HorizontalContentAlignment" Value="Right" />
         </Style>
     </Window.Resources>
-    <DockPanel>
+    <DockPanel Background="{StaticResource BackgroundBrush}">
         <Menu DockPanel.Dock="Top"
               FontFamily="{StaticResource UiFontFamily}" FontSize="{StaticResource UiFontMedium}">
             <MenuItem Header="ファイル">
@@ -138,7 +138,7 @@
                 </DockPanel>
             </Border>
 
-            <GridSplitter Name="SidebarSplitter" Template="{StaticResource ResizeBarTemplate}" Tag="Vertical" Cursor="SizeWE" ToolTip="動画一覧の幅を変更" AutomationProperties.Name="動画一覧の幅を変更" Grid.Column="1" Margin="0,36,0,0" Width="10" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#405066" />
+            <GridSplitter Name="SidebarSplitter" Template="{StaticResource ResizeBarTemplate}" Tag="Vertical" Cursor="SizeWE" ToolTip="動画一覧の幅を変更" AutomationProperties.Name="動画一覧の幅を変更" Grid.Column="1" Margin="0,36,0,0" Width="10" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="{StaticResource UiSeparatorBrush}" />
             <Button Name="SidebarToggleButton" Grid.Column="1" Content="◀" ToolTip="一覧を最小化" AutomationProperties.Name="一覧を最小化"
                     Click="SidebarToggle_Click" Width="18" Height="30" MinWidth="0" Padding="0" Margin="1,0,1,0" VerticalAlignment="Top"
                     Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}" />
@@ -165,7 +165,7 @@
                                           ScrubbingEnabled="True" Stretch="Uniform"
                                           MediaOpened="LeftMedia_Opened" MediaFailed="LeftMedia_Failed" MediaEnded="Media_Ended" />
                             <Image Name="LeftAv1Image" Stretch="Uniform" Visibility="Collapsed" />
-                            <Border VerticalAlignment="Top" Background="#CC17202D" Padding="10,7">
+                            <Border VerticalAlignment="Top" Background="{StaticResource UiVideoOverlayBrush}" Padding="10,7">
                                 <StackPanel>
                                     <TextBlock Name="LeftName" Text="左: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
                                     <ComboBox Name="PreviewLeftSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" />
@@ -181,7 +181,7 @@
                                           ScrubbingEnabled="True" Stretch="Uniform" IsMuted="True"
                                           MediaOpened="RightMedia_Opened" MediaFailed="RightMedia_Failed" MediaEnded="Media_Ended" />
                             <Image Name="RightAv1Image" Stretch="Uniform" Visibility="Collapsed" />
-                            <Border VerticalAlignment="Top" Background="#CC17202D" Padding="10,7">
+                            <Border VerticalAlignment="Top" Background="{StaticResource UiVideoOverlayBrush}" Padding="10,7">
                                 <StackPanel>
                                     <TextBlock Name="RightName" Text="右: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" />
                                     <ComboBox Name="PreviewRightSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" />
@@ -250,7 +250,7 @@
                 <Button Name="PreviewToggleButton" Grid.Row="3" HorizontalAlignment="Right" Margin="0,0,34,0" Width="30" Height="18" MinWidth="0" Padding="0" Content="▲" ToolTip="プレビューを最小化" Click="PreviewToggle_Click" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}" />
                 <Thumb Margin="0,0,68,0" Name="QualityGraphResizeBar" Template="{StaticResource ResizeBarTemplate}" Focusable="True" KeyDown="QualityGraphResize_KeyDown" Grid.Row="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                        Cursor="SizeNS" ToolTip="品質グラフの高さを変更" DragDelta="QualityGraphResize_DragDelta"
-                       AutomationProperties.Name="品質グラフの高さを変更" Background="#405066" />
+                       AutomationProperties.Name="品質グラフの高さを変更" Background="{StaticResource UiSeparatorBrush}" />
                 <Button Name="GraphToggleButton" Grid.Row="3" HorizontalAlignment="Right" Width="30" Height="18" MinWidth="0" Padding="0" Content="▼" ToolTip="グラフを最小化" Click="GraphToggle_Click" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}" />
                 <ContentControl Name="QualityGraphHost" Grid.Row="4" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
 

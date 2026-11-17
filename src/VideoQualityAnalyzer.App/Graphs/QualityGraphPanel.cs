@@ -50,7 +50,7 @@ public sealed partial class QualityGraphPanel : UserControl
         bool frameOnly = false, bool separatePlaybackLayer = false, bool cacheStaticGraph = false, Action? clearSelection = null,
         bool useDarkPalette = true)
     {
-        palette = useDarkPalette ? GraphPalette.Dark : GraphPalette.Light;
+        palette = useDarkPalette ? GraphPalette.Screen : GraphPalette.Export;
         colors = palette.Series;
         timeline.Background = palette.Plot;
         averages.Background = palette.Plot;
@@ -124,7 +124,7 @@ public sealed partial class QualityGraphPanel : UserControl
         {
             var selectedMetric = (QualityMetric)((TabItem)metric.SelectedItem).Tag;
             var available = (this.allVideos ?? this.videos).Where(video => playbackResults.ContainsKey((video.Id, selectedMetric))).ToArray();
-            var exportColors = GraphPalette.Light.Series;
+            var exportColors = GraphPalette.Export.Series;
             var series = available.Select((video, index) => new QualityGraphImageSeries(video,
                 playbackResults[(video.Id, selectedMetric)], exportColors[index % exportColors.Length], selectedIds.Contains(video.Id),
                 Bitrate(video), this.groups is not null && this.groups.TryGetValue(video.Id, out var group) ? group : null)).ToArray();
@@ -202,7 +202,7 @@ public sealed partial class QualityGraphPanel : UserControl
     {
         static bool SameColor(Brush actual, Brush expected) => actual is SolidColorBrush a &&
             expected is SolidColorBrush b && a.Color == b.Color;
-        if (!SameColor(palette.Surface, GraphPalette.Dark.Surface) ||
+        if (!SameColor(palette.Surface, GraphPalette.Screen.Surface) ||
             !SameColor(Background, palette.Surface) || !SameColor(timeline.Background, palette.Plot) ||
             !SameColor(averages.Background, palette.Plot) || !SameColor(playhead.Stroke, palette.Text) ||
             !SameColor(legend.Children.OfType<StackPanel>().First().Children.OfType<TextBlock>().First().Foreground, palette.Text) ||

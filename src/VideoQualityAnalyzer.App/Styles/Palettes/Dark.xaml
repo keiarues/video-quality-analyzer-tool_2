@@ -1,0 +1,27 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="BackgroundBrush" Color="#141922" />
+    <SolidColorBrush x:Key="PanelBrush" Color="#202837" />
+    <SolidColorBrush x:Key="TextBrush" Color="#F1F5FA" />
+    <SolidColorBrush x:Key="UiEmphasisBrush" Color="#91C9FF" />
+    <SolidColorBrush x:Key="UiWarningBrush" Color="#F6D37A" />
+    <SolidColorBrush x:Key="UiMutedBrush" Color="#BFCBDB" />
+    <SolidColorBrush x:Key="UiOnLightBrush" Color="#17202D" />
+    <SolidColorBrush x:Key="UiControlBackgroundBrush" Color="#273345" />
+    <SolidColorBrush x:Key="UiControlBorderBrush" Color="#4B5D75" />
+    <SolidColorBrush x:Key="UiSelectedBrush" Color="#34516F" />
+    <SolidColorBrush x:Key="UiSeparatorBrush" Color="#405066" />
+    <SolidColorBrush x:Key="UiVideoOverlayBrush" Color="#CC17202D" />
+    <SolidColorBrush x:Key="GraphSurfaceBrush" Color="#202837" />
+    <SolidColorBrush x:Key="GraphPlotBrush" Color="#17202D" />
+    <SolidColorBrush x:Key="GraphTextBrush" Color="#F1F5FA" />
+    <SolidColorBrush x:Key="GraphGridBrush" Color="#405066" />
+    <SolidColorBrush x:Key="GraphAxisBrush" Color="#97A8BE" />
+    <SolidColorBrush x:Key="GraphConnectionBrush" Color="#97A8BE" />
+    <SolidColorBrush x:Key="GraphSelectionBrush" Color="#FFFFFF" />
+    <SolidColorBrush x:Key="GraphSeries1Brush" Color="#91C9FF" />
+    <SolidColorBrush x:Key="GraphSeries2Brush" Color="#FFA678" />
+    <SolidColorBrush x:Key="GraphSeries3Brush" Color="#77DAAC" />
+    <SolidColorBrush x:Key="GraphSeries4Brush" Color="#CDA4FF" />
+    <SolidColorBrush x:Key="GraphSeries5Brush" Color="#FFD57A" />
+</ResourceDictionary>

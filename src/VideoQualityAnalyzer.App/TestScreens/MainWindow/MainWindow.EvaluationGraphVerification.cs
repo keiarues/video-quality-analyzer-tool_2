@@ -62,6 +62,14 @@ public partial class MainWindow
 #pragma warning restore WPF0001
                 FontFamily.Source != "Yu Gothic UI" || FontSize != (double)FindResource("UiFontMedium"))
                 throw new InvalidOperationException("Fluent Darkまたは共通フォントが不正です。");
+            if (Content is not System.Windows.Controls.DockPanel root ||
+                Background is not System.Windows.Media.SolidColorBrush windowBackground ||
+                root.Background is not System.Windows.Media.SolidColorBrush rootBackground ||
+                Foreground is not System.Windows.Media.SolidColorBrush foreground ||
+                windowBackground.Color != ((System.Windows.Media.SolidColorBrush)FindResource("BackgroundBrush")).Color ||
+                rootBackground.Color != windowBackground.Color ||
+                foreground.Color != ((System.Windows.Media.SolidColorBrush)FindResource("TextBrush")).Color)
+                throw new InvalidOperationException("主画面の余白または標準文字色が共通パレットと一致しません。");
             if (EvaluationControls.TranslatePoint(new Point(0, 0), this).Y <
                 VideoList.TranslatePoint(new Point(0, VideoList.ActualHeight), this).Y)
                 throw new InvalidOperationException("評価操作がファイル一覧の下にありません。");

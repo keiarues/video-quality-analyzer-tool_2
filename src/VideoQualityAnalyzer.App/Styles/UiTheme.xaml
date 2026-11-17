@@ -6,16 +6,6 @@
     <sys:Double x:Key="UiFontLarge">20</sys:Double>
     <sys:Double x:Key="UiFontMedium">13</sys:Double>
     <sys:Double x:Key="UiFontSmall">11</sys:Double>
-    <SolidColorBrush x:Key="BackgroundBrush" Color="#141922" />
-    <SolidColorBrush x:Key="PanelBrush" Color="#202837" />
-    <SolidColorBrush x:Key="TextBrush" Color="#F1F5FA" />
-    <SolidColorBrush x:Key="UiEmphasisBrush" Color="#91C9FF" />
-    <SolidColorBrush x:Key="UiWarningBrush" Color="#F6D37A" />
-    <SolidColorBrush x:Key="UiMutedBrush" Color="#BFCBDB" />
-    <SolidColorBrush x:Key="UiOnLightBrush" Color="#17202D" />
-    <SolidColorBrush x:Key="UiControlBackgroundBrush" Color="#273345" />
-    <SolidColorBrush x:Key="UiControlBorderBrush" Color="#4B5D75" />
-    <SolidColorBrush x:Key="UiSelectedBrush" Color="#34516F" />
     <!-- Fluent Darkで明色になる一覧の選択行だけを補正する。 -->
     <Style TargetType="DataGridRow">
         <Style.Triggers>
@@ -36,14 +26,18 @@
     <Style TargetType="Window">
         <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource UiFontMedium}" />
+        <Setter Property="Background" Value="{StaticResource BackgroundBrush}" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
     </Style>
     <Style TargetType="UserControl">
         <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource UiFontMedium}" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
     </Style>
     <Style TargetType="TextBlock">
         <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource UiFontMedium}" />
+        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
     </Style>
     <Style x:Key="UiTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
         <Setter Property="FontSize" Value="{StaticResource UiFontLarge}" />
@@ -63,7 +57,7 @@
     <!-- 縦横共通のサイズ変更バー。見た目とマウスの操作範囲を分ける。 -->
     <ControlTemplate x:Key="ResizeBarTemplate" TargetType="Thumb">
         <Grid Background="Transparent">
-            <Border x:Name="Line" Height="1" Background="#405066" VerticalAlignment="Center" />
+            <Border x:Name="Line" Height="1" Background="{StaticResource UiSeparatorBrush}" VerticalAlignment="Center" />
             <Border x:Name="Grip" Width="36" Height="3" CornerRadius="1.5" Background="{StaticResource UiMutedBrush}"
                     HorizontalAlignment="Center" VerticalAlignment="Center" />
         </Grid>

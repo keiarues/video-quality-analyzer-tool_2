@@ -47,8 +47,18 @@ internal sealed class FluentThemeTestWindow : Window
             try
             {
                 UpdateLayout();
+                var background = (SolidColorBrush)FindResource("BackgroundBrush");
+                var foreground = (SolidColorBrush)FindResource("TextBrush");
+                if (Background is not SolidColorBrush windowBackground || windowBackground.Color != background.Color ||
+                    Foreground is not SolidColorBrush windowForeground || windowForeground.Color != foreground.Color)
+                    throw new InvalidOperationException("共通のウィンドウ背景または文字色が適用されていません。");
                 var image = new RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
                 image.Render(this);
+                var pixel = new byte[4];
+                image.CopyPixels(new Int32Rect(2, 40, 1, 1), pixel, 4, 0);
+                if (pixel[3] != 255 || pixel[2] != background.Color.R ||
+                    pixel[1] != background.Color.G || pixel[0] != background.Color.B)
+                    throw new InvalidOperationException("ウィンドウの余白が暗色で描画されていません。");
                 var output = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
                     "../../../../../measurement-results/fluent-theme"));
                 Directory.CreateDirectory(output);

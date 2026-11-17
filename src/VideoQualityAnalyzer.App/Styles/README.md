@@ -1,6 +1,6 @@
 ﻿# 表示書式の共通ルール
 
-表示書式は `UiTheme.xaml` を基準にし、各画面で独自のフォント種類・サイズ・文字色を増やさない。
+表示書式は `UiTheme.xaml` を基準にし、各画面で独自のフォント種類・サイズ・文字色を増やさない。画面固有色は `Palettes/Dark.xaml` と `Palettes/Light.xaml` の同じリソースキーで管理する。
 
 | 用途 | リソース | 値 |
 | --- | --- | --- |
@@ -18,9 +18,9 @@
 
 派生Window・UserControlには基底型用の共通Styleを明示的に適用する。XAMLでは `Style="{StaticResource {x:Type Window}}"` またはUserControlを指定し、コードで作る画面でも同じ型キーのStyleを設定する。C#からの小文字サイズ・色の取得は `UiTheme` を利用する。
 
-標準コントロールとウィンドウの暗色表示は `Application.ThemeMode="Dark"` のFluentテーマを利用する。`UiTheme.xaml` はフォント、グラフ・動画領域など固有の色、Fluentの一覧選択行の補正に使う。`UiOnLightBrush` は白背景のPNG画像出力などに限って使う。新しい文字用途が必要になった場合は、この表と辞書に用途を追加してから各画面へ適用する。
+標準コントロールの暗色表示は `Application.ThemeMode="Dark"` のFluentテーマを利用する。ウィンドウの余白、文字、一覧選択行、画面内グラフはパレット辞書の値を `UiTheme.xaml` の共通スタイルから適用する。`App.xaml` ではパレット辞書を共通スタイルより先に読み込む。`UiOnLightBrush` とグラフの画像出力色は白背景PNG用である。新しい色用途が必要になった場合は、両パレットに同じキーを追加する。
 
-`--test-fluent-theme` は標準コントロール、`--test-dark-palette` は独自グラフと標準コントロールを確認する。PNG画像出力は従来の白背景を維持する。`None`・`System`・`Light` の画面配色は今後の検証対象である。
+`--test-fluent-theme` は標準コントロールとウィンドウ余白、`--test-dark-palette` は独自グラフと標準コントロールを確認する。PNG画像出力は従来の白背景を維持する。現在読み込むのは暗色パレットで、`None`・`System`・`Light` への切り替えと明色画面の検証は次の作業である。
 
 ## グラフ画像出力の文字サイズ
 

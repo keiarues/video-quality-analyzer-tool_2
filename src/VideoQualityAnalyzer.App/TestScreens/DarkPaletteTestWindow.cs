@@ -21,7 +21,7 @@ internal sealed class DarkPaletteTestWindow : Window
         Width = 1400; Height = 850; MinWidth = 950; MinHeight = 600;
         var panel = (Brush)FindResource("PanelBrush");
         var text = (Brush)FindResource("TextBrush");
-        var control = new SolidColorBrush(Color.FromRgb(39, 51, 69));
+        var control = (Brush)FindResource("UiControlBackgroundBrush");
         var muted = (Brush)FindResource("UiMutedBrush");
 
         var root = new DockPanel { Margin = new Thickness(12) };
