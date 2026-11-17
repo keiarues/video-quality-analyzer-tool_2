@@ -78,29 +78,12 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
                 InputByName(candidateName); InputByName(referenceName);
                 void InputByName(string name) => arguments.AddRange(["-thread_queue_size", "2", "-f", "rawvideo", "-pixel_format", "yuv420p",
                     "-video_size", $"{reference.Width}x{reference.Height}", "-framerate", fps, "-probesize", "32", "-analyzeduration", "0", "-i", @"\\.\pipe\" + name]);
-                var filter = metric switch
-                {
-                    QualityMetric.Ssim => "ssim=stats_file=metric.log:shortest=1",
-                    QualityMetric.Psnr => "psnr=stats_file=metric.log:shortest=1",
-                    _ => "libvmaf=log_fmt=json:log_path=metric.json:n_threads=1:shortest=1"
-                };
+                var filter = MetricFilter(metric);
                 arguments.AddRange(["-filter_complex", $"[0:v:0]{candidateRaster.Parameters},settb=AVTB,setpts=N/({fps}*TB)[d];" +
                     $"[1:v:0]{referenceRaster.Parameters},settb=AVTB,setpts=N/({fps}*TB)[r];[d][r]{filter}",
                     "-an", "-fps_mode", "passthrough", "-progress", "pipe:1", "-f", "null", "-"]);
-                void Report(long count)
-                {
-                    var processed = Math.Clamp(count, 0, numbers.LongLength);
-                    long remaining = processed;
-                    var interval = 1;
-                    foreach (var range in snapshot)
-                    {
-                        if (remaining < range.End - range.Start) break;
-                        remaining -= range.End - range.Start;
-                        interval++;
-                    }
-                    progress?.Report(new(stage, Math.Min(interval, snapshot.Length), snapshot.Length, processed, numbers.LongLength,
-                        PartialEvaluationProgress.ToSourceTime(snapshot, reference.AverageFrameRate, TimeSpan.FromSeconds(processed / reference.AverageFrameRate))));
-                }
+                void Report(long count) => progress?.Report(PartialEvaluationProgress.FromCompletedFrames(
+                    stage, snapshot, reference.AverageFrameRate, count, numbers.LongLength));
                 Report(0);
                 async Task Guard(Func<Task> action)
                 {
@@ -188,22 +171,11 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
             {
                 var selection = $"trim=end_frame={snapshot[^1].End},select='" + string.Join("+", snapshot.Select(range => $"between(n,{range.Start},{range.End - 1})")) +
                     $"',settb=AVTB,setpts=N/({fps}*TB)";
-                var filter = metric switch
-                {
-                    QualityMetric.Ssim => "ssim=stats_file=metric.log:shortest=1",
-                    QualityMetric.Psnr => "psnr=stats_file=metric.log:shortest=1",
-                    _ => "libvmaf=log_fmt=json:log_path=metric.json:n_threads=1:shortest=1"
-                };
+                var filter = MetricFilter(metric);
                 var arguments = new[] { "-hide_banner", "-loglevel", "error", "-stats_period", "0.1", "-i", Path.GetFullPath(candidate.Path), "-i", Path.GetFullPath(reference.Path),
                     "-filter_complex", $"[0:v:0]{selection}[d];[1:v:0]{selection}[r];[d][r]{filter}", "-an", "-fps_mode", "passthrough", "-progress", "pipe:1", "-f", "null", "-" };
-                void Report(long count)
-                {
-                    var processed = Math.Clamp(count, 0, numbers.LongLength);
-                    var remaining = processed; var interval = 1;
-                    foreach (var range in snapshot) { if (remaining < range.End - range.Start) break; remaining -= range.End - range.Start; interval++; }
-                    progress?.Report(new("直接復号基準", Math.Min(interval, snapshot.Length), snapshot.Length, processed, numbers.LongLength,
-                        PartialEvaluationProgress.ToSourceTime(snapshot, reference.AverageFrameRate, TimeSpan.FromSeconds(processed / reference.AverageFrameRate))));
-                }
+                void Report(long count) => progress?.Report(PartialEvaluationProgress.FromCompletedFrames(
+                    "直接復号基準", snapshot, reference.AverageFrameRate, count, numbers.LongLength));
                 Report(0);
                 await Task.Run(() => EvaluateAsync(arguments, directory, Report, token, cpu => Interlocked.Add(ref cpuTicks, cpu.Ticks)));
                 var aggregation = Stopwatch.StartNew();
@@ -216,6 +188,13 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
             finally { Directory.Delete(directory, recursive: true); }
         }
     }
+
+    private static string MetricFilter(QualityMetric metric) => metric switch
+    {
+        QualityMetric.Ssim => "ssim=stats_file=metric.log:shortest=1",
+        QualityMetric.Psnr => "psnr=stats_file=metric.log:shortest=1",
+        _ => "libvmaf=log_fmt=json:log_path=metric.json:n_threads=1:shortest=1"
+    };
 
     private static async Task<QualityResult> ReadResultAsync(string directory, long[] numbers, QualityMetric metric, CancellationToken token)
     {

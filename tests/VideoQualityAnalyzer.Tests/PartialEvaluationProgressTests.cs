@@ -6,6 +6,22 @@ namespace VideoQualityAnalyzer.Tests;
 public sealed class PartialEvaluationProgressTests
 {
     [TestMethod]
+    public void CompletedFramesAdvanceIntervalAtRangeBoundary()
+    {
+        EvaluationFrameRange[] ranges = [new(0, 3), new(30, 33)];
+        var before = PartialEvaluationProgress.FromCompletedFrames("検証", ranges, 30, 2, 6);
+        var boundary = PartialEvaluationProgress.FromCompletedFrames("検証", ranges, 30, 3, 6);
+        var end = PartialEvaluationProgress.FromCompletedFrames("検証", ranges, 30, 10, 6);
+
+        Assert.AreEqual(1, before.Interval);
+        Assert.AreEqual(2d / 30, before.SourceTime.TotalSeconds, 0.000001);
+        Assert.AreEqual(2, boundary.Interval);
+        Assert.AreEqual(1d, boundary.SourceTime.TotalSeconds);
+        Assert.AreEqual(6L, end.CompletedFrames);
+        Assert.AreEqual(33d / 30, end.SourceTime.TotalSeconds, 0.000001);
+    }
+
+    [TestMethod]
     public void TimeRangeStartsAtOriginalTimeAndClampsToEnd()
     {
         EvaluationFrameRange[] ranges = [new(150, 1800)];

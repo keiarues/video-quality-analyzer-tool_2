@@ -3,6 +3,22 @@ namespace VideoQualityAnalyzer.Media;
 // FFmpegへ渡した区間の連結時刻を、元動画のフレーム位置に戻す。
 public static class PartialEvaluationProgress
 {
+    public static InputSeekProgress FromCompletedFrames(string stage, IReadOnlyList<EvaluationFrameRange> ranges,
+        double frameRate, long completedFrames, long totalFrames)
+    {
+        var processed = Math.Clamp(completedFrames, 0, totalFrames);
+        var remaining = processed;
+        var interval = 1;
+        foreach (var range in ranges)
+        {
+            if (remaining < range.End - range.Start) break;
+            remaining -= range.End - range.Start;
+            interval++;
+        }
+        return new(stage, Math.Min(interval, ranges.Count), ranges.Count, processed, totalFrames,
+            ToSourceTime(ranges, frameRate, TimeSpan.FromSeconds(processed / frameRate)));
+    }
+
     public static TimeSpan ToSourceTime(IReadOnlyList<EvaluationFrameRange> ranges, double frameRate, TimeSpan processed)
     {
         if (ranges.Count == 0 || !double.IsFinite(frameRate) || frameRate <= 0)
