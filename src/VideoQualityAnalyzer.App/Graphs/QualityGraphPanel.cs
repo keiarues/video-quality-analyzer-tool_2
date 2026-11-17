@@ -130,15 +130,16 @@ public sealed partial class QualityGraphPanel : UserControl
         fileLayers.Children.Add(averages);
         fileLayers.Children.Add(overlay);
         rightGraph.Children.Add(fileLayers);
-        createExportImage = (target, width, height, fontScale) =>
+        createExportImage = (target, width, height, fontScale, imageTheme) =>
         {
             var selectedMetric = (QualityMetric)((TabItem)metric.SelectedItem).Tag;
             var available = (this.allVideos ?? this.videos).Where(video => playbackResults.ContainsKey((video.Id, selectedMetric))).ToArray();
-            var exportColors = GraphPalette.Export.Series;
+            var exportPalette = GraphPalette.ForExport(imageTheme);
+            var exportColors = exportPalette.Series;
             var series = available.Select((video, index) => new QualityGraphImageSeries(video,
                 playbackResults[(video.Id, selectedMetric)], exportColors[index % exportColors.Length], selectedIds.Contains(video.Id),
                 Bitrate(video), this.groups is not null && this.groups.TryGetValue(video.Id, out var group) ? group : null)).ToArray();
-            return QualityGraphImageRenderer.Render(target, width, height, fontScale, selectedMetric, series);
+            return QualityGraphImageRenderer.Render(target, width, height, fontScale, selectedMetric, series, exportPalette);
         };
         legendController = new QualityGraphLegendController(legendBox, legendScroll, overlay, averages,
             legendDrag, collapseLegend, () => PlotArea(averages));
@@ -192,13 +193,15 @@ public sealed partial class QualityGraphPanel : UserControl
         };
     }
 
-    private readonly Func<GraphImageTarget, int, int, double, System.Windows.Media.Imaging.BitmapSource> createExportImage;
-    public System.Windows.Media.Imaging.BitmapSource CreateExportImage(GraphImageTarget target, int width, int height, double fontScale = 1) =>
-        createExportImage(target, width, height, fontScale);
+    private readonly Func<GraphImageTarget, int, int, double, GraphImageTheme, System.Windows.Media.Imaging.BitmapSource> createExportImage;
+    public System.Windows.Media.Imaging.BitmapSource CreateExportImage(GraphImageTarget target, int width, int height,
+        double fontScale = 1, GraphImageTheme imageTheme = GraphImageTheme.Light) =>
+        createExportImage(target, width, height, fontScale, imageTheme);
 
-    public void ExportPng(string path, GraphImageTarget target, int width, int height, double fontScale = 1)
+    public void ExportPng(string path, GraphImageTarget target, int width, int height,
+        double fontScale = 1, GraphImageTheme imageTheme = GraphImageTheme.Light)
     {
-        var bitmap = CreateExportImage(target, width, height, fontScale);
+        var bitmap = CreateExportImage(target, width, height, fontScale, imageTheme);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
         using var stream = System.IO.File.Create(path);

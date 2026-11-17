@@ -35,6 +35,31 @@ internal sealed partial class GraphImageSaveWindow
             fitToWindow || zoom.Value != 100 || zoomLabel.Text != "100%" ||
             RequirePreview() is not { PixelWidth: 1280, PixelHeight: 960 })
             throw new InvalidOperationException("画像サイズまたは表示倍率の初期値が不正です。");
+        static Color FirstPixel(BitmapSource image)
+        {
+            var pixel = new byte[4];
+            image.CopyPixels(new Int32Rect(0, 0, 1, 1), pixel, 4, 0);
+            return Color.FromRgb(pixel[2], pixel[1], pixel[0]);
+        }
+        if (imageTheme.Items.Count != 2 || CurrentImageTheme != GraphImageTheme.Light ||
+            FirstPixel(RequirePreview()) != Colors.White)
+            throw new InvalidOperationException("出力画像の初期テーマがライトではありません。");
+        var lightImage = preview.Source;
+        imageTheme.SelectedIndex = (int)GraphImageTheme.Dark;
+        if (CurrentImageTheme != GraphImageTheme.Dark || ReferenceEquals(lightImage, preview.Source) ||
+            FirstPixel(RequirePreview()) != ((SolidColorBrush)GraphPalette.ForExport(GraphImageTheme.Dark).Surface).Color)
+            throw new InvalidOperationException("ダーク画像への切り替えがプレビューへ即時反映されません。");
+        var darkPng = Path.Combine(directory, "dark-theme.png");
+        SavePng(darkPng);
+        using (var darkStream = File.OpenRead(darkPng))
+        {
+            var saved = new PngBitmapDecoder(darkStream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
+            if (FirstPixel(saved.Frames[0]) != FirstPixel(RequirePreview()))
+                throw new InvalidOperationException("保存したダークPNGとプレビューの配色が一致しません。");
+        }
+        imageTheme.SelectedIndex = (int)GraphImageTheme.Light;
+        if (FirstPixel(RequirePreview()) != Colors.White)
+            throw new InvalidOperationException("ライト画像へ即時に戻せません。");
         foreach (var targetIndex in new[] { 0, 1 })
         foreach (var metric in Enum.GetValues<QualityMetric>())
         {
@@ -192,6 +217,11 @@ internal sealed partial class GraphImageSaveWindow
                 production.preview.Source is not BitmapSource { PixelWidth: 1280, PixelHeight: 960 } ||
                 production.referenceFileName != "サンプル基準動画.mkv")
                 throw new InvalidOperationException("本体用の画像保存画面を開けません。");
+            production.imageTheme.SelectedIndex = (int)GraphImageTheme.Dark;
+            if (production.CurrentImageTheme != GraphImageTheme.Dark ||
+                FirstPixel(production.RequirePreview()) !=
+                    ((SolidColorBrush)GraphPalette.ForExport(GraphImageTheme.Dark).Surface).Color)
+                throw new InvalidOperationException("本体用の画像保存画面でダーク画像に切り替えられません。");
             var savedPng = Path.Combine(directory, "production-save.png");
             production.SavePng(savedPng);
             using (var savedStream = File.OpenRead(savedPng))
@@ -199,7 +229,13 @@ internal sealed partial class GraphImageSaveWindow
                 var savedImage = new PngBitmapDecoder(savedStream, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
                 if (savedImage.Frames[0].PixelWidth != 1280 || savedImage.Frames[0].PixelHeight != 960)
                     throw new InvalidOperationException("保存したPNGの寸法がプレビューと一致しません。");
+                if (FirstPixel(savedImage.Frames[0]) !=
+                    ((SolidColorBrush)GraphPalette.ForExport(GraphImageTheme.Dark).Surface).Color)
+                    throw new InvalidOperationException("本体用の保存画像がダーク配色ではありません。");
             }
+            production.imageTheme.SelectedIndex = (int)GraphImageTheme.Light;
+            if (FirstPixel(production.RequirePreview()) != Colors.White)
+                throw new InvalidOperationException("本体用の画像保存画面でライト画像に戻せません。");
             production.UpdateLayout();
             var productionShot = new RenderTargetBitmap((int)production.ActualWidth, (int)production.ActualHeight,
                 96, 96, PixelFormats.Pbgra32);
@@ -210,7 +246,7 @@ internal sealed partial class GraphImageSaveWindow
             productionEncoder.Save(stream);
         }
         finally { production.Close(); }
-        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：PNGの初期ファイル名、30件、3指標×2対象、評価方式の双方向切り替え、9サイズ選択（1024×768・1600×1200を含む）、初期値1280×960・表示100%、6フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、1280×960指定、200%・100%・全体表示。サンプルは架空データ。");
+        File.WriteAllText(Path.Combine(directory, "result.txt"), "合格：PNGの初期ファイル名、ライト・ダーク画像の即時切り替えと保存、30件、3指標×2対象、評価方式の双方向切り替え、9サイズ選択（1024×768・1600×1200を含む）、初期値1280×960・表示100%、6フォント倍率、通常・最大化・リサイズ時の全画素一致、解像度変更時のタイトル画素一致、1280×960指定、200%・100%・全体表示。サンプルは架空データ。");
         resizeTimer.Stop(); Console.WriteLine("グラフ画像保存テスト：合格");
     }
 

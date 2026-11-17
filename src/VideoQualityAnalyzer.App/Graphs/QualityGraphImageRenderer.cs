@@ -17,8 +17,9 @@ internal static class QualityGraphImageRenderer
     internal const double MediumFontPixels = 22;
 
     public static BitmapSource Render(GraphImageTarget target, int width, int height, double fontScale,
-        QualityMetric metric, IReadOnlyList<QualityGraphImageSeries> allSeries)
+        QualityMetric metric, IReadOnlyList<QualityGraphImageSeries> allSeries, GraphPalette? imagePalette = null)
     {
+        var palette = imagePalette ?? GraphPalette.Export;
         if (!Enum.IsDefined(target)) throw new ArgumentOutOfRangeException(nameof(target));
         if (width < 1 || height < 1 || width > 16384 || height > 16384 || (long)width * height > 40_000_000)
             throw new ArgumentOutOfRangeException(nameof(width), "画像は各辺1～16384ピクセル、総画素数4000万以下にしてください。");
@@ -31,7 +32,7 @@ internal static class QualityGraphImageRenderer
         FormattedText Text(string value, double pixels, double maximumWidth = double.PositiveInfinity)
         {
             var text = new FormattedText(value, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                typeface, pixels, UiTheme.OnLight, 1);
+                typeface, pixels, palette.Text, 1);
             if (double.IsFinite(maximumWidth))
             {
                 text.MaxTextWidth = Math.Max(1, maximumWidth);
@@ -85,11 +86,11 @@ internal static class QualityGraphImageRenderer
         var visual = new DrawingVisual();
         using (var drawing = visual.RenderOpen())
         {
-            drawing.DrawRectangle(Brushes.White, null, new Rect(0, 0, width, height));
+            drawing.DrawRectangle(palette.Surface, null, new Rect(0, 0, width, height));
             drawing.DrawText(title, new Point(margin, margin));
             drawing.DrawText(qualityGuide, new Point(left + 4, top - qualityGuide.Height - 4));
-            drawing.DrawRectangle(Brushes.WhiteSmoke, null, plot);
-            var gridPen = new Pen(Brushes.LightGray, 1);
+            drawing.DrawRectangle(palette.Plot, null, plot);
+            var gridPen = new Pen(palette.Grid, 1);
             for (var index = 0; index <= xDivisions; index++)
             {
                 var fraction = index / (double)xDivisions;
@@ -107,7 +108,7 @@ internal static class QualityGraphImageRenderer
                 var label = Text((minimum + (maximum - minimum) * fraction).ToString("G4"), small);
                 drawing.DrawText(label, new Point(plot.Left - label.WidthIncludingTrailingWhitespace - 8, y - label.Height / 2));
             }
-            var axisPen = new Pen(Brushes.DimGray, 1);
+            var axisPen = new Pen(palette.Axis, 1);
             drawing.DrawLine(axisPen, plot.TopLeft, plot.BottomLeft);
             drawing.DrawLine(axisPen, plot.BottomLeft, plot.BottomRight);
             // 指標名を通常の横書きで組んでから反時計回りに90度回す。
@@ -149,7 +150,7 @@ internal static class QualityGraphImageRenderer
                     var point = Position(item.Bitrate, item.Result.Average);
                     if (item.Group is { } group)
                     {
-                        if (previous.TryGetValue(group, out var last)) drawing.DrawLine(new Pen(Brushes.Gray, 1), last, point);
+                        if (previous.TryGetValue(group, out var last)) drawing.DrawLine(new Pen(palette.Connection, 1), last, point);
                         previous[group] = point;
                     }
                 }
@@ -159,13 +160,13 @@ internal static class QualityGraphImageRenderer
                 foreach (var item in series.Where(item => double.IsFinite(item.Result.Average)))
                 {
                     var point = Position(item.Bitrate, item.Result.Average);
-                    drawing.DrawEllipse(item.Color, item.Selected ? new Pen(Brushes.Black, 2) : null, point, 6, 6);
+                    drawing.DrawEllipse(item.Color, item.Selected ? new Pen(palette.Selection, 2) : null, point, 6, 6);
                     var label = Text($"{item.Result.Average:F4} / {item.Bitrate:N0} kbps", small, plot.Width);
                     var labelY = point.Y - label.Height - 8;
                     if (labelY < plot.Top) labelY = point.Y + 10;
                     var location = new Point(Math.Clamp(point.X + 10, plot.Left, Math.Max(plot.Left, plot.Right - label.Width)),
                         Math.Clamp(labelY, plot.Top, Math.Max(plot.Top, plot.Bottom - label.Height)));
-                    drawing.DrawRectangle(Brushes.WhiteSmoke, null, new Rect(location, new Size(label.Width, label.Height)));
+                    drawing.DrawRectangle(palette.Plot, null, new Rect(location, new Size(label.Width, label.Height)));
                     drawing.DrawText(label, location);
                 }
             if (series.Length == 0)

@@ -23,6 +23,7 @@ internal sealed partial class GraphImageSaveWindow : Window
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap, MinHeight = 22 };
     private readonly ComboBox target = new() { Width = 145 };
     private readonly ComboBox metricSelection = new() { Width = 85 };
+    private readonly ComboBox imageTheme = new() { Width = 100 };
     private readonly ComboBox size = new() { Width = 160 };
     private readonly TextBox dimension = new() { Width = 70, Text = "1280" };
     private readonly TextBox heightDimension = new() { Width = 70, Text = "960" };
@@ -48,6 +49,7 @@ internal sealed partial class GraphImageSaveWindow : Window
     internal BitmapSource? CurrentPreviewImage => preview.Source as BitmapSource;
     internal string ReferenceFileName => referenceFileName;
     internal QualityMetric CurrentMetric => graph.SelectedMetric;
+    internal GraphImageTheme CurrentImageTheme => (GraphImageTheme)imageTheme.SelectedIndex;
     internal int FilePointCount => graph.FilePointCount;
     internal int SelectedVideoCount => graph.DisplayedVideoIds.Count;
 
@@ -64,7 +66,7 @@ internal sealed partial class GraphImageSaveWindow : Window
         var root = new DockPanel { Margin = new Thickness(8) }; Content = root;
         var toolbar = new WrapPanel(); DockPanel.SetDock(toolbar, Dock.Top); root.Children.Add(toolbar);
         var saveOptions = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
-        foreach (Control input in new Control[] { target, metricSelection, size, dimension, heightDimension, font })
+        foreach (Control input in new Control[] { target, metricSelection, imageTheme, size, dimension, heightDimension, font })
         {
             input.Height = 32;
             input.Margin = new Thickness(3, 2, 3, 2);
@@ -76,6 +78,9 @@ internal sealed partial class GraphImageSaveWindow : Window
         foreach (var value in Enum.GetValues<QualityMetric>()) metricSelection.Items.Add(value.ToString().ToUpperInvariant());
         metricSelection.SelectedIndex = 0;
         saveOptions.Children.Add(Group(Label("評価方式："), metricSelection));
+        imageTheme.Items.Add("ライト"); imageTheme.Items.Add("ダーク");
+        imageTheme.SelectedIndex = 0;
+        saveOptions.Children.Add(Group(Label("画像のテーマ："), imageTheme));
         foreach (var text in new[] { "現在の表示サイズ", "幅と高さを指定" }) size.Items.Add(text);
         foreach (var preset in presets) size.Items.Add($"{preset.Width} × {preset.Height}");
         size.SelectedIndex = 4;
@@ -124,6 +129,7 @@ internal sealed partial class GraphImageSaveWindow : Window
         }
         UpdateSizeInputs();
         target.SelectionChanged += (_, _) => RefreshPreview();
+        imageTheme.SelectionChanged += (_, _) => RefreshPreview();
         metricSelection.SelectionChanged += (_, _) =>
         {
             if (metricSelection.SelectedIndex < 0) return;

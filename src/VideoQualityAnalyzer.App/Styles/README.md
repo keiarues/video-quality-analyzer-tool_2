@@ -19,9 +19,9 @@
 
 派生Window・UserControlには基底型用の共通Styleを明示的に適用する。XAMLでは `Style="{StaticResource {x:Type Window}}"` またはUserControlを指定し、コードで作る画面でも同じ型キーのStyleを設定する。C#からの小文字サイズ・色の取得は `UiTheme` を利用する。
 
-標準コントロールの表示には、保存した `None`・`System`・`Light`・`Dark` を起動時に `Application.ThemeMode` へ設定する。`None` は従来のWPF表示、`System` はWindowsのアプリ用配色を使う。ウィンドウの余白、文字、一覧選択行、画面内グラフは同じ明暗に対応するパレット辞書の値を `UiTheme.xaml` の共通スタイルから適用する。起動時にパレット辞書、次に共通スタイルを読み込む。新しい色用途が必要になった場合は、両パレットに同じキーを追加する。`UiOnLightBrush` とグラフの画像出力色は白背景PNG用である。
+標準コントロールの表示には、保存した `None`・`System`・`Light`・`Dark` を起動時に `Application.ThemeMode` へ設定する。`None` は従来のWPF表示、`System` はWindowsのアプリ用配色を使う。ウィンドウの余白、文字、一覧選択行、画面内グラフは同じ明暗に対応するパレット辞書の値を `UiTheme.xaml` の共通スタイルから適用する。起動時にパレット辞書、次に共通スタイルを読み込む。新しい色用途が必要になった場合は、両パレットに同じキーを追加する。`UiOnLightBrush` は白背景PNG用の文字色である。
 
-表示スタイルはオプション画面で保存し、次回起動時から反映する。未設定時の既定値は `System` とし、保存済みの選択は維持する。`System` の独自パレットは起動時のWindowsアプリ用配色に合わせる。`--test-display-style --auto --theme Light` のように4モードを専用画面で検証できる。`--test-fluent-theme` と `--test-dark-palette` は暗色部品とグラフの既存検証に使う。PNG画像出力は従来の白背景を維持する。
+表示スタイルはオプション画面で保存し、次回起動時から反映する。未設定時の既定値は `System` とし、保存済みの選択は維持する。`System` の独自パレットは起動時のWindowsアプリ用配色に合わせる。`--test-display-style --auto --theme Light` のように4モードを専用画面で検証できる。`--test-fluent-theme` と `--test-dark-palette` は暗色部品とグラフの既存検証に使う。PNG画像出力は画像保存画面でライト・ダークを選択でき、初期値はライトである。
 
 ライト配色は、Visual Studioの明色画面を参考に薄いグレーの余白とパネル、控えめな罫線を使う。標準部品のテンプレートは `ThemeMode` に任せ、画面で境界が必要なボタン・入力欄には `UiControlBorderBrush` を直接指定する。パネルは `UiPanelBorderBrush`、一覧は `UiListBackgroundBrush` と `UiGridLineBrush` を利用する。暗黙のButton等のStyleで標準テンプレートを置き換えない。
 
@@ -32,5 +32,7 @@
 主要な操作ボタンは `UiControlBorderBrush` を使い、高さを `UiTheme.ActionButtonHeight`（32）に揃える。横並びのボタン間は8pxを目安に空ける。XAML側も同じ値を指定し、標準テンプレートは維持する。
 
 ## グラフ画像出力の文字サイズ
+
+画像保存画面の「画像のテーマ」はアプリ全体の `ThemeMode` と独立し、変更直後にプレビューと保存PNGへ反映する。ダーク出力には `Palettes/Dark.xaml` のグラフ用配色を使う。
 
 画像出力は `QualityGraphImageRenderer` で、画像出力専用の小18px・中22pxを標準とする。さらに選択したフォント倍率（0.5・0.8・1・1.2・1.5・2倍、初期値1倍）を掛け、96dpi・1描画単位＝1pxで直接描く。ウィンドウの寸法や画面DPIによる文字サイズの変更、画像全体の縮小による文字の縮小は行わない。プレビューの表示倍率は出力画像を変更しない。

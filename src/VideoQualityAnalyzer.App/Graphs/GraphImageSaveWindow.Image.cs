@@ -59,7 +59,7 @@ internal sealed partial class GraphImageSaveWindow
     private BitmapSource CreateImage()
     {
         var (width, height) = ImageSize();
-        return graph.CreateExportImage((GraphImageTarget)target.SelectedIndex, width, height, FontScale());
+        return graph.CreateExportImage((GraphImageTarget)target.SelectedIndex, width, height, FontScale(), CurrentImageTheme);
     }
     private BitmapSource SavePng(string path)
     {

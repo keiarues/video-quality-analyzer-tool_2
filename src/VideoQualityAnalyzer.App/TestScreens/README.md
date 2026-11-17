@@ -9,7 +9,7 @@
 | SettingsWindow.Verification.cs | 設定画面の無効な入力・保存拒否・自動検出・バージョン表示とダウンロード検証 | `--verify-settings-detection`、`--verify-ffmpeg-settings` |
 | CsvExportTestWindow.cs | 品質CSVの保存・読み戻し | `--test-csv-export --auto` |
 | GraphPlaybackTestWindow.cs | グラフ表示中の再生 | `--graph-playback-test` |
-| GraphImageSaveWindow.Verification.cs | グラフ画像保存画面のサンプル・画像出力 | `--test-graph-image --auto` |
+| GraphImageSaveWindow.Verification.cs | グラフ画像保存画面のサンプル・画像出力、画像テーマの即時切り替え | `--test-graph-image --auto` |
 | DarkPaletteTestWindow.cs | 共通の暗色配色。実グラフ・操作部品・一覧と、メニュー・選択欄の展開画像を確認 | `--test-dark-palette --auto` |
 | FluentThemeTestWindow.cs | Fluent Darkの標準部品と展開メニュー・コンボボックスの画像を確認 | `--test-fluent-theme --auto` |
 | DisplayStyleTestWindow.cs | 4つのThemeModeと対応パレット、標準部品、グラフ色、設定値の保存・読み込みを確認 | `--test-display-style --auto --theme Light` など |
