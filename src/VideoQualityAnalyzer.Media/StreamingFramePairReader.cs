@@ -111,8 +111,7 @@ public sealed class StreamingFramePairReader : IAsyncDisposable
 
     private static void StopProcess(Process process)
     {
-        try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
-        catch (InvalidOperationException) { }
+        EvaluationProcess.Kill(process);
     }
 
     private static void Stop(Process process)

@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Text.Json;
 using VideoQualityAnalyzer.Core;
@@ -88,18 +87,8 @@ public sealed class FfprobeService
 
     private async Task<string> RunAsync(IReadOnlyList<string> arguments, CancellationToken cancellationToken)
     {
-        var startInfo = new ProcessStartInfo(probePath)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true
-        };
-        foreach (var argument in arguments)
-            startInfo.ArgumentList.Add(argument);
-
-        using var process = new Process { StartInfo = startInfo };
-        process.Start();
+        using var process = EvaluationProcess.Start(probePath, arguments, null, "FFprobeを起動できません。");
+        using var registration = cancellationToken.Register(() => EvaluationProcess.Kill(process));
         var stdout = process.StandardOutput.ReadToEndAsync(cancellationToken);
         var stderr = process.StandardError.ReadToEndAsync(cancellationToken);
         try
@@ -111,11 +100,10 @@ public sealed class FfprobeService
                 throw new InvalidDataException($"FFprobeの処理に失敗しました（終了コード {process.ExitCode}）。{Sanitize(error)}");
             return output;
         }
-        catch (OperationCanceledException)
+        finally
         {
-            if (!process.HasExited)
-                process.Kill(entireProcessTree: true);
-            throw;
+            EvaluationProcess.Kill(process);
+            await process.WaitForExitAsync(CancellationToken.None);
         }
     }
 

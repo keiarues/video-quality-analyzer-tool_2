@@ -61,8 +61,7 @@ public sealed class FfmpegRgbReader : IDisposable
 
     public void Dispose()
     {
-        try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
-        catch (InvalidOperationException) { }
+        EvaluationProcess.Kill(process);
         process.Dispose();
     }
 

@@ -65,7 +65,7 @@ public sealed class FrameComparisonService
         }
         finally
         {
-            if (!process.HasExited) process.Kill(entireProcessTree: true);
+            EvaluationProcess.Kill(process);
             try { await errorTask; } catch (OperationCanceledException) { }
         }
     }

@@ -31,12 +31,7 @@ public static class FfmpegSettings
         catch (OperationCanceledException) { return "バージョン取得を中断しました。"; }
         catch (Exception error) when (error is System.ComponentModel.Win32Exception or IOException or InvalidOperationException)
         { return "バージョン取得失敗：" + error.Message; }
-        finally
-        {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
-            catch (InvalidOperationException) { }
-            catch (System.ComponentModel.Win32Exception) { }
-        }
+        finally { EvaluationProcess.Kill(process); }
     }
     public static string ActivePath { get; } = Detect(Load()).Path ?? "";
     private static string SettingsPath => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "VideoQualityAnalyzer", "settings.txt");
