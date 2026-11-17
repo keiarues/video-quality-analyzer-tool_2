@@ -95,8 +95,8 @@ public sealed class InputSeekEvaluationService(string executable, string probeEx
         }
         Input(candidate, candidateStart); Input(reference, referenceStart);
         string Select(TimeSpan streamStart) => useSeek
-            ? $"select='between(round((t-{streamStart.TotalSeconds.ToString("R", CultureInfo.InvariantCulture)})*{fps}),{ranges[0].Start},{ranges[^1].End - 1})'"
-            : $"trim=end_frame={ranges[^1].End},select='" + string.Join("+", ranges.Select(range => $"between(n,{range.Start},{range.End - 1})")) + "'";
+            ? EvaluationFrameSelector.Seek(ranges, streamStart.TotalSeconds, reference.AverageFrameRate)
+            : EvaluationFrameSelector.Sequential(ranges);
         // 入力のtime_baseが異なっても、同じ番号の左右フレームを正確に対応させる。
         // メタデータ差による自動色変換がハッシュ分岐へ回り込むのを防ぎ、復号したYUVサンプルを照合する。
         string Prepare(TimeSpan streamStart) => "setparams=colorspace=unknown," + Select(streamStart) + $",settb=AVTB,setpts=N/({fps}*TB),split=2";

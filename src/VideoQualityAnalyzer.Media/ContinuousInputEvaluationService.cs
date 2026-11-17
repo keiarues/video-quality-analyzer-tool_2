@@ -125,8 +125,8 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
                                     (batch[^1].End / reference.AverageFrameRate - anchor + 1).ToString("F9", CultureInfo.InvariantCulture)]);
                             }
                             var select = useSeek
-                                ? $"select='between(round((t-{raster.Start!.Value.ToString("R", CultureInfo.InvariantCulture)})*{fps}),{batch[0].Start},{batch[^1].End - 1})'"
-                                : $"trim=end_frame={batch[^1].End},select='" + string.Join("+", batch.Select(range => $"between(n,{range.Start},{range.End - 1})")) + "'";
+                                ? EvaluationFrameSelector.Seek(batch, raster.Start!.Value, reference.AverageFrameRate)
+                                : EvaluationFrameSelector.Sequential(batch);
                             decoderArguments.AddRange(["-i", Path.GetFullPath(video.Path), "-map", "0:v:0", "-vf", select, "-an", "-sn", "-dn",
                                 "-c:v", "rawvideo", "-threads:v", "1", "-pix_fmt", "yuv420p", "-fps_mode", "passthrough", "-f", "rawvideo", "pipe:1"]);
                             using var decoder = EvaluationProcess.Start(executable, decoderArguments, directory, "連続入力用FFmpegを起動できません。");
@@ -169,8 +169,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
             Directory.CreateDirectory(directory);
             try
             {
-                var selection = $"trim=end_frame={snapshot[^1].End},select='" + string.Join("+", snapshot.Select(range => $"between(n,{range.Start},{range.End - 1})")) +
-                    $"',settb=AVTB,setpts=N/({fps}*TB)";
+                var selection = EvaluationFrameSelector.Sequential(snapshot) + $",settb=AVTB,setpts=N/({fps}*TB)";
                 var filter = MetricFilter(metric);
                 var arguments = new[] { "-hide_banner", "-loglevel", "error", "-stats_period", "0.1", "-i", Path.GetFullPath(candidate.Path), "-i", Path.GetFullPath(reference.Path),
                     "-filter_complex", $"[0:v:0]{selection}[d];[1:v:0]{selection}[r];[d][r]{filter}", "-an", "-fps_mode", "passthrough", "-progress", "pipe:1", "-f", "null", "-" };
