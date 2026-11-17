@@ -102,11 +102,14 @@ public partial class MainWindow : Window
         Loaded += async (_, _) =>
         {
             if (TryRunStartupVerification()) return;
-            var startupFiles = Environment.GetCommandLineArgs().Skip(1).Where(File.Exists).ToArray();
-            if (startupFiles.Length > 0)
+            var arguments = Environment.GetCommandLineArgs();
+            var verifyConcurrentAdd = arguments.Contains("--verify-concurrent-add");
+            var startupFiles = arguments.Skip(1).Where(File.Exists).ToArray();
+            if (startupFiles.Length > 0 && !verifyConcurrentAdd)
                 await AddFilesAsync(startupFiles);
-            var graphPlaybackCheck = Environment.GetCommandLineArgs().FirstOrDefault(arg => arg.StartsWith("--verify-main-graph-playback="));
+            var graphPlaybackCheck = arguments.FirstOrDefault(arg => arg.StartsWith("--verify-main-graph-playback="));
             if (graphPlaybackCheck is not null) await VerifyMainGraphPlaybackAsync(graphPlaybackCheck.Split('=', 2)[1]);
+            else if (verifyConcurrentAdd) await VerifyConcurrentAddAsync(startupFiles);
             else if (Environment.GetCommandLineArgs().Contains("--verify-graph-image-save")) await VerifyGraphImageSaveAsync();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-features")) VerifyMainFeatures();
             else if (Environment.GetCommandLineArgs().Contains("--verify-main-comparison")) await VerifyEmbeddedComparisonAsync();

@@ -7,6 +7,8 @@ namespace VideoQualityAnalyzer.App;
 
 public partial class MainWindow
 {
+    private readonly HashSet<string> loadingVideoPaths = new(StringComparer.OrdinalIgnoreCase);
+
     private async void Add_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
@@ -35,45 +37,49 @@ public partial class MainWindow
         pendingVideoLoads++;
         try
         {
-        foreach (var input in paths)
-        {
-            var path = System.IO.Path.GetFullPath(input);
-            if (videos.Any(item => string.Equals(item.Descriptor.Path, path, StringComparison.OrdinalIgnoreCase)))
-                continue;
-            if (!File.Exists(path))
+            foreach (var input in paths)
             {
-                SetWindowStatus("ファイルが見つかりません: " + System.IO.Path.GetFileName(path));
-                continue;
+                var path = Path.GetFullPath(input);
+                if (videos.Any(item => string.Equals(item.Descriptor.Path, path, StringComparison.OrdinalIgnoreCase)) ||
+                    !loadingVideoPaths.Add(path)) continue;
+                try
+                {
+                    if (!File.Exists(path))
+                    {
+                        SetWindowStatus("ファイルが見つかりません: " + Path.GetFileName(path));
+                        continue;
+                    }
+
+                    SetWindowStatus("動画情報を取得中: " + Path.GetFileName(path));
+                    try
+                    {
+                        var descriptor = await probe.ProbeAsync(path, CancellationToken.None);
+                        var entry = new VideoEntry(descriptor);
+                        videos.Add(entry);
+                        referenceId ??= descriptor.Id;
+                        entry.IsReference = referenceId == descriptor.Id;
+                        if (!entry.IsReference && droppedFolders is not null)
+                            entry.Group = VideoDropFiles.GetGroup(path, droppedFolders);
+                        VideoList.Items.Refresh();
+                        log.Record("file_added", "none", descriptor.Id, "ok",
+                            detail: $"codec={descriptor.Codec};resolution={descriptor.Width}x{descriptor.Height};fps={descriptor.AverageFrameRate:F3}");
+                    }
+                    catch (Exception exception)
+                    {
+                        SetWindowStatus($"動画情報を取得できません: {Path.GetFileName(path)} ({exception.GetType().Name})");
+                        log.Record("probe_failed", "none", null, "failed", detail: exception.GetType().Name);
+                    }
+                }
+                finally { loadingVideoPaths.Remove(path); }
             }
 
-            SetWindowStatus("動画情報を取得中: " + System.IO.Path.GetFileName(path));
-            try
-            {
-                var descriptor = await probe.ProbeAsync(path, CancellationToken.None);
-                var entry = new VideoEntry(descriptor);
-                videos.Add(entry);
-                referenceId ??= descriptor.Id;
-                entry.IsReference = referenceId == descriptor.Id;
-                if (!entry.IsReference && droppedFolders is not null)
-                    entry.Group = VideoDropFiles.GetGroup(path, droppedFolders);
-                VideoList.Items.Refresh();
-                log.Record("file_added", "none", descriptor.Id, "ok",
-                    detail: $"codec={descriptor.Codec};resolution={descriptor.Width}x{descriptor.Height};fps={descriptor.AverageFrameRate:F3}");
-            }
-            catch (Exception exception)
-            {
-                SetWindowStatus($"動画情報を取得できません: {System.IO.Path.GetFileName(path)} ({exception.GetType().Name})");
-                log.Record("probe_failed", "none", null, "failed", detail: exception.GetType().Name);
-            }
-        }
-
-        ClearLibrarySelection();
-        UpdateSelection();
-        if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
-        ClearLibrarySelection();
-        var groupCount = videos.Where(entry => !entry.IsReference && !string.IsNullOrWhiteSpace(entry.Group))
-            .Select(entry => entry.Group).Distinct().Count();
-        SetWindowStatus($"読み込み済み：{videos.Count}ファイル／{groupCount}グループ");
+            ClearLibrarySelection();
+            UpdateSelection();
+            if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
+            ClearLibrarySelection();
+            var groupCount = videos.Where(entry => !entry.IsReference && !string.IsNullOrWhiteSpace(entry.Group))
+                .Select(entry => entry.Group).Distinct().Count();
+            SetWindowStatus($"読み込み済み：{videos.Count}ファイル／{groupCount}グループ");
         }
         finally { pendingVideoLoads--; }
     }
@@ -87,7 +93,7 @@ public partial class MainWindow
     private async void Window_Drop(object sender, DragEventArgs e)
     {
         if (e.Data.GetData(DataFormats.FileDrop) is string[] paths)
-            {
+        {
             e.Handled = true;
             try
             {
