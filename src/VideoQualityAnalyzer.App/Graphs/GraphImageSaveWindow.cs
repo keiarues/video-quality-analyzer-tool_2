@@ -57,6 +57,7 @@ internal sealed partial class GraphImageSaveWindow : Window
     private GraphImageSaveWindow(bool automatic, string outputDirectory, GraphImageSaveSource? source)
     {
         Style = (Style)Application.Current.FindResource(typeof(Window));
+        viewport.Background = (Brush)FindResource("PanelBrush");
         Title = source is null ? "グラフ画像保存テスト" : "グラフを画像にして保存";
         Width = 1400; Height = 850; MinWidth = 900; MinHeight = 600;
         var root = new DockPanel { Margin = new Thickness(8) }; Content = root;

@@ -22,17 +22,7 @@ internal sealed class DarkPaletteTestWindow : Window
         var panel = (Brush)FindResource("PanelBrush");
         var text = (Brush)FindResource("TextBrush");
         var control = new SolidColorBrush(Color.FromRgb(39, 51, 69));
-        var border = new SolidColorBrush(Color.FromRgb(75, 93, 117));
         var muted = (Brush)FindResource("UiMutedBrush");
-        AddStyle(typeof(Button), control, text, border);
-        AddStyle(typeof(TextBox), control, text, border);
-        AddStyle(typeof(Menu), panel, text, border);
-        AddStyle(typeof(MenuItem), panel, text, border);
-        AddStyle(typeof(TabControl), panel, text, border);
-        AddStyle(typeof(DataGrid), panel, text, border);
-        AddStyle(typeof(DataGridColumnHeader), control, text, border);
-        Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri(
-            "/VideoQualityAnalyzer;component/TestScreens/DarkPalettePreview.xaml", UriKind.Relative) });
 
         var root = new DockPanel { Margin = new Thickness(12) };
         Content = root;
@@ -92,7 +82,7 @@ internal sealed class DarkPaletteTestWindow : Window
                     .94 + index * .01 + Math.Sin(number / 14d) * .008)).ToArray();
                 results[(videos[index].Id, metric)] = new QualityResult(metric, frames.Average(frame => frame.Value), frames);
             }
-        graph = new QualityGraphPanel(videos, results, allVideos: videos, darkPalettePreview: true);
+        graph = new QualityGraphPanel(videos, results, allVideos: videos);
         graph.SelectMetric(QualityMetric.Ssim);
         Grid.SetRow(graph, 1); layout.Children.Add(graph);
         if (automatic) Loaded += (_, _) => Dispatcher.BeginInvoke(() =>
@@ -100,7 +90,7 @@ internal sealed class DarkPaletteTestWindow : Window
             try
             {
                 UpdateLayout();
-                graph.VerifyDarkPalettePreview();
+                graph.VerifyDarkPalette();
                 var image = new RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);
                 image.Render(this);
                 var output = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
@@ -109,19 +99,42 @@ internal sealed class DarkPaletteTestWindow : Window
                 var encoder = new PngBitmapEncoder();
                 encoder.Frames.Add(BitmapFrame.Create(image));
                 using (var stream = File.Create(Path.Combine(output, "screen.png"))) encoder.Save(stream);
-                Console.WriteLine("ダーク配色テスト：背景・文字・グリッド・凡例を確認。画面画像を保存しました。");
+                file.IsSubmenuOpen = true;
+                SavePopup(file, Path.Combine(output, "menu-popup.png"));
+                file.IsSubmenuOpen = false;
+                if (method.Template.FindName("DropButton", method) is not ToggleButton dropButton ||
+                    dropButton.ActualWidth < method.ActualWidth - 4)
+                    throw new InvalidOperationException("動画選択欄の全体を開閉操作に使えません。");
+                method.IsDropDownOpen = true;
+                SavePopup(method, Path.Combine(output, "combo-popup.png"));
+                method.IsDropDownOpen = false;
+                Console.WriteLine("ダーク配色テスト：背景・文字・グリッド・凡例・メニューと選択欄の展開を確認。画面画像を保存しました。");
                 Application.Current.Shutdown(0);
             }
             catch (Exception error) { Console.Error.WriteLine(error); Application.Current.Shutdown(1); }
         }, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
-    private void AddStyle(Type type, Brush background, Brush foreground, Brush border)
+    private static void SavePopup(DependencyObject control, string path)
     {
-        var style = new Style(type);
-        style.Setters.Add(new Setter(Control.BackgroundProperty, background));
-        style.Setters.Add(new Setter(Control.ForegroundProperty, foreground));
-        style.Setters.Add(new Setter(Control.BorderBrushProperty, border));
-        Resources.Add(type, style);
+        static Popup? FindPopup(DependencyObject root)
+        {
+            if (root is Popup popup) return popup;
+            for (var index = 0; index < VisualTreeHelper.GetChildrenCount(root); index++)
+                if (FindPopup(VisualTreeHelper.GetChild(root, index)) is { } found) return found;
+            return null;
+        }
+        var child = FindPopup(control)?.Child as FrameworkElement
+            ?? throw new InvalidOperationException("選択メニューのポップアップを描画できません。");
+        child.UpdateLayout();
+        if (child.ActualWidth < 1 || child.ActualHeight < 1)
+            throw new InvalidOperationException("選択メニューのポップアップ寸法が不正です。");
+        var image = new RenderTargetBitmap((int)Math.Ceiling(child.ActualWidth),
+            (int)Math.Ceiling(child.ActualHeight), 96, 96, PixelFormats.Pbgra32);
+        image.Render(child);
+        var encoder = new PngBitmapEncoder();
+        encoder.Frames.Add(BitmapFrame.Create(image));
+        using var stream = File.Create(path);
+        encoder.Save(stream);
     }
 }

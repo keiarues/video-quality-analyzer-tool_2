@@ -17,7 +17,9 @@
             <Setter Property="TextAlignment" Value="Right" />
         </Style>
         <Style x:Key="CenteredFileHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Foreground" Value="{StaticResource UiOnLightBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Background" Value="{StaticResource UiControlBackgroundBrush}" />
+            <Setter Property="BorderBrush" Value="{StaticResource UiControlBorderBrush}" />
             <Setter Property="Padding" Value="5,6" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
@@ -27,7 +29,7 @@
     </Window.Resources>
     <DockPanel>
         <Menu DockPanel.Dock="Top" Background="{StaticResource UiControlBackgroundBrush}"
-              Foreground="{StaticResource UiOnLightBrush}"
+              Foreground="{StaticResource TextBrush}"
               FontFamily="{StaticResource UiFontFamily}" FontSize="{StaticResource UiFontMedium}">
             <MenuItem Header="ファイル">
                 <MenuItem Header="動画を読み込む" Click="Add_Click"
@@ -77,7 +79,9 @@
                               BorderThickness="0" HeadersVisibility="Column">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Foreground" Value="{StaticResource UiOnLightBrush}" />
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                <Setter Property="Background" Value="{StaticResource UiControlBackgroundBrush}" />
+                                <Setter Property="BorderBrush" Value="{StaticResource UiControlBorderBrush}" />
                                 <Setter Property="Padding" Value="5,6" />
                                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                             </Style>
@@ -121,7 +125,9 @@
                               BorderThickness="0" HeadersVisibility="Column">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Foreground" Value="{StaticResource UiOnLightBrush}" />
+                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                                <Setter Property="Background" Value="{StaticResource UiControlBackgroundBrush}" />
+                                <Setter Property="BorderBrush" Value="{StaticResource UiControlBorderBrush}" />
                                 <Setter Property="Padding" Value="5,6" />
                                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                             </Style>
@@ -158,7 +164,7 @@
                 </Grid.RowDefinitions>
                 <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0" Background="{StaticResource BackgroundBrush}">
                     <TabItem>
-                        <TabItem.Header><TextBlock Text="2画面" Foreground="{StaticResource UiOnLightBrush}" /></TabItem.Header>
+                        <TabItem.Header><TextBlock Text="2画面" Foreground="{StaticResource TextBrush}" /></TabItem.Header>
                 <Grid Name="LegacyPreviewGrid">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -200,11 +206,11 @@
                 </Grid>
                     </TabItem>
                     <TabItem>
-                        <TabItem.Header><TextBlock Text="ワイプ" Foreground="{StaticResource UiOnLightBrush}" /></TabItem.Header>
+                        <TabItem.Header><TextBlock Text="ワイプ" Foreground="{StaticResource TextBrush}" /></TabItem.Header>
                         <TextBlock Text="比較する動画を2本選択してください。" Foreground="{StaticResource TextBrush}" Margin="12" />
                     </TabItem>
                     <TabItem>
-                        <TabItem.Header><TextBlock Text="差分ヒートマップ" Foreground="{StaticResource UiOnLightBrush}" /></TabItem.Header>
+                        <TabItem.Header><TextBlock Text="差分ヒートマップ" Foreground="{StaticResource TextBrush}" /></TabItem.Header>
                         <TextBlock Text="比較する動画を2本選択してください。" Foreground="{StaticResource TextBrush}" Margin="12" />
                     </TabItem>
                 </TabControl>

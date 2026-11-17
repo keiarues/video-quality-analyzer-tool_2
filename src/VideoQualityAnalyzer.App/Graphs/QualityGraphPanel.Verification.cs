@@ -82,7 +82,7 @@ public sealed partial class QualityGraphPanel
                 !rightPlaybackStatus.Text.Contains(playbackVideo.Name) || !playbackTimeLabel.Text.EndsWith("秒"))
                 throw new InvalidOperationException("左右の再生ステータスまたは元動画の評価値表示が不正です。");
             if (!Equals(rightPlaybackStatus.Foreground, videoColors[playbackVideo.Id]) ||
-                !Equals(leftPlaybackStatus.Foreground, UiTheme.OnLight) || !Equals(playbackTimeLabel.Foreground, UiTheme.OnLight))
+                !Equals(leftPlaybackStatus.Foreground, palette.Text) || !Equals(playbackTimeLabel.Foreground, palette.Text))
                 throw new InvalidOperationException("再生ステータスの系列色または秒数の標準色が不正です。");
             UpdateLayout();
             var legendTarget = legend.Children.OfType<StackPanel>().First();

@@ -20,9 +20,9 @@ public sealed partial class QualityGraphPanel : UserControl
     private readonly Canvas playbackCanvas;
     private readonly QualityGraphLegendController legendController;
     private readonly Action<string>? selectVideoRequested;
-    private readonly Canvas timeline = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
+    private readonly Canvas timeline = new() { ClipToBounds = true };
     private readonly Canvas playbackOverlay = new() { ClipToBounds = true, IsHitTestVisible = false };
-    private readonly Canvas averages = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
+    private readonly Canvas averages = new() { ClipToBounds = true };
     private readonly TabControl metric = new();
     private readonly Dictionary<string, Brush> videoColors = new();
     private readonly TextBlock leftPlaybackStatus = MakePlaybackLabel(TextAlignment.Right);
@@ -37,7 +37,7 @@ public sealed partial class QualityGraphPanel : UserControl
     private bool playheadDragging;
     private VideoDescriptor? evaluationVideo;
     private TimeSpan? evaluationPosition;
-    private readonly Line playhead = new() { Stroke = UiTheme.OnLight, StrokeThickness = 2,
+    private readonly Line playhead = new() { StrokeThickness = 2,
         Tag = "再生位置", IsHitTestVisible = false };
     private readonly Action<TimeSpan>? seekRequested;
     public event Action<TimeSpan>? SeekPreviewed;
@@ -48,9 +48,9 @@ public sealed partial class QualityGraphPanel : UserControl
         Action<TimeSpan>? seek = null, Action<string>? select = null, bool verify = false,
         VideoDescriptor[]? allVideos = null, IReadOnlyDictionary<string, string>? groups = null,
         bool frameOnly = false, bool separatePlaybackLayer = false, bool cacheStaticGraph = false, Action? clearSelection = null,
-        bool darkPalettePreview = false)
+        bool useDarkPalette = true)
     {
-        palette = darkPalettePreview ? GraphPalette.Dark : GraphPalette.Light;
+        palette = useDarkPalette ? GraphPalette.Dark : GraphPalette.Light;
         colors = palette.Series;
         timeline.Background = palette.Plot;
         averages.Background = palette.Plot;
@@ -124,8 +124,9 @@ public sealed partial class QualityGraphPanel : UserControl
         {
             var selectedMetric = (QualityMetric)((TabItem)metric.SelectedItem).Tag;
             var available = (this.allVideos ?? this.videos).Where(video => playbackResults.ContainsKey((video.Id, selectedMetric))).ToArray();
+            var exportColors = GraphPalette.Light.Series;
             var series = available.Select((video, index) => new QualityGraphImageSeries(video,
-                playbackResults[(video.Id, selectedMetric)], colors[index % colors.Length], selectedIds.Contains(video.Id),
+                playbackResults[(video.Id, selectedMetric)], exportColors[index % exportColors.Length], selectedIds.Contains(video.Id),
                 Bitrate(video), this.groups is not null && this.groups.TryGetValue(video.Id, out var group) ? group : null)).ToArray();
             return QualityGraphImageRenderer.Render(target, width, height, fontScale, selectedMetric, series);
         };
@@ -197,7 +198,7 @@ public sealed partial class QualityGraphPanel : UserControl
     private readonly HashSet<string> displayedVideoIds = [];
     public IReadOnlyCollection<string> DisplayedVideoIds => displayedVideoIds;
     public int FilePointCount => averages.Children.OfType<Ellipse>().Count();
-    internal void VerifyDarkPalettePreview()
+    internal void VerifyDarkPalette()
     {
         static bool SameColor(Brush actual, Brush expected) => actual is SolidColorBrush a &&
             expected is SolidColorBrush b && a.Color == b.Color;

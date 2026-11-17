@@ -28,6 +28,11 @@ public partial class MainWindow
                 throw new InvalidOperationException("主画面で評価結果が確定されません。");
             qualityGraphPanel!.SelectMetric(QualityMetric.Ssim);
             if (qualityGraphPanel.FilePointCount != 1) throw new InvalidOperationException("評価結果が主画面グラフに反映されません。");
+            qualityGraphPanel.VerifyDarkPalette();
+            if (PreviewLeftSelect.SelectedItem is not VideoEntry left ||
+                PreviewRightSelect.SelectedItem is not VideoEntry right ||
+                PreviewLeftSelect.Text != left.Descriptor.Name || PreviewRightSelect.Text != right.Descriptor.Name)
+                throw new InvalidOperationException("暗色選択欄に動画名が表示されません。");
             StartEvaluationForVerification(EvaluationSelection.Full, [QualityMetric.Ssim]);
             await evaluationTask;
             if (!ReferenceEquals(completed, qualityResults[key])) throw new InvalidOperationException("完了済み結果が再計算されました。");

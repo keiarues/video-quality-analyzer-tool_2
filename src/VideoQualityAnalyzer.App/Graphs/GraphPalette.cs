@@ -2,7 +2,7 @@ using System.Windows.Media;
 
 namespace VideoQualityAnalyzer.App;
 
-// 暗色案は専用テスト画面だけで選択する。
+// 画面表示には暗色、白背景の画像出力には明色の系列色を使う。
 internal sealed record GraphPalette(Brush Surface, Brush Plot, Brush Text, Brush Grid, Brush Axis,
     Brush Connection, Brush Selection, Brush[] Series)
 {

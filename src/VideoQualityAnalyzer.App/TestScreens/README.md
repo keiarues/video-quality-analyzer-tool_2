@@ -10,7 +10,7 @@
 | CsvExportTestWindow.cs | 品質CSVの保存・読み戻し | `--test-csv-export --auto` |
 | GraphPlaybackTestWindow.cs | グラフ表示中の再生 | `--graph-playback-test` |
 | GraphImageSaveWindow.Verification.cs | グラフ画像保存画面のサンプル・画像出力 | `--test-graph-image --auto` |
-| DarkPaletteTestWindow.cs | 画面全体の暗色配色案。実グラフと代表的な操作部品・一覧を表示し、自動実行で画像を保存 | `--test-dark-palette --auto` |
+| DarkPaletteTestWindow.cs | 共通の暗色配色。実グラフ・操作部品・一覧と、メニュー・選択欄の展開画像を確認 | `--test-dark-palette --auto` |
 | App.TestScreens.cs | 専用テスト画面の起動分岐 | `--test-*` など |
 | App.Verification.cs | グラフ準備・評価・比較などの検証起動分岐 | `--verify-*` など |
 | MainWindow/ | 主画面の検証専用partialクラス | `--verify-main-*` など |

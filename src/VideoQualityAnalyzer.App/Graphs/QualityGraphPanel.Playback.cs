@@ -51,7 +51,7 @@ public sealed partial class QualityGraphPanel
 
     private static TextBlock MakePlaybackLabel(TextAlignment alignment) => new()
     {
-        FontSize = UiTheme.Small, Foreground = UiTheme.OnLight, Background = Brushes.WhiteSmoke,
+        FontSize = UiTheme.Small,
         TextAlignment = alignment, TextTrimming = TextTrimming.CharacterEllipsis, IsHitTestVisible = false
     };
 
