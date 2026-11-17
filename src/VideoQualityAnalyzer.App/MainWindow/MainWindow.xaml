@@ -63,7 +63,7 @@
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top">
                         <WrapPanel Margin="0,0,0,8">
-                            <Button Name="AddVideoButton" Content="動画ファイルを追加" Click="Add_Click" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                            <Button Name="AddVideoButton" Content="動画ファイルを追加" Click="Add_Click" Margin="0,0,8,0" BorderBrush="{StaticResource UiControlBorderBrush}" />
                             <Button Name="RemoveVideoButton" Content="動画を削除" Click="Remove_Click" BorderBrush="{StaticResource UiControlBorderBrush}" />
                         </WrapPanel>
                     <TextBlock Text="基準動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
@@ -107,8 +107,8 @@
                     </StackPanel>
                     <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                            <Button Name="EvaluationClearButton" Content="評価クリア" Click="ClearEvaluation_Click" Margin="0,3,8,3" BorderBrush="{StaticResource UiControlBorderBrush}" />
-                            <Button Name="EvaluationRangeButton" Content="評価を開始" Click="Evaluate_Click" Width="220" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                            <Button Name="EvaluationClearButton" Content="評価クリア" Click="ClearEvaluation_Click" Height="32" Margin="0,0,8,0" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                            <Button Name="EvaluationRangeButton" Content="評価を開始" Click="Evaluate_Click" Width="220" Height="32" BorderBrush="{StaticResource UiControlBorderBrush}" />
                         </StackPanel>
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Top" Text="評価対象動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />

@@ -8,7 +8,10 @@ namespace VideoQualityAnalyzer.App;
 public sealed class EvaluationSettingsWindow : Window
 {
     private readonly PartialEvaluationSettingsControl ranges = new();
-    private readonly Button start = new() { Content = "実行", IsDefault = true };
+    private readonly Button start = new() { Content = "実行", IsDefault = true,
+        Height = UiTheme.ActionButtonHeight, MinWidth = 96 };
+    private readonly Button cancel = new() { Content = "キャンセル", IsCancel = true,
+        Height = UiTheme.ActionButtonHeight, MinWidth = 96, Margin = new Thickness(0, 0, 8, 0) };
     private readonly QualityMetricSelectionControl metricCards = new();
     private readonly ScrollViewer contentScroll = new() { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     private readonly TextBlock targetSummary = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 8, 0, 0) };
@@ -28,7 +31,9 @@ public sealed class EvaluationSettingsWindow : Window
         var root = new DockPanel { Margin = new Thickness(16), Background = (System.Windows.Media.Brush)FindResource("BackgroundBrush") }; Content = root;
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         DockPanel.SetDock(actions, Dock.Bottom); root.Children.Add(actions);
-        actions.Children.Add(new Button { Content = "キャンセル", IsCancel = true });
+        cancel.BorderBrush = UiTheme.ControlBorder;
+        actions.Children.Add(cancel);
+        start.BorderBrush = UiTheme.ControlBorder;
         actions.Children.Add(start);
         var panel = new StackPanel();
         contentScroll.Content = panel; root.Children.Add(contentScroll);
@@ -73,6 +78,11 @@ public sealed class EvaluationSettingsWindow : Window
     internal void VerifyStableRangeLayout()
     {
         UpdateLayout();
+        var cancelRight = cancel.TranslatePoint(new Point(cancel.ActualWidth, 0), this).X;
+        var startLeft = start.TranslatePoint(new Point(), this).X;
+        if (startLeft - cancelRight < 7 ||
+            Math.Abs(start.ActualHeight - cancel.ActualHeight) > 0.5 || start.ActualHeight < 31)
+            throw new InvalidOperationException("評価設定の実行・キャンセルボタンの配置が不正です。");
         var initialPosition = metricCards.TranslatePoint(new Point(), this).Y;
         var initialHeight = ActualHeight;
         if (Math.Abs(metricCards.CardHeight - ranges.CardHeight) > 1 ||

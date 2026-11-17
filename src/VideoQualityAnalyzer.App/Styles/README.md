@@ -27,6 +27,8 @@
 
 プレビューのタブ周辺と動画情報帯には `UiPreviewChromeBrush`・`UiVideoOverlayBrush` を使い、その上の文字色は `UiVideoTextBrush`・`UiVideoMutedBrush` で揃える。ライトでは明るいグレーと暗い文字、ダークでは暗い背景と明るい文字を指定する。タブは標準テンプレートを保ったまま `UiControlBorderBrush` の細い枠線を付ける。映像の余白は黒を維持する。
 
+主要な操作ボタンは `UiControlBorderBrush` を使い、高さを `UiTheme.ActionButtonHeight`（32）に揃える。横並びのボタン間は8pxを目安に空ける。XAML側も同じ値を指定し、標準テンプレートは維持する。
+
 ## グラフ画像出力の文字サイズ
 
 画像出力は `QualityGraphImageRenderer` で、画像出力専用の小18px・中22pxを標準とする。さらに選択したフォント倍率（0.5・0.8・1・1.2・1.5・2倍、初期値1倍）を掛け、96dpi・1描画単位＝1pxで直接描く。ウィンドウの寸法や画面DPIによる文字サイズの変更、画像全体の縮小による文字の縮小は行わない。プレビューの表示倍率は出力画像を変更しない。

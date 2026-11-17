@@ -24,6 +24,10 @@ internal sealed partial class GraphImageSaveWindow
             Environment.GetFolderPath(Environment.SpecialFolder.MyPictures))
             throw new InvalidOperationException("保存先の初期フォルダーがピクチャではありません。");
         UpdateLayout(); resizeTimer.Stop(); RefreshPreview();
+        if (saveButton.ActualHeight < 31 ||
+            saveButton.BorderBrush is not SolidColorBrush saveBorder ||
+            saveBorder.Color != ((SolidColorBrush)UiTheme.ControlBorder).Color)
+            throw new InvalidOperationException("PNG保存ボタンの高さまたは枠線が主画面と一致しません。");
         if (size.Items.Count != 9 || size.SelectedIndex != 4 || presets[1] != (1024, 768) ||
             presets[2] != (1280, 960) || presets[3] != (1600, 1200) ||
             metricSelection.Items.Count != 3 || metricSelection.SelectedIndex != 0 ||

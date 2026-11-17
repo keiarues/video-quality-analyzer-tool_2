@@ -57,6 +57,12 @@ public partial class MainWindow
                     throw new InvalidOperationException("主画面で選んだ動画が設定画面の評価対象に反映されません。");
             }
             UpdateLayout();
+            var addRight = AddVideoButton.TranslatePoint(new Point(AddVideoButton.ActualWidth, 0), this).X;
+            var removeLeft = RemoveVideoButton.TranslatePoint(new Point(), this).X;
+            if (removeLeft - addRight < 7 ||
+                Math.Abs(EvaluationClearButton.ActualHeight - EvaluationRangeButton.ActualHeight) > 0.5 ||
+                EvaluationClearButton.ActualHeight < 31)
+                throw new InvalidOperationException("動画操作ボタンの間隔または評価操作ボタンの高さが不正です。");
 #pragma warning disable WPF0001 // .NET 10のFluentテーマは実験的API。
             var selectedMode = DisplayStyleSettings.ActiveMode switch
             {

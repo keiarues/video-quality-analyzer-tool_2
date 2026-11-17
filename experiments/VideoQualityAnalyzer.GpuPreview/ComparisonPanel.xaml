@@ -112,7 +112,7 @@
                     <StackPanel Grid.Row="0">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                             <TextBlock Text="差分ヒートマップ" VerticalAlignment="Center" />
-            <ComboBox Name="GainSelect" ToolTip="差分強調" Margin="8,0,0,0" Width="68" SelectionChanged="GainSelect_SelectionChanged">
+            <ComboBox Name="GainSelect" ToolTip="差分強調" Margin="8,0,0,0" Width="112" SelectionChanged="GainSelect_SelectionChanged">
                 <ComboBoxItem Content="4倍" Tag="4" />
                 <ComboBoxItem Content="16倍" Tag="16" />
                 <ComboBoxItem Content="64倍" Tag="64" />

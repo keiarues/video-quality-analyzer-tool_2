@@ -30,8 +30,11 @@ public sealed class GroupWindow : Window
         panel.Children.Add(name);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         panel.Children.Add(buttons);
-        var apply = new Button { Content = "適用", IsDefault = true };
-        var cancel = new Button { Content = "キャンセル", IsCancel = true };
+        var apply = new Button { Content = "適用", IsDefault = true,
+            Height = UiTheme.ActionButtonHeight, MinWidth = 96,
+            Margin = new Thickness(0, 0, 8, 0), BorderBrush = UiTheme.ControlBorder };
+        var cancel = new Button { Content = "キャンセル", IsCancel = true,
+            Height = UiTheme.ActionButtonHeight, MinWidth = 96, BorderBrush = UiTheme.ControlBorder };
         buttons.Children.Add(apply);
         buttons.Children.Add(cancel);
         apply.Click += (_, _) => { VideoLibrary.SetGroup(selected, name.Text); DialogResult = true; };
@@ -40,6 +43,12 @@ public sealed class GroupWindow : Window
             name.Focus();
             if (name.Template.FindName("PART_EditableTextBox", name) is TextBox editor) editor.SelectAll();
             if (!verify) return;
+            UpdateLayout();
+            var applyRight = apply.TranslatePoint(new Point(apply.ActualWidth, 0), this).X;
+            var cancelLeft = cancel.TranslatePoint(new Point(), this).X;
+            if (cancelLeft - applyRight < 7 ||
+                Math.Abs(apply.ActualHeight - cancel.ActualHeight) > 0.5 || apply.ActualHeight < 31)
+                throw new InvalidOperationException("グループ設定ボタンの間隔または高さが不正です。");
             if (verifyExisting) name.SelectedItem = groups.First();
             else name.Text = "検証グループ";
             apply.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));

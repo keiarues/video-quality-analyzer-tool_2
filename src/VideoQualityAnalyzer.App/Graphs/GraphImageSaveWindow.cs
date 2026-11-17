@@ -19,6 +19,7 @@ internal sealed record GraphImageSaveSource(VideoDescriptor Reference, VideoDesc
 internal sealed partial class GraphImageSaveWindow : Window
 {
     private readonly ContentControl graphHost = new();
+    private readonly Button saveButton;
     private readonly TextBlock status = new() { TextWrapping = TextWrapping.Wrap, MinHeight = 22 };
     private readonly ComboBox target = new() { Width = 145 };
     private readonly ComboBox metricSelection = new() { Width = 85 };
@@ -84,7 +85,7 @@ internal sealed partial class GraphImageSaveWindow : Window
         font.SelectedIndex = 2;
         font.ToolTip = "出力画像上の文字サイズ：目盛り・凡例は18px、見出し・単位は22pxに倍率を掛けます。";
         saveOptions.Children.Add(Group(Label("フォント："), font));
-        var save = BarButton("PNG画像を保存", 128); saveOptions.Children.Add(save);
+        saveButton = BarButton("PNG画像を保存", 128); saveOptions.Children.Add(saveButton);
         var load = BarButton("実データを読み込む", 140);
         if (source is null) toolbar.Children.Add(load);
         DockPanel.SetDock(status, Dock.Bottom); root.Children.Add(status);
@@ -143,7 +144,7 @@ internal sealed partial class GraphImageSaveWindow : Window
         };
         fit.Click += (_, _) => { fitToWindow = true; ApplyZoom(); };
         actual.Click += (_, _) => { fitToWindow = false; zoom.Value = 100; ApplyZoom(); };
-        save.Click += (_, _) =>
+        saveButton.Click += (_, _) =>
         {
             var dialog = CreateSaveDialog(DateTime.Now);
             if (dialog.ShowDialog(this) != true) return;
@@ -192,9 +193,9 @@ internal sealed partial class GraphImageSaveWindow : Window
     }
     private static Button BarButton(string text, double width) => new()
     {
-        Content = text, Width = width, MinWidth = width, Height = 32,
+        Content = text, Width = width, MinWidth = width, Height = UiTheme.ActionButtonHeight,
         Padding = new Thickness(4, 0, 4, 0), Margin = new Thickness(3, 2, 3, 2),
-        VerticalContentAlignment = VerticalAlignment.Center
+        VerticalContentAlignment = VerticalAlignment.Center, BorderBrush = UiTheme.ControlBorder
     };
     private void SetGraph(VideoDescriptor[] selectedVideos, VideoDescriptor[] allVideos,
         Dictionary<(string VideoId, QualityMetric Metric), QualityResult> results, string referenceName,

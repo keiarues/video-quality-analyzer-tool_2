@@ -651,7 +651,7 @@ public partial class ComparisonPanel : UserControl, IDisposable
             ViewSelect.SelectedIndex = 2;
             await System.Windows.Threading.Dispatcher.Yield(System.Windows.Threading.DispatcherPriority.Loaded);
             UpdateLayout();
-            if (!HeatmapOptions.IsVisible || !HeatmapPanel.IsAncestorOf(GainSelect) ||
+            if (!HeatmapOptions.IsVisible || !HeatmapPanel.IsAncestorOf(GainSelect) || GainSelect.ActualWidth < 100 ||
                 HeatmapTab.Content is not DockPanel optionsPanel || !optionsPanel.Children.Contains(HeatmapOptions))
                 throw new InvalidOperationException($"ヒートマップ専用オプションがタブ内にありません。表示={HeatmapOptions.IsVisible} 配置={HeatmapPanel.IsAncestorOf(GainSelect)} 内容={HeatmapTab.Content?.GetType().Name}");
             var snapshot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)ActualWidth, (int)ActualHeight, 96, 96, PixelFormats.Pbgra32);

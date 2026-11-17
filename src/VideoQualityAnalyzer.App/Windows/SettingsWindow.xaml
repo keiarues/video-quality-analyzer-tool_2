@@ -49,11 +49,11 @@
                 <TextBlock Text="FFmpegフォルダーパス" VerticalAlignment="Center" Margin="0,0,8,0" HorizontalAlignment="Right" />
                 <TextBox x:Name="FolderPathBox" Grid.Column="1" VerticalAlignment="Center" VerticalContentAlignment="Center" AcceptsReturn="False" TextWrapping="NoWrap" d:Text="C:\Tools\ffmpeg\bin" BorderBrush="{StaticResource UiControlBorderBrush}" />
                 <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="8,0,0,0">
-                    <Button Content="フォルダーを選択" Click="SelectFolder_Click" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                    <Button Content="フォルダーを選択" Click="SelectFolder_Click" Margin="0,0,8,0" BorderBrush="{StaticResource UiControlBorderBrush}" />
                     <Button Content="再検出" Click="Detect_Click" BorderBrush="{StaticResource UiControlBorderBrush}" />
                 </StackPanel>
                 <StackPanel Grid.Column="2" Grid.Row="1" Grid.RowSpan="2" Margin="8,4,0,0">
-                    <Button x:Name="DownloadButton" Content="ffmpegを取得" Click="Download_Click" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                    <Button x:Name="DownloadButton" Content="ffmpegを取得" Click="Download_Click" Margin="0,0,8,0" BorderBrush="{StaticResource UiControlBorderBrush}" />
                     <Button x:Name="CancelDownloadButton" Content="ダウンロードを中断" Click="CancelDownload_Click" Visibility="Collapsed" BorderBrush="{StaticResource UiControlBorderBrush}" />
                     <TextBlock x:Name="DownloadStatus" TextWrapping="Wrap" MaxWidth="300" />
                 </StackPanel>
@@ -72,7 +72,7 @@
         </StackPanel>
         </ScrollViewer>
             <StackPanel Grid.Row="1" Margin="18,0,18,18" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
-                <Button x:Name="SaveButton" Content="保存" IsDefault="True" Click="Save_Click" VerticalAlignment="Bottom" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                <Button x:Name="SaveButton" Content="保存" IsDefault="True" Click="Save_Click" VerticalAlignment="Bottom" Margin="0,0,8,0" BorderBrush="{StaticResource UiControlBorderBrush}" />
                 <Button Content="キャンセル" IsCancel="True" BorderBrush="{StaticResource UiControlBorderBrush}" />
             </StackPanel>
     </Grid>
