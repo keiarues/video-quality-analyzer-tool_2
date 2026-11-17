@@ -9,8 +9,16 @@ namespace VideoQualityAnalyzer.App;
 
 public enum GraphImageTarget { Frames, Files }
 
-public sealed class QualityGraphPanel : UserControl
+public sealed partial class QualityGraphPanel : UserControl
 {
+    private VideoDescriptor[] videos;
+    private VideoDescriptor[]? allVideos;
+    private IReadOnlyDictionary<string, string>? groups;
+    private readonly HashSet<string> selectedIds;
+    private readonly StackPanel legend = new();
+    private readonly Canvas playbackCanvas;
+    private readonly QualityGraphLegendController legendController;
+    private readonly Action<string>? selectVideoRequested;
     private readonly Canvas timeline = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
     private readonly Canvas playbackOverlay = new() { ClipToBounds = true, IsHitTestVisible = false };
     private readonly Canvas averages = new() { Background = Brushes.WhiteSmoke, ClipToBounds = true };
@@ -43,6 +51,11 @@ public sealed class QualityGraphPanel : UserControl
     {
         playbackResults = results;
         seekRequested = seek;
+        selectVideoRequested = select;
+        this.videos = videos;
+        this.allVideos = allVideos;
+        this.groups = groups;
+        selectedIds = videos.Select(video => video.Id).ToHashSet();
         Style = (Style)Application.Current.FindResource(typeof(UserControl));
         Background = Brushes.White;
         Foreground = UiTheme.OnLight;
@@ -52,13 +65,12 @@ public sealed class QualityGraphPanel : UserControl
             metric.Items.Add(new TabItem { Header = value.ToString().ToUpperInvariant(), Tag = value });
         metric.SelectedIndex = 0;
         panel.Children.Add(metric);
-        var selectedIds = videos.Select(video => video.Id).ToHashSet();
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Add(new ColumnDefinition());
         grid.ColumnDefinitions.Insert(1, new ColumnDefinition { Width = new GridLength(10) });
         var leftGraph = MakeGraph("フレームグラフ：時刻（秒）と品質", timeline);
-        var playbackCanvas = separatePlaybackLayer ? playbackOverlay : timeline;
+        playbackCanvas = separatePlaybackLayer ? playbackOverlay : timeline;
         if (separatePlaybackLayer)
         {
             // 静的な軸・折れ線だけを保持し、再生位置と評価値は毎回描画する。
@@ -69,15 +81,7 @@ public sealed class QualityGraphPanel : UserControl
             layers.Children.Add(playbackOverlay);
             leftGraph.Children.Add(layers);
         }
-        void AttachPlaybackVisuals()
-        {
-            playbackCanvas.Children.Add(playhead);
-            playbackCanvas.Children.Add(leftPlaybackStatus);
-            playbackCanvas.Children.Add(rightPlaybackStatus);
-            playbackCanvas.Children.Add(playbackTimeLabel);
-        }
         var rightGraph = MakeGraph("ファイルグラフ：平均ビットレート（kbps）と平均品質", averages);
-        var legend = new StackPanel();
         var legendScroll = new ScrollViewer { Content = legend, MaxHeight = 180,
             VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
         var legendBody = new DockPanel();
@@ -108,13 +112,13 @@ public sealed class QualityGraphPanel : UserControl
         createExportImage = (target, width, height, fontScale) =>
         {
             var selectedMetric = (QualityMetric)((TabItem)metric.SelectedItem).Tag;
-            var available = (allVideos ?? videos).Where(video => results.ContainsKey((video.Id, selectedMetric))).ToArray();
+            var available = (this.allVideos ?? this.videos).Where(video => playbackResults.ContainsKey((video.Id, selectedMetric))).ToArray();
             var series = available.Select((video, index) => new QualityGraphImageSeries(video,
-                results[(video.Id, selectedMetric)], colors[index % colors.Length], selectedIds.Contains(video.Id),
-                Bitrate(video), groups is not null && groups.TryGetValue(video.Id, out var group) ? group : null)).ToArray();
+                playbackResults[(video.Id, selectedMetric)], colors[index % colors.Length], selectedIds.Contains(video.Id),
+                Bitrate(video), this.groups is not null && this.groups.TryGetValue(video.Id, out var group) ? group : null)).ToArray();
             return QualityGraphImageRenderer.Render(target, width, height, fontScale, selectedMetric, series);
         };
-        var legendController = new QualityGraphLegendController(legendBox, legendScroll, overlay, averages,
+        legendController = new QualityGraphLegendController(legendBox, legendScroll, overlay, averages,
             legendDrag, collapseLegend, () => PlotArea(averages));
         Grid.SetColumn(rightGraph, 2);
         grid.Children.Add(leftGraph);
@@ -148,120 +152,14 @@ public sealed class QualityGraphPanel : UserControl
             e.Handled = true;
         };
         ((TabItem)metric.SelectedItem).Content = grid;
-        void SelectVideo(string id)
-        {
-            selectedIds.Clear();
-            selectedIds.Add(id);
-            select?.Invoke(id);
-            Draw();
-        }
-        void Draw()
-        {
-            displayedVideoIds.Clear();
-            videoColors.Clear();
-            timeline.Children.Clear();
-            playbackOverlay.Children.Clear();
-            averages.Children.Clear();
-            legend.Children.Clear();
-            if (metric.SelectedItem is not TabItem { Tag: QualityMetric selected }) return;
-            var available = (allVideos ?? videos).Where(video => results.ContainsKey((video.Id, selected))).ToArray();
-            if (available.Length == 0)
-            {
-                var durations = new[] { playbackLeft, playbackRight }.OfType<VideoDescriptor>()
-                    .Where(video => video.Duration > TimeSpan.Zero).Select(video => video.Duration.TotalSeconds).ToArray();
-                maximumTime = evaluationVideo?.Duration.TotalSeconds ?? (durations.Length > 0 ? durations.Min() : 0);
-                if (maximumTime > 0) DrawAxes(timeline, PlotArea(timeline), maximumTime, 0, 1, "秒", selected);
-                AttachPlaybackVisuals();
-                UpdatePlayhead();
-                legendController.Place();
-                return;
-            }
-            // フレーム値とファイル平均値は変動幅が異なるため、表示対象ごとに軸を求める。
-            var frameVideos = available.Where(video => selectedIds.Contains(video.Id)).ToArray();
-            var (min, max) = QualityGraphScale.VerticalRange(frameVideos.SelectMany(video =>
-                results[(video.Id, selected)].Frames.Select(frame => frame.Value)));
-            var (fileMin, fileMax) = QualityGraphScale.VerticalRange(available.Select(video => results[(video.Id, selected)].Average));
-            maximumTime = available.Max(video => results[(video.Id, selected)].Frames.Max(frame => frame.Number) / video.AverageFrameRate);
-            if (available.Any(video => results[(video.Id, selected)].Selection.IsPartial))
-                maximumTime = available.Max(video => video.Duration.TotalSeconds);
-            if (evaluationVideo is not null) maximumTime = evaluationVideo.Duration.TotalSeconds;
-            var rates = available.Select(Bitrate).ToArray();
-            var maxRate = Math.Max(1, rates.Max());
-            var timeArea = PlotArea(timeline);
-            var fileArea = PlotArea(averages);
-            DrawAxes(timeline, timeArea, maximumTime, min, max, "秒", selected);
-            DrawAxes(averages, fileArea, maxRate, fileMin, fileMax, "kbps", selected);
-            var previousPoints = new Dictionary<string, Point>();
-            for (var index = 0; index < available.Length; index++)
-            {
-                var video = available[index];
-                var result = results[(video.Id, selected)];
-                var color = colors[index % colors.Length];
-                videoColors[video.Id] = color;
-                var line = new Polyline { Stroke = color, StrokeThickness = 1, ToolTip = video.Name };
-                var isSelected = selectedIds.Contains(video.Id);
-                long? previousNumber = null;
-                foreach (var frame in result.Frames)
-                {
-                    if (result.Selection.IsPartial && previousNumber is { } previous && frame.Number != previous + 1)
-                    {
-                        if (isSelected) timeline.Children.Add(line);
-                        line = new Polyline { Stroke = color, StrokeThickness = 1, ToolTip = video.Name };
-                    }
-                    line.Points.Add(new Point(timeArea.Left + frame.Number / video.AverageFrameRate / Math.Max(0.001, maximumTime) * timeArea.Width,
-                        timeArea.Top + (max - frame.Value) / (max - min) * timeArea.Height));
-                    previousNumber = frame.Number;
-                }
-                if (isSelected) { timeline.Children.Add(line); displayedVideoIds.Add(video.Id); }
-                var point = new Ellipse { Width = 12, Height = 12, Fill = color,
-                    Stroke = isSelected ? Brushes.Black : null, StrokeThickness = 2,
-                    Tag = video.Id, ToolTip = $"{video.Name}: {result.Average:F4} / {rates[index]:N0} kbps\n{result.Selection.Description}" +
-                        (result.Selection.IsPartial ? "（評価対象のみの平均）" : ""), Cursor = System.Windows.Input.Cursors.Hand };
-                Canvas.SetLeft(point, fileArea.Left + rates[index] / maxRate * fileArea.Width - 6);
-                Canvas.SetTop(point, fileArea.Top + (fileMax - result.Average) / (fileMax - fileMin) * fileArea.Height - 6);
-                point.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); e.Handled = true; };
-                if (groups is not null && groups.TryGetValue(video.Id, out var group))
-                {
-                    var center = new Point(Canvas.GetLeft(point) + 6, Canvas.GetTop(point) + 6);
-                    if (previousPoints.TryGetValue(group, out var previous))
-                        averages.Children.Add(new Line { X1 = previous.X, Y1 = previous.Y,
-                            X2 = center.X, Y2 = center.Y, Stroke = Brushes.Gray, StrokeThickness = 1, IsHitTestVisible = false });
-                    previousPoints[group] = center;
-                }
-                averages.Children.Add(point);
-                var label = new TextBlock { Text = $"{result.Average:F4} / {rates[index]:N0} kbps",
-                    FontSize = UiTheme.Small, Foreground = UiTheme.OnLight, Background = Brushes.WhiteSmoke,
-                    IsHitTestVisible = false, Tag = "点の評価値" };
-                label.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
-                Canvas.SetLeft(label, Math.Clamp(Canvas.GetLeft(point) + 14, fileArea.Left,
-                    Math.Max(fileArea.Left, averages.ActualWidth - label.DesiredSize.Width - 4)));
-                Canvas.SetTop(label, Math.Clamp(Canvas.GetTop(point) - label.DesiredSize.Height,
-                    0, Math.Max(0, averages.ActualHeight - label.DesiredSize.Height)));
-                averages.Children.Add(label);
-                var legendItem = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 2, 10, 2),
-                    ToolTip = $"{video.Name} / {result.Average:F4} / {rates[index]:N0} kbps" };
-                legendItem.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = color, Margin = new Thickness(0, 0, 5, 0) });
-                legendItem.Children.Add(new TextBlock { Text = video.Name, FontSize = UiTheme.Small,
-                    Foreground = UiTheme.OnLight, MaxWidth = 150, TextTrimming = TextTrimming.CharacterEllipsis });
-                legendItem.Children.Add(new TextBlock { Text = $"  {result.Average:F4} / {rates[index]:N0} kbps",
-                    FontSize = UiTheme.Small, Foreground = UiTheme.OnLight });
-                legendItem.Background = Brushes.Transparent;
-                legendItem.Cursor = System.Windows.Input.Cursors.Hand;
-                legendItem.MouseLeftButtonDown += (_, e) => { SelectVideo(video.Id); e.Handled = true; };
-                legend.Children.Add(legendItem);
-            }
-            legendController.Place();
-            AttachPlaybackVisuals();
-            UpdatePlayhead();
-        }
         redrawPlaybackGraph = Draw;
         updateData = (selectedVideos, registeredVideos, groupNames) =>
         {
-            videos = selectedVideos;
-            allVideos = registeredVideos;
-            groups = groupNames;
+            this.videos = selectedVideos;
+            this.allVideos = registeredVideos;
+            this.groups = groupNames;
             selectedIds.Clear();
-            selectedIds.UnionWith(videos.Select(video => video.Id));
+            selectedIds.UnionWith(this.videos.Select(video => video.Id));
             Draw();
         };
         seekToFraction = fraction =>
