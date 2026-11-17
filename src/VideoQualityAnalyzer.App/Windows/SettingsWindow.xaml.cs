@@ -30,17 +30,7 @@ public partial class SettingsWindow : Window
         Closed += (_, _) => { closed = true; generation++; versionCancellation?.Cancel(); downloadCancellation?.Cancel(); };
         Loaded += (_, _) => { if (!verifyDetection) RefreshStatus(); };
         if (verifyDetection) Loaded += async (_, _) => await VerifyDetectionAsync();
-        if (verifyDownload) Loaded += async (_, _) =>
-        {
-            await DownloadAsync();
-            var success = DownloadStatus.Text.StartsWith("ダウンロード完了", StringComparison.Ordinal)
-                && FolderPathBox.Text.StartsWith(FfmpegDownloader.InstallRoot, StringComparison.OrdinalIgnoreCase)
-                && FfmpegSettings.Detect(FolderPathBox.Text).Path is not null
-                && DownloadButton.IsEnabled && SaveButton.IsEnabled;
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "ffmpeg-settings-verification.txt"),
-                (success ? "成功" : "失敗") + "\n" + FolderPathBox.Text + "\n" + DownloadStatus.Text + "\n" + ErrorText.Text);
-            Application.Current.Shutdown(success ? 0 : 1);
-        };
+        if (verifyDownload) Loaded += async (_, _) => await VerifyDownloadAsync();
     }
 
     private async void RefreshStatus() => await RefreshStatusAsync();
