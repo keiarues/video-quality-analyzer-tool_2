@@ -31,7 +31,6 @@ public sealed partial class QualityGraphPanel : UserControl
     private VideoDescriptor? playbackLeft;
     private VideoDescriptor? playbackRight;
     private string? playbackReferenceId;
-    private Action redrawPlaybackGraph = () => { };
     private double maximumTime;
     private TimeSpan playbackPosition;
     private bool playheadDragging;
@@ -152,22 +151,6 @@ public sealed partial class QualityGraphPanel : UserControl
             e.Handled = true;
         };
         ((TabItem)metric.SelectedItem).Content = grid;
-        redrawPlaybackGraph = Draw;
-        updateData = (selectedVideos, registeredVideos, groupNames) =>
-        {
-            this.videos = selectedVideos;
-            this.allVideos = registeredVideos;
-            this.groups = groupNames;
-            selectedIds.Clear();
-            selectedIds.UnionWith(this.videos.Select(video => video.Id));
-            Draw();
-        };
-        seekToFraction = fraction =>
-        {
-            var position = TimeSpan.FromSeconds(maximumTime * Math.Clamp(fraction, 0, 1));
-            SetPlaybackPosition(position);
-            seek?.Invoke(position);
-        };
         metric.SelectionChanged += (_, e) =>
         {
             if (e.Source != metric) return;
@@ -177,32 +160,7 @@ public sealed partial class QualityGraphPanel : UserControl
         };
         timeline.SizeChanged += (_, _) => Draw();
         averages.SizeChanged += (_, _) => Draw();
-        timeline.Cursor = System.Windows.Input.Cursors.SizeWE;
-        timeline.MouseLeftButtonDown += (_, e) =>
-        {
-            var area = PlotArea(timeline);
-            var position = e.GetPosition(timeline);
-            if (maximumTime <= 0 || !area.Contains(position) || !timeline.CaptureMouse()) return;
-            BeginPlayheadDrag((position.X - area.Left) / area.Width);
-            e.Handled = true;
-        };
-        timeline.MouseMove += (_, e) =>
-        {
-            if (!playheadDragging) return;
-            var area = PlotArea(timeline);
-            MovePlayheadDrag((e.GetPosition(timeline).X - area.Left) / area.Width);
-            e.Handled = true;
-        };
-        timeline.MouseLeftButtonUp += (_, e) =>
-        {
-            if (!playheadDragging) return;
-            var area = PlotArea(timeline);
-            MovePlayheadDrag((e.GetPosition(timeline).X - area.Left) / area.Width);
-            EndPlayheadDrag();
-            timeline.ReleaseMouseCapture();
-            e.Handled = true;
-        };
-        timeline.LostMouseCapture += (_, _) => { if (playheadDragging) EndPlayheadDrag(); };
+        InitializePlayheadInput();
         Loaded += (_, _) =>
         {
             Draw();
@@ -225,12 +183,18 @@ public sealed partial class QualityGraphPanel : UserControl
     }
 
     private readonly HashSet<string> displayedVideoIds = [];
-    private readonly Action<VideoDescriptor[], VideoDescriptor[], IReadOnlyDictionary<string, string>?> updateData;
-    private readonly Action<double> seekToFraction;
     public IReadOnlyCollection<string> DisplayedVideoIds => displayedVideoIds;
     public int FilePointCount => averages.Children.OfType<Ellipse>().Count();
     internal int FrameSegmentCount => timeline.Children.OfType<Polyline>().Count(line => line.Tag is null);
-    public void UpdateData(VideoDescriptor[] selected, VideoDescriptor[] all, IReadOnlyDictionary<string, string>? groups) => updateData(selected, all, groups);
+    public void UpdateData(VideoDescriptor[] selected, VideoDescriptor[] all, IReadOnlyDictionary<string, string>? groups)
+    {
+        videos = selected;
+        allVideos = all;
+        this.groups = groups;
+        selectedIds.Clear();
+        selectedIds.UnionWith(videos.Select(video => video.Id));
+        Draw();
+    }
     public void SetEvaluationProgress(VideoDescriptor video, QualityMetric value, TimeSpan position)
     {
         var changed = evaluationVideo?.Id != video.Id || evaluationPosition is null || (int)value != metric.SelectedIndex;
@@ -240,7 +204,7 @@ public sealed partial class QualityGraphPanel : UserControl
         EvaluationProgressUpdateCount++;
         LastEvaluationProgressPosition = playbackPosition;
         SelectMetric(value);
-        if (changed) redrawPlaybackGraph(); else UpdatePlayhead();
+        if (changed) Draw(); else UpdatePlayhead();
     }
 
     public void EndEvaluationProgress(TimeSpan position)
@@ -248,12 +212,17 @@ public sealed partial class QualityGraphPanel : UserControl
         evaluationVideo = null;
         evaluationPosition = null;
         playbackPosition = position;
-        redrawPlaybackGraph();
+        Draw();
     }
 
     public QualityMetric SelectedMetric => (QualityMetric)((TabItem)metric.SelectedItem).Tag;
     public void SelectMetric(QualityMetric value) => metric.SelectedIndex = (int)value;
-    public void SeekToFraction(double fraction) => seekToFraction(fraction);
+    public void SeekToFraction(double fraction)
+    {
+        var position = TimeSpan.FromSeconds(maximumTime * Math.Clamp(fraction, 0, 1));
+        SetPlaybackPosition(position);
+        seekRequested?.Invoke(position);
+    }
     public void SelectFile(string id)
     {
         var point = averages.Children.OfType<Ellipse>().Single(item => Equals(item.Tag, id));
@@ -325,7 +294,7 @@ public sealed partial class QualityGraphPanel : UserControl
         playbackLeft = left;
         playbackRight = right;
         playbackReferenceId = referenceId;
-        redrawPlaybackGraph();
+        Draw();
     }
 
     private static TextBlock MakePlaybackLabel(TextAlignment alignment) => new()
