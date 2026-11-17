@@ -27,6 +27,8 @@
 
 プレビューのタブ周辺と動画情報帯には `UiPreviewChromeBrush`・`UiVideoOverlayBrush` を使い、その上の文字色は `UiVideoTextBrush`・`UiVideoMutedBrush` で揃える。ライトでは明るいグレーと暗い文字、ダークでは暗い背景と明るい文字を指定する。タブは標準テンプレートを保ったまま `UiControlBorderBrush` の細い枠線を付ける。映像の余白は黒を維持する。
 
+グラフの指標タブもプレビュータブと同じ `UiPreviewTabHeaderStyle`、背景色、枠線色を使う。プレビューの動画詳細・元フレーム位置の表示には左6pxの余白を付ける。
+
 主要な操作ボタンは `UiControlBorderBrush` を使い、高さを `UiTheme.ActionButtonHeight`（32）に揃える。横並びのボタン間は8pxを目安に空ける。XAML側も同じ値を指定し、標準テンプレートは維持する。
 
 ## グラフ画像出力の文字サイズ

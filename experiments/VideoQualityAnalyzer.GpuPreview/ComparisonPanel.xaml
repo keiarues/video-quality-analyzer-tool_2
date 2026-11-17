@@ -32,13 +32,13 @@
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Margin="0,0,8,0">
                         <ComboBox Name="WipeLeftPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=LeftSelect}" SelectedItem="{Binding SelectedItem, ElementName=LeftSelect, Mode=TwoWay}" />
-                        <TextBlock Text="{Binding Text, ElementName=LeftDetails}" Style="{StaticResource UiSmallTextStyle}" />
-                        <TextBlock Text="{Binding Text, ElementName=LeftFrameStatus}" Style="{StaticResource UiSmallTextStyle}" />
+                        <TextBlock Text="{Binding Text, ElementName=LeftDetails}" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,0" />
+                        <TextBlock Text="{Binding Text, ElementName=LeftFrameStatus}" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,0" />
                     </StackPanel>
                     <StackPanel Grid.Column="1">
                         <ComboBox Name="WipeRightPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=RightSelect}" SelectedItem="{Binding SelectedItem, ElementName=RightSelect, Mode=TwoWay}" />
-                        <TextBlock Text="{Binding Text, ElementName=RightDetails}" Style="{StaticResource UiSmallTextStyle}" />
-                        <TextBlock Text="{Binding Text, ElementName=RightFrameStatus}" Style="{StaticResource UiSmallTextStyle}" />
+                        <TextBlock Text="{Binding Text, ElementName=RightDetails}" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,0" />
+                        <TextBlock Text="{Binding Text, ElementName=RightFrameStatus}" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,0" />
                     </StackPanel>
                 </Grid>
                 <Grid Name="WipeViewport" Background="Black" ClipToBounds="True">
@@ -86,8 +86,8 @@
                     <StackPanel Grid.Row="0">
                         <TextBlock Name="LeftFrameLabel" Text="左フレーム" TextTrimming="CharacterEllipsis" Margin="0,0,0,5" Visibility="Collapsed" />
                         <ComboBox Name="LeftPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=LeftSelect}" SelectedItem="{Binding SelectedItem, ElementName=LeftSelect, Mode=TwoWay}" Margin="0,0,0,5" />
-                        <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="0,0,0,5" />
-                        <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" Margin="0,0,0,5" />
+                        <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="6,0,0,5" />
+                        <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,5" />
                     </StackPanel>
                     <Border Grid.Row="1" Background="Black"><Image Name="LeftImage" Stretch="Uniform" /></Border>
                 </Grid>
@@ -99,8 +99,8 @@
                     <StackPanel Grid.Row="0">
                         <TextBlock Name="RightFrameLabel" Text="右フレーム" TextTrimming="CharacterEllipsis" Margin="0,0,0,5" Visibility="Collapsed" />
                         <ComboBox Name="RightPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=RightSelect}" SelectedItem="{Binding SelectedItem, ElementName=RightSelect, Mode=TwoWay}" Margin="0,0,0,5" />
-                        <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="0,0,0,5" />
-                        <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" Margin="0,0,0,5" />
+                        <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="6,0,0,5" />
+                        <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,5" />
                     </StackPanel>
                     <Border Grid.Row="1" Background="Black"><Image Name="RightImage" Stretch="Uniform" /></Border>
                 </Grid>

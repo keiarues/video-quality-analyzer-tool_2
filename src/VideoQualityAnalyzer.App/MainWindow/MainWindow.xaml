@@ -178,8 +178,8 @@
                                 <StackPanel>
                                     <TextBlock Name="LeftName" Text="左: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" Foreground="{StaticResource UiVideoTextBrush}" />
                                     <ComboBox Name="PreviewLeftSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" BorderBrush="{StaticResource UiControlBorderBrush}" />
-                                    <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiVideoMutedBrush}" />
-                                    <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" Foreground="{StaticResource UiVideoMutedBrush}" />
+                                    <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiVideoMutedBrush}" Margin="6,0,0,0" />
+                                    <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" Foreground="{StaticResource UiVideoMutedBrush}" Margin="6,0,0,0" />
                                 </StackPanel>
                             </Border>
                         </Grid>
@@ -194,8 +194,8 @@
                                 <StackPanel>
                                     <TextBlock Name="RightName" Text="右: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" Foreground="{StaticResource UiVideoTextBrush}" />
                                     <ComboBox Name="PreviewRightSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" BorderBrush="{StaticResource UiControlBorderBrush}" />
-                                    <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiVideoMutedBrush}" />
-                                    <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" Foreground="{StaticResource UiVideoMutedBrush}" />
+                                    <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiVideoMutedBrush}" Margin="6,0,0,0" />
+                                    <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" Foreground="{StaticResource UiVideoMutedBrush}" Margin="6,0,0,0" />
                                 </StackPanel>
                             </Border>
                         </Grid>

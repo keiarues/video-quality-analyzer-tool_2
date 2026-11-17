@@ -18,6 +18,12 @@ public sealed partial class QualityGraphPanel
         try
         {
             UpdateLayout();
+            if (metric.Items.OfType<TabItem>().Any(tab =>
+                    tab.Header is not TextBlock { Style: not null } || tab.BorderThickness.Left != 1) ||
+                metric.BorderThickness.Left != 1 ||
+                metric.Background is not SolidColorBrush tabBackground ||
+                tabBackground.Color != ((SolidColorBrush)FindResource("UiPreviewChromeBrush")).Color)
+                throw new InvalidOperationException("グラフの指標タブがプレビュータブと同じ配色・枠線ではありません。");
             if (metric.Items.Count != 3 || grid.ColumnDefinitions.Count != 3 ||
                 !timeline.Children.OfType<Polyline>().Any(line => line.Tag is null) || !averages.Children.OfType<Ellipse>().Any())
                 throw new InvalidOperationException("グラフのタブまたは横並び表示が不正です。");

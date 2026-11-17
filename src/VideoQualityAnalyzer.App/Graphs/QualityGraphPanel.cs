@@ -72,8 +72,18 @@ public sealed partial class QualityGraphPanel : UserControl
         Foreground = palette.Text;
         var panel = new DockPanel { Margin = new Thickness(4) };
         Content = panel;
+        metric.Background = (Brush)FindResource("UiPreviewChromeBrush");
+        metric.BorderBrush = (Brush)FindResource("UiPanelBorderBrush");
+        metric.BorderThickness = new Thickness(1);
         foreach (var value in Enum.GetValues<QualityMetric>())
-            metric.Items.Add(new TabItem { Header = value.ToString().ToUpperInvariant(), Tag = value });
+            metric.Items.Add(new TabItem
+            {
+                Header = new TextBlock { Text = value.ToString().ToUpperInvariant(),
+                    Style = (Style)FindResource("UiPreviewTabHeaderStyle") },
+                Tag = value,
+                BorderBrush = (Brush)FindResource("UiControlBorderBrush"),
+                BorderThickness = new Thickness(1)
+            });
         metric.SelectedIndex = 0;
         panel.Children.Add(metric);
         var grid = new Grid();
