@@ -12,6 +12,7 @@
 | App.TestScreens.cs | 専用テスト画面の起動分岐 | `--test-*` など |
 | App.Verification.cs | グラフ準備・評価・比較などの検証起動分岐 | `--verify-*` など |
 | MainWindow/ | 主画面の検証専用partialクラス | `--verify-main-*` など |
+| MainWindow/MainWindow.PreviewVerification.cs など | 主画面のプレビュー・評価とグラフ・比較・一覧の機能別検証 | `--verify-preview-controls`、`--verify-main-*` |
 | MainWindow/MainWindow.LibraryFilesVerification.cs | 同時・重複追加、失敗時の予約解除、選択維持、個別・全削除中の登録 | `--verify-concurrent-add` |
 
 起動引数の詳細や入力ファイルは `App.TestScreens.cs`、`App.Verification.cs`、検証ツールを参照。名前空間と起動方法は変更していない。SDKの標準ファイル収集でビルドされるため、移動後も開発用引数で起動できる。この整理は配布物からテスト機能を除外するものではない。
