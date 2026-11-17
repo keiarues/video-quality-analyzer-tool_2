@@ -5,7 +5,7 @@ $workspace = Split-Path $PSScriptRoot -Parent
 $env:DOTNET_CLI_HOME = Join-Path $workspace '.dotnet-home'
 $env:NUGET_PACKAGES = Join-Path $workspace '.nuget-packages'
 $dotnet = Join-Path $workspace 'tools/dotnet/dotnet.exe'
-$app = Join-Path $workspace "src/VideoQualityAnalyzer.App/bin/$OutputFolder/net10.0-windows/VideoQualityAnalyzer.StageA.dll"
+$app = Join-Path $workspace "src/VideoQualityAnalyzer.App/bin/$OutputFolder/net10.0-windows/VideoQualityAnalyzer.dll"
 $smokeTarget = if ($OutputFolder -eq "Release") { "net10.0" } else { "net10.0-windows" }
 $smoke = Join-Path $workspace "tests/VideoQualityAnalyzer.Smoke/bin/$OutputFolder/$smokeTarget/VideoQualityAnalyzer.Smoke.dll"
 

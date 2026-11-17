@@ -6,7 +6,7 @@ $videoDirectory = Join-Path $workspace 'test-data'
 $outputDirectory = Join-Path $workspace 'measurement-results'
 $dotnet = Join-Path $workspace 'tools/dotnet/dotnet.exe'
 $app = if ($MainApp) {
-    Join-Path $workspace "src/VideoQualityAnalyzer.App/bin/$OutputFolder/net10.0-windows/VideoQualityAnalyzer.StageA.dll"
+    Join-Path $workspace "src/VideoQualityAnalyzer.App/bin/$OutputFolder/net10.0-windows/VideoQualityAnalyzer.dll"
 } else {
     Join-Path $workspace "experiments/VideoQualityAnalyzer.GpuPreview/bin/$OutputFolder/net10.0-windows/VideoQualityAnalyzer.GpuPreview.dll"
 }

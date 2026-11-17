@@ -2,7 +2,7 @@ param([switch]$Prepare, [switch]$Auto)
 $ErrorActionPreference = 'Stop'
 $workspace = Split-Path $PSScriptRoot -Parent
 $dotnet = Join-Path $workspace 'tools/dotnet/dotnet.exe'
-$app = Join-Path $workspace 'src/VideoQualityAnalyzer.App/bin/Release/net10.0-windows/VideoQualityAnalyzer.StageA.dll'
+$app = Join-Path $workspace 'src/VideoQualityAnalyzer.App/bin/Release/net10.0-windows/VideoQualityAnalyzer.dll'
 $cache = Join-Path $workspace 'measurement-results/graph-playback/ssim.json'
 if ($Prepare) {
     $reference = (Get-ChildItem -LiteralPath (Join-Path $workspace 'test-data') -Filter '*reference.mkv').FullName
