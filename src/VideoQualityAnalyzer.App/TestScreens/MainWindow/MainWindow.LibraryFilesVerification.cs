@@ -17,6 +17,10 @@ public partial class MainWindow
             if (videos.Count(entry => string.Equals(entry.Descriptor.Path, path, StringComparison.OrdinalIgnoreCase)) != 1 ||
                 loadingVideoPaths.Count != 0 || pendingVideoLoads != 0)
                 throw new InvalidOperationException("同時追加で同じ動画が重複登録されました。");
+            var selectionBeforeDuplicate = selectionGeneration;
+            await AddFilesAsync([path]);
+            if (selectionGeneration != selectionBeforeDuplicate)
+                throw new InvalidOperationException("重複追加で不要な選択更新が行われました。");
 
             var missing = Path.Combine(Path.GetDirectoryName(path)!, Guid.NewGuid().ToString("N") + ".mkv");
             await AddFilesAsync([missing]);
@@ -36,10 +40,12 @@ public partial class MainWindow
 
             var candidatePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".mkv");
             var latePath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".mkv");
+            var removedDuringLoadPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N") + ".mkv");
             try
             {
                 File.Copy(path, candidatePath);
                 File.Copy(path, latePath);
+                File.Copy(path, removedDuringLoadPath);
                 await AddFilesAsync([candidatePath]);
                 var candidate = videos.Single(entry => entry.Descriptor.Path == candidatePath);
                 var selectionGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -50,6 +56,16 @@ public partial class MainWindow
                 await selectionLoad;
                 if (VideoList.SelectedItem != candidate)
                     throw new InvalidOperationException("読み込み中に変更した一覧選択が解除されました。");
+
+                var removeGate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                beforeVideoProbeForVerification = _ => removeGate.Task;
+                var removalLoad = AddFilesAsync([removedDuringLoadPath]);
+                Remove_Click(this, new RoutedEventArgs());
+                removeGate.SetResult();
+                await removalLoad;
+                if (videos.Contains(candidate) || VideoList.SelectedItem == candidate ||
+                    !videos.Any(entry => entry.Descriptor.Path == removedDuringLoadPath))
+                    throw new InvalidOperationException("読み込み中の個別削除または新規登録が不正です。");
 
                 RemoveAll_Click(this, new RoutedEventArgs());
                 if (videos.Count != 0) throw new InvalidOperationException("全削除後に動画が残っています。");
@@ -89,8 +105,9 @@ public partial class MainWindow
                 beforeDropRegistrationForVerification = null;
                 if (File.Exists(candidatePath)) File.Delete(candidatePath);
                 if (File.Exists(latePath)) File.Delete(latePath);
+                if (File.Exists(removedDuringLoadPath)) File.Delete(removedDuringLoadPath);
             }
-            Console.WriteLine("動画登録: 同時追加、失敗時の予約解除、選択維持、全削除後の古い読み込みとドロップ結果の破棄が合格");
+            Console.WriteLine("動画登録: 重複時の更新抑制、選択維持、読み込み中の個別削除、全削除後の古い結果破棄が合格");
             Application.Current.Shutdown(0);
         }
         catch (Exception exception)

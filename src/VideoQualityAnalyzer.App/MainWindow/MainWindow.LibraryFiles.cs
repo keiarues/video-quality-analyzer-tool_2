@@ -49,6 +49,7 @@ public partial class MainWindow
 
         var generation = libraryLoadGeneration;
         var cancellationToken = libraryLoadCancellation.Token;
+        var addedVideo = false;
         pendingVideoLoads++;
         try
         {
@@ -77,6 +78,7 @@ public partial class MainWindow
                         if (generation != libraryLoadGeneration) break;
                         var entry = new VideoEntry(descriptor);
                         videos.Add(entry);
+                        addedVideo = true;
                         referenceId ??= descriptor.Id;
                         entry.IsReference = referenceId == descriptor.Id;
                         if (!entry.IsReference && droppedFolders is not null)
@@ -103,8 +105,11 @@ public partial class MainWindow
             }
 
             if (generation != libraryLoadGeneration) return;
-            UpdateSelection();
-            if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
+            if (addedVideo)
+            {
+                if (activeSort != VideoSortOrder.Registration) RefreshVideoOrder();
+                else UpdateSelection();
+            }
             var groupCount = videos.Where(entry => !entry.IsReference && !string.IsNullOrWhiteSpace(entry.Group))
                 .Select(entry => entry.Group).Distinct().Count();
             SetWindowStatus($"読み込み済み：{videos.Count}ファイル／{groupCount}グループ");
