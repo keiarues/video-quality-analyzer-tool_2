@@ -4,16 +4,6 @@ using VideoQualityAnalyzer.Core;
 
 namespace VideoQualityAnalyzer.Media;
 
-public sealed record EvaluationFrameDigest(long Number, long Bytes, string Sha256);
-public sealed record InputSeekProgress(string Stage, int Interval, int Intervals, long CompletedFrames, long TotalFrames, TimeSpan SourceTime);
-public sealed record InputSeekRun(QualityResult Result, IReadOnlyList<EvaluationFrameDigest> ReferenceFrames,
-    IReadOnlyList<EvaluationFrameDigest> CandidateFrames, TimeSpan Elapsed);
-public sealed record InputSeekComparison(InputSeekRun Sequential, InputSeekRun Seek,
-    int ReferencePixelMismatches, int CandidatePixelMismatches, int ValueMismatches, double MaximumValueDifference)
-{
-    public bool Passed => ReferencePixelMismatches == 0 && CandidatePixelMismatches == 0 && ValueMismatches == 0;
-}
-
 // 専用画面用。通常評価とは別に、画素ハッシュを同時出力してシークの正確さを検証する。
 public sealed class InputSeekEvaluationService(string executable, string probeExecutable)
 {
@@ -32,16 +22,7 @@ public sealed class InputSeekEvaluationService(string executable, string probeEx
         {
             var sequential = await RunAsync(false);
             var seek = await RunAsync(true);
-            int ComparePixels(IReadOnlyList<EvaluationFrameDigest> expected, IReadOnlyList<EvaluationFrameDigest> actual) =>
-                Math.Abs(expected.Count - actual.Count) + expected.Zip(actual).Count(pair => pair.First != pair.Second);
-            var expectedValues = sequential.Result.Frames.ToDictionary(frame => frame.Number, frame => frame.Value);
-            var actualValues = seek.Result.Frames.ToDictionary(frame => frame.Number, frame => frame.Value);
-            var differences = expectedValues.Keys.Union(actualValues.Keys).Select(number =>
-                expectedValues.TryGetValue(number, out var a) && actualValues.TryGetValue(number, out var b)
-                    ? Math.Abs(a - b) : double.PositiveInfinity).ToArray();
-            return new(sequential, seek, ComparePixels(sequential.ReferenceFrames, seek.ReferenceFrames),
-                ComparePixels(sequential.CandidateFrames, seek.CandidateFrames), differences.Count(value => value > 0.000001),
-                differences.DefaultIfEmpty(0).Max());
+            return InputSeekComparison.Create(sequential, seek);
 
             async Task<InputSeekRun> RunAsync(bool useSeek)
             {

@@ -55,14 +55,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
             direct.Result.Frames.Zip(sequential.Result.Frames).Any(pair => pair.First.Number != pair.Second.Number || Math.Abs(pair.First.Value - pair.Second.Value) > 0.000001)))
             throw new InvalidDataException("パイプ経由の先頭復号が、元の色情報を保った直接評価基準と一致しません。");
         var seek = await RunAsync(true);
-        int Pixels(IReadOnlyList<EvaluationFrameDigest> a, IReadOnlyList<EvaluationFrameDigest> b) =>
-            Math.Abs(a.Count - b.Count) + a.Zip(b).Count(pair => pair.First != pair.Second);
-        var expected = sequential.Result.Frames.ToDictionary(frame => frame.Number, frame => frame.Value);
-        var actual = seek.Result.Frames.ToDictionary(frame => frame.Number, frame => frame.Value);
-        var differences = expected.Keys.Union(actual.Keys).Select(number => expected.TryGetValue(number, out var a) && actual.TryGetValue(number, out var b)
-            ? Math.Abs(a - b) : double.PositiveInfinity).ToArray();
-        return (seek, new(sequential, seek, Pixels(sequential.ReferenceFrames, seek.ReferenceFrames), Pixels(sequential.CandidateFrames, seek.CandidateFrames),
-            differences.Count(value => value > 0.000001), differences.DefaultIfEmpty().Max()));
+        return (seek, InputSeekComparison.Create(sequential, seek));
 
         async Task<InputSeekRun> RunAsync(bool useSeek)
         {
