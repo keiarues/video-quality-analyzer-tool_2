@@ -131,51 +131,9 @@ public sealed class QualityGraphPanel : UserControl
             Tag = "Vertical", Template = (ControlTemplate)FindResource("ResizeBarTemplate"), ToolTip = "グラフの横幅を変更" };
         Grid.SetColumn(graphSplitter, 1);
         grid.Children.Add(graphSplitter);
-        var minimizedColumn = -1;
-        GridLength savedLeft = new(1, GridUnitType.Star), savedRight = new(1, GridUnitType.Star);
-        var graphToggles = new Dictionary<int, Button>();
-        Button AddMinimize(DockPanel graph, int column, string name)
-        {
-            var title = graph.Children[0];
-            var header = new DockPanel();
-            var toggle = new Button { Content = column == 0 ? "◀" : "▶", MinWidth = 24,
-                Padding = new Thickness(2), ToolTip = name + "を最小化" };
-            graphToggles[column] = toggle;
-            graph.Children.Remove(title);
-            DockPanel.SetDock(toggle, column == 0 ? Dock.Right : Dock.Left);
-            header.Children.Add(toggle);
-            header.Children.Add(title);
-            DockPanel.SetDock(header, Dock.Top);
-            graph.Children.Insert(0, header);
-            toggle.Click += (_, _) =>
-            {
-                var restore = minimizedColumn != -1;
-                if (minimizedColumn == -1) { savedLeft = grid.ColumnDefinitions[0].Width; savedRight = grid.ColumnDefinitions[2].Width; }
-                minimizedColumn = restore ? -1 : column;
-                foreach (var (pane, paneColumn) in new[] { (leftGraph, 0), (rightGraph, 2) })
-                {
-                    var minimized = minimizedColumn == paneColumn;
-                    var paneHeader = (DockPanel)pane.Children[0];
-                    paneHeader.Children[1].Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
-                    foreach (UIElement child in pane.Children)
-                        if (child != paneHeader) child.Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
-                    grid.ColumnDefinitions[paneColumn].Width = minimized ? new GridLength(0) :
-                        minimizedColumn == -1 ? (paneColumn == 0 ? savedLeft : savedRight) : new GridLength(1, GridUnitType.Star);
-                    graphToggles[paneColumn].Visibility = minimized ? Visibility.Collapsed : Visibility.Visible;
-                    graphToggles[paneColumn].Content = paneColumn == 0 ? "◀" : "▶";
-                    graphToggles[paneColumn].ToolTip = minimizedColumn == -1
-                        ? (paneColumn == 0 ? "フレームグラフ" : "ファイルグラフ") + "を最小化"
-                        : (minimizedColumn == 0 ? "フレームグラフ" : "ファイルグラフ") + "を復元";
-                }
-                graphSplitter.IsEnabled = minimizedColumn == -1;
-                graphSplitter.Visibility = minimizedColumn == -1 && !frameOnly ? Visibility.Visible : Visibility.Collapsed;
-                grid.ColumnDefinitions[1].Width = new GridLength(minimizedColumn == -1 && !frameOnly ? 10 : 0);
-            };
-            return toggle;
-        }
-        var minimizeFrame = AddMinimize(leftGraph, 0, "フレームグラフ");
-        var minimizeFile = AddMinimize(rightGraph, 2, "ファイルグラフ");
-        if (frameOnly) { graphSplitter.Visibility = Visibility.Collapsed; grid.ColumnDefinitions[1].Width = new GridLength(0); }
+        var paneController = new QualityGraphPaneController(grid, leftGraph, rightGraph, graphSplitter, frameOnly);
+        var minimizeFrame = paneController.FrameButton;
+        var minimizeFile = paneController.FileButton;
         void ClearFileSelection()
         {
             selectedIds.Clear();
@@ -436,8 +394,8 @@ public sealed class QualityGraphPanel : UserControl
                     if (toggle.Visibility != Visibility.Collapsed || other.Visibility != Visibility.Visible)
                         throw new InvalidOperationException("最小化したグラフのボタン表示が不正です。");
                     other.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-                    if (minimizedColumn != -1 || toggle.Visibility != Visibility.Visible || other.Visibility != Visibility.Visible ||
-                        grid.ColumnDefinitions[0].Width != savedLeft || grid.ColumnDefinitions[2].Width != savedRight)
+                    if (paneController.MinimizedColumn != -1 || toggle.Visibility != Visibility.Visible || other.Visibility != Visibility.Visible ||
+                        grid.ColumnDefinitions[0].Width != paneController.SavedLeft || grid.ColumnDefinitions[2].Width != paneController.SavedRight)
                         throw new InvalidOperationException("反対側のボタンでグラフのサイズを復元できません。");
                 }
                 UpdateLayout();
