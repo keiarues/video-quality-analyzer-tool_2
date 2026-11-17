@@ -19,8 +19,6 @@ public partial class MainWindow
         slot.Video = video;
         slot.LastShownPosition = null;
         slot.Ready = false;
-        slot.FpsSampleStamp = 0;
-        slot.PlaybackFps = null;
         slot.OpenStarted = Stopwatch.GetTimestamp();
         slot.Name.Text = video is null ? (slot.Side == "left" ? "左: 未選択" : "右: 未選択") :
             (slot.Side == "left" ? "左: " : "右: ") + video.Name;
@@ -52,8 +50,6 @@ public partial class MainWindow
             return;
 
         // 映像の準備完了はFFmpeg側の最初のフレーム提示で判定する。
-        slot.FpsSampleStamp = 0;
-        slot.PlaybackFps = null;
         slot.Media.Position = ClampToVideo(CurrentPosition(), video);
         if (isPlaying)
             slot.Media.Play();
@@ -73,7 +69,6 @@ public partial class MainWindow
     {
         if (slot.Av1.IsOpen) return;
         slot.Ready = false;
-        slot.PlaybackFps = null;
         log.Record("media_failed", slot.Side, slot.Video?.Id, "failed",
             detail: e.ErrorException?.GetType().Name ?? "unknown");
     }
@@ -133,7 +128,6 @@ public partial class MainWindow
         playbackClock.Restart();
         isPlaying = true;
         UpdatePlayPauseButton();
-        ResetFpsSamples();
         log.Record("play", "both", left.Video?.Id, "requested", detail: "presented_fps=unmeasured");
     }
 
@@ -148,7 +142,6 @@ public partial class MainWindow
         playbackClock.Stop();
         isPlaying = false;
         UpdatePlayPauseButton();
-        ResetFpsSamples();
         left.Media.Pause();
         right.Media.Pause();
         left.Av1.Pause();
@@ -164,7 +157,6 @@ public partial class MainWindow
         playbackClock.Reset();
         isPlaying = false;
         UpdatePlayPauseButton();
-        ResetFpsSamples();
         left.LastShownPosition = right.LastShownPosition = null;
         evaluatedPlaybackEnded = evaluatedAudioPending = false;
         basePosition = evaluatedPlaybackPlan is { } plan && left.Video is { } video ? TimeSpan.FromSeconds(plan.FirstFrame / video.AverageFrameRate) : TimeSpan.Zero;
@@ -194,7 +186,6 @@ public partial class MainWindow
         basePosition = ClampToCommon(NormalizeEvaluatedSeek(position, direction));
         if (isPlaying && evaluatedPlaybackPlan is not null) BeginEvaluatedAudioTransition(basePosition);
         if (comparisonActive && comparisonPanel is not null) comparisonChangeTask = comparisonPanel.SeekAsync(basePosition, isPlaying);
-        ResetFpsSamples();
         if (isPlaying)
             playbackClock.Restart();
         if (left.Av1.IsOpen) left.Av1.Seek(basePosition);
@@ -284,8 +275,5 @@ public partial class MainWindow
         public bool Ready { get; set; }
         public TimeSpan? LastShownPosition { get; set; }
         public long OpenStarted { get; set; }
-        public long FpsSampleStamp { get; set; }
-        public TimeSpan FpsSamplePosition { get; set; }
-        public double? PlaybackFps { get; set; }
     }
 }

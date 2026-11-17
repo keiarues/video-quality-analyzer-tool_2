@@ -15,8 +15,6 @@ public partial class MainWindow
             UpdatePerformanceDisplay();
             return;
         }
-        SamplePlaybackFps(left);
-        SamplePlaybackFps(right);
         UpdateResourceSample();
         if (isPlaying && CurrentPosition() >= CommonDuration() && CommonDuration() > TimeSpan.Zero)
         {
@@ -37,8 +35,6 @@ public partial class MainWindow
                         right.Av1.Seek(ClampToVideo(CurrentPosition(), right.Video!));
                     else
                         right.Media.Position = ClampToVideo(CurrentPosition(), right.Video!);
-                    right.FpsSampleStamp = 0;
-                    right.PlaybackFps = null;
                     log.Record("resync", "right", right.Video?.Id, "position_estimate",
                         detail: $"position_difference_ms={difference.TotalMilliseconds:F0};presented_pts_difference=unmeasured");
                     driftStart = null;
@@ -50,40 +46,6 @@ public partial class MainWindow
             }
         }
         UpdatePerformanceDisplay();
-    }
-
-    private void ResetFpsSamples()
-    {
-        foreach (var slot in new[] { left, right })
-        {
-            slot.FpsSampleStamp = 0;
-            slot.PlaybackFps = null;
-        }
-    }
-
-    private void SamplePlaybackFps(SlotState slot)
-    {
-        if (!isPlaying || !slot.Ready || slot.Video is not { AverageFrameRate: > 0 } video)
-            return;
-
-        var now = Stopwatch.GetTimestamp();
-        var position = SlotPosition(slot);
-        if (slot.FpsSampleStamp == 0)
-        {
-            slot.FpsSampleStamp = now;
-            slot.FpsSamplePosition = position;
-            return;
-        }
-
-        var seconds = Stopwatch.GetElapsedTime(slot.FpsSampleStamp, now).TotalSeconds;
-        if (seconds < 1)
-            return;
-        var advanced = (position - slot.FpsSamplePosition).TotalSeconds;
-        // 再生位置の進み方からの換算値。実際に提示されたフレーム数ではない。
-        slot.PlaybackFps = advanced >= 0 && advanced <= seconds * 2
-            ? advanced / seconds * video.AverageFrameRate : null;
-        slot.FpsSampleStamp = now;
-        slot.FpsSamplePosition = position;
     }
 
     private void UpdateResourceSample()
