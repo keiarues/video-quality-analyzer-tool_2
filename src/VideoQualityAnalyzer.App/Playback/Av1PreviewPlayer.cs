@@ -116,7 +116,11 @@ internal sealed class Av1PreviewPlayer(Image image) : IDisposable
         catch (Exception exception)
         {
             if (!token.IsCancellationRequested && currentGeneration == generation)
-                await image.Dispatcher.InvokeAsync(() => Failed?.Invoke(exception));
+                await image.Dispatcher.InvokeAsync(() =>
+                {
+                    if (!token.IsCancellationRequested && currentGeneration == generation)
+                        Failed?.Invoke(exception);
+                });
         }
     }
 
