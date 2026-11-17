@@ -6,6 +6,7 @@
 |---|---|---|
 | FolderDropTestWindow.cs | フォルダー登録 | `--test-folder-drop` |
 | FfmpegDownloadTestWindow.cs | FFmpegの取得 | `--test-ffmpeg-download` |
+| SettingsWindow.Verification.cs | 設定画面の無効な入力・自動検出・バージョン表示 | `--verify-settings-detection` |
 | CsvExportTestWindow.cs | 品質CSVの保存・読み戻し | `--test-csv-export --auto` |
 | GraphPlaybackTestWindow.cs | グラフ表示中の再生 | `--graph-playback-test` |
 | GraphImageSaveWindow.Verification.cs | グラフ画像保存画面のサンプル・画像出力 | `--test-graph-image --auto` |

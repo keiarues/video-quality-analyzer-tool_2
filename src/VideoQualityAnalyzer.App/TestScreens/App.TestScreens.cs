@@ -40,6 +40,8 @@ public partial class App
         }
         else if (e.Args.Contains("--verify-ffmpeg-settings"))
             createWindow = () => new SettingsWindow(verifyDownload: true);
+        else if (e.Args.Contains("--verify-settings-detection"))
+            createWindow = () => new SettingsWindow(verifyDetection: true);
         else if (e.Args.Contains("--test-ffmpeg-download"))
             createWindow = () => new FfmpegDownloadTestWindow(automatic);
 
