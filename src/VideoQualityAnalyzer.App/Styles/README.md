@@ -23,6 +23,8 @@
 
 表示スタイルはオプション画面で保存し、次回起動時から反映する。`System` の独自パレットは起動時のWindowsアプリ用配色に合わせる。`--test-display-style --auto --theme Light` のように4モードを専用画面で検証できる。`--test-fluent-theme` と `--test-dark-palette` は暗色部品とグラフの既存検証に使う。PNG画像出力は従来の白背景を維持する。
 
+ライト配色は、Visual Studioの明色画面を参考に薄いグレーの余白とパネル、控えめな罫線を使う。標準部品のテンプレートは `ThemeMode` に任せ、画面で境界が必要なボタン・入力欄には `UiControlBorderBrush` を直接指定する。パネルは `UiPanelBorderBrush`、一覧は `UiListBackgroundBrush` と `UiGridLineBrush` を利用する。暗黙のButton等のStyleで標準テンプレートを置き換えない。
+
 ## グラフ画像出力の文字サイズ
 
 画像出力は `QualityGraphImageRenderer` で、画像出力専用の小18px・中22pxを標準とする。さらに選択したフォント倍率（0.5・0.8・1・1.2・1.5・2倍、初期値1倍）を掛け、96dpi・1描画単位＝1pxで直接描く。ウィンドウの寸法や画面DPIによる文字サイズの変更、画像全体の縮小による文字の縮小は行わない。プレビューの表示倍率は出力画像を変更しない。

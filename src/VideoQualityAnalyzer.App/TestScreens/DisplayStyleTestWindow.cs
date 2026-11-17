@@ -20,7 +20,9 @@ internal sealed class DisplayStyleTestWindow : Window
             Style = (Style)FindResource("UiTitleStyle"), Margin = new Thickness(0, 0, 0, 12) };
         DockPanel.SetDock(title, Dock.Top); root.Children.Add(title);
         var controls = new StackPanel { Orientation = Orientation.Horizontal };
-        controls.Children.Add(new Button { Content = "操作ボタン" });
+        var button = new Button { Content = "操作ボタン",
+            BorderBrush = (Brush)FindResource("UiControlBorderBrush") };
+        controls.Children.Add(button);
         controls.Children.Add(new CheckBox { Content = "選択肢", Margin = new Thickness(12, 0, 0, 0) });
         controls.Children.Add(new ComboBox { ItemsSource = new[] { "VMAF", "SSIM", "PSNR" },
             SelectedIndex = 1, Width = 110, Margin = new Thickness(12, 0, 0, 0) });
@@ -28,14 +30,16 @@ internal sealed class DisplayStyleTestWindow : Window
         var list = new ListBox { ItemsSource = new[] { "比較動画 A", "比較動画 B" }, SelectedIndex = 0,
             Height = 95, Margin = new Thickness(0, 12, 0, 12) };
         DockPanel.SetDock(list, Dock.Top); root.Children.Add(list);
-        var panel = new Border { Background = (Brush)FindResource("GraphSurfaceBrush"), Padding = new Thickness(12) };
+        var panel = new Border { Background = (Brush)FindResource("GraphSurfaceBrush"),
+            BorderBrush = (Brush)FindResource("UiPanelBorderBrush"), BorderThickness = new Thickness(1),
+            Padding = new Thickness(12) };
         panel.Child = new TextBlock { Text = "画面内グラフの文字", Foreground = (Brush)FindResource("GraphTextBrush") };
         root.Children.Add(panel);
 
-        if (automatic) Loaded += (_, _) => Dispatcher.BeginInvoke(() => Verify(root, title));
+        if (automatic) Loaded += (_, _) => Dispatcher.BeginInvoke(() => Verify(root, title, button));
     }
 
-    private void Verify(DockPanel root, TextBlock title)
+    private void Verify(DockPanel root, TextBlock title, Button button)
     {
         try
         {
@@ -45,7 +49,7 @@ internal sealed class DisplayStyleTestWindow : Window
                 DisplayStyleSettings.PaletteFor("None", false) != "Light")
                 throw new InvalidOperationException("システム配色と標準配色の選択が不正です。");
             var expected = DisplayStyleSettings.ActivePalette == "Dark" ? Color.FromRgb(20, 25, 34) :
-                Color.FromRgb(244, 246, 250);
+                Color.FromRgb(232, 232, 234);
             if (Background is not SolidColorBrush window || window.Color != expected ||
                 root.Background is not SolidColorBrush rootBrush || rootBrush.Color != expected ||
                 title.Foreground is not SolidColorBrush text ||
@@ -53,6 +57,10 @@ internal sealed class DisplayStyleTestWindow : Window
                 ((SolidColorBrush)GraphPalette.Screen.Surface).Color !=
                     ((SolidColorBrush)FindResource("GraphSurfaceBrush")).Color)
                 throw new InvalidOperationException("ウィンドウ・文字・グラフのパレットが一致しません。");
+            if (DisplayStyleSettings.ActivePalette == "Light" &&
+                (button.BorderBrush is not SolidColorBrush border ||
+                 border.Color != ((SolidColorBrush)FindResource("UiControlBorderBrush")).Color))
+                throw new InvalidOperationException("ライト表示のボタン罫線が適用されていません。");
 #pragma warning disable WPF0001 // .NET 10のFluentテーマは実験的API。
             var actualMode = Application.Current.ThemeMode;
             var expectedMode = mode switch

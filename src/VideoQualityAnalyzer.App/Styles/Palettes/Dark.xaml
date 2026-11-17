@@ -10,6 +10,9 @@
     <SolidColorBrush x:Key="UiOnAccentBrush" Color="#17202D" />
     <SolidColorBrush x:Key="UiControlBackgroundBrush" Color="#273345" />
     <SolidColorBrush x:Key="UiControlBorderBrush" Color="#4B5D75" />
+    <SolidColorBrush x:Key="UiPanelBorderBrush" Color="#3D4A5E" />
+    <SolidColorBrush x:Key="UiGridLineBrush" Color="#405066" />
+    <SolidColorBrush x:Key="UiListBackgroundBrush" Color="#2B3444" />
     <SolidColorBrush x:Key="UiSelectedBrush" Color="#34516F" />
     <SolidColorBrush x:Key="UiSeparatorBrush" Color="#405066" />
     <SolidColorBrush x:Key="UiVideoOverlayBrush" Color="#CC17202D" />
