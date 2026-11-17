@@ -57,10 +57,11 @@ public partial class MainWindow
                     throw new InvalidOperationException("主画面で選んだ動画が設定画面の評価対象に反映されません。");
             }
             UpdateLayout();
-            var expectedText = ((System.Windows.Media.SolidColorBrush)FindResource("TextBrush")).Color;
-            if (MuteCheck.Foreground is not System.Windows.Media.SolidColorBrush brush || brush.Color != expectedText ||
+#pragma warning disable WPF0001 // .NET 10のFluentテーマは実験的API。
+            if (!Application.Current.ThemeMode.Equals(ThemeMode.Dark) ||
+#pragma warning restore WPF0001
                 FontFamily.Source != "Yu Gothic UI" || FontSize != (double)FindResource("UiFontMedium"))
-                throw new InvalidOperationException("共通フォントまたはミュートの文字色が不正です。");
+                throw new InvalidOperationException("Fluent Darkまたは共通フォントが不正です。");
             if (EvaluationControls.TranslatePoint(new Point(0, 0), this).Y <
                 VideoList.TranslatePoint(new Point(0, VideoList.ActualHeight), this).Y)
                 throw new InvalidOperationException("評価操作がファイル一覧の下にありません。");

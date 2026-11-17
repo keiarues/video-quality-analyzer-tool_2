@@ -20,11 +20,11 @@
         <Grid>
             <TabControl Name="ViewSelect" SelectionChanged="ViewSelect_SelectionChanged" Background="#141B26">
                 <TabItem Name="TwoScreenTab">
-                    <TabItem.Header><TextBlock Text="2画面" Foreground="{StaticResource TextBrush}" /></TabItem.Header>
+                    <TabItem.Header><TextBlock Text="2画面" /></TabItem.Header>
                     <ContentControl Name="TwoScreenContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 </TabItem>
                 <TabItem Name="WipeTab">
-                    <TabItem.Header><TextBlock Text="ワイプ" Foreground="{StaticResource TextBrush}" /></TabItem.Header>
+                    <TabItem.Header><TextBlock Text="ワイプ" /></TabItem.Header>
             <DockPanel Name="WipeViewGrid" Visibility="Collapsed">
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
@@ -58,11 +58,11 @@
                 </TabItem>
 
                 <TabItem Name="HeatmapTab">
-                    <TabItem.Header><TextBlock Text="差分ヒートマップ" Foreground="{StaticResource TextBrush}" /></TabItem.Header>
+                    <TabItem.Header><TextBlock Text="差分ヒートマップ" /></TabItem.Header>
                     <DockPanel>
                         <WrapPanel Name="HeatmapOptions" TextElement.Foreground="{StaticResource TextBrush}" DockPanel.Dock="Top" Margin="0,8,0,8">
             <TextBlock Name="BlurLabel" Text="ヒートマップのぼかし" VerticalAlignment="Center" Margin="16,0,6,0" />
-            <ComboBox Name="BlurSelect" Foreground="{StaticResource TextBrush}" Width="105" SelectionChanged="BlurSelect_SelectionChanged">
+            <ComboBox Name="BlurSelect" Width="105" SelectionChanged="BlurSelect_SelectionChanged">
                 <ComboBoxItem Content="ぼかしなし" Tag="0" />
                 <ComboBoxItem Content="弱" Tag="1" />
                 <ComboBoxItem Content="中" Tag="2" />
@@ -110,7 +110,7 @@
                     <StackPanel Grid.Row="0">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                             <TextBlock Text="差分ヒートマップ" VerticalAlignment="Center" />
-            <ComboBox Name="GainSelect" ToolTip="差分強調" Margin="8,0,0,0" Foreground="{StaticResource TextBrush}" Width="68" SelectionChanged="GainSelect_SelectionChanged">
+            <ComboBox Name="GainSelect" ToolTip="差分強調" Margin="8,0,0,0" Width="68" SelectionChanged="GainSelect_SelectionChanged">
                 <ComboBoxItem Content="4倍" Tag="4" />
                 <ComboBoxItem Content="16倍" Tag="16" />
                 <ComboBoxItem Content="64倍" Tag="64" />

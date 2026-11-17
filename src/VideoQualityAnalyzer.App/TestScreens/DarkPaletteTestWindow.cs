@@ -9,7 +9,7 @@ using VideoQualityAnalyzer.Media;
 
 namespace VideoQualityAnalyzer.App;
 
-// 主画面へ適用する前に、実グラフと代表的な操作部品の暗色案を確認する。
+// Fluent Darkの標準部品と、独自描画のグラフ配色を確認する。
 internal sealed class DarkPaletteTestWindow : Window
 {
     private readonly QualityGraphPanel graph;
@@ -102,9 +102,6 @@ internal sealed class DarkPaletteTestWindow : Window
                 file.IsSubmenuOpen = true;
                 SavePopup(file, Path.Combine(output, "menu-popup.png"));
                 file.IsSubmenuOpen = false;
-                if (method.Template.FindName("DropButton", method) is not ToggleButton dropButton ||
-                    dropButton.ActualWidth < method.ActualWidth - 4)
-                    throw new InvalidOperationException("動画選択欄の全体を開閉操作に使えません。");
                 method.IsDropDownOpen = true;
                 SavePopup(method, Path.Combine(output, "combo-popup.png"));
                 method.IsDropDownOpen = false;
@@ -115,7 +112,7 @@ internal sealed class DarkPaletteTestWindow : Window
         }, System.Windows.Threading.DispatcherPriority.Loaded);
     }
 
-    private static void SavePopup(DependencyObject control, string path)
+    internal static void SavePopup(DependencyObject control, string path)
     {
         static Popup? FindPopup(DependencyObject root)
         {

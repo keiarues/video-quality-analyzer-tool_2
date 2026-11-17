@@ -18,9 +18,9 @@
 
 派生Window・UserControlには基底型用の共通Styleを明示的に適用する。XAMLでは `Style="{StaticResource {x:Type Window}}"` またはUserControlを指定し、コードで作る画面でも同じ型キーのStyleを設定する。C#からの小文字サイズ・色の取得は `UiTheme` を利用する。
 
-画面上の暗い背景と明るい文字を共通化する。`DarkControls.xaml` は選択行・タブ・入力・スクロールバーなどの暗色表示を担当する。`UiOnLightBrush` は白背景のPNG画像出力などに限って使う。ツールチップにも同じフォントを使用する。新しい文字用途が必要になった場合は、この表と辞書に用途を追加してから各画面へ適用する。
+標準コントロールとウィンドウの暗色表示は `Application.ThemeMode="Dark"` のFluentテーマを利用する。`UiTheme.xaml` はフォント、グラフ・動画領域など固有の色、Fluentの一覧選択行の補正に使う。`UiOnLightBrush` は白背景のPNG画像出力などに限って使う。新しい文字用途が必要になった場合は、この表と辞書に用途を追加してから各画面へ適用する。
 
-`--test-dark-palette` の専用画面で共通スタイルとグラフを確認できる。PNG画像出力は従来の白背景を維持する。
+`--test-fluent-theme` は標準コントロール、`--test-dark-palette` は独自グラフと標準コントロールを確認する。PNG画像出力は従来の白背景を維持する。`None`・`System`・`Light` の画面配色は今後の検証対象である。
 
 ## グラフ画像出力の文字サイズ
 

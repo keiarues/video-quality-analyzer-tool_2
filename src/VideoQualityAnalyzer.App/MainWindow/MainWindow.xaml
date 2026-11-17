@@ -6,7 +6,6 @@
         Style="{StaticResource {x:Type Window}}"
         Title="VideoQualityAnalyzer"
         Width="1800" Height="900" MinWidth="980" MinHeight="620"
-        Background="{StaticResource BackgroundBrush}" Foreground="{StaticResource TextBrush}"
         AllowDrop="True" Drop="Window_Drop" DragOver="Window_DragOver"
         Closing="Window_Closing">
     <Window.Resources>
@@ -16,10 +15,7 @@
         <Style x:Key="RightFileCellStyle" TargetType="TextBlock">
             <Setter Property="TextAlignment" Value="Right" />
         </Style>
-        <Style x:Key="CenteredFileHeaderStyle" TargetType="DataGridColumnHeader">
-            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-            <Setter Property="Background" Value="{StaticResource UiControlBackgroundBrush}" />
-            <Setter Property="BorderBrush" Value="{StaticResource UiControlBorderBrush}" />
+        <Style x:Key="CenteredFileHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
             <Setter Property="Padding" Value="5,6" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
@@ -28,8 +24,7 @@
         </Style>
     </Window.Resources>
     <DockPanel>
-        <Menu DockPanel.Dock="Top" Background="{StaticResource UiControlBackgroundBrush}"
-              Foreground="{StaticResource TextBrush}"
+        <Menu DockPanel.Dock="Top"
               FontFamily="{StaticResource UiFontFamily}" FontSize="{StaticResource UiFontMedium}">
             <MenuItem Header="ファイル">
                 <MenuItem Header="動画を読み込む" Click="Add_Click"
@@ -75,13 +70,9 @@
                               SelectionChanged="ReferenceList_SelectionChanged" CanUserSortColumns="False"
                               AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                               CanUserDeleteRows="False" CanUserReorderColumns="True" RowHeaderWidth="0"
-                              Background="#17202D" Foreground="{StaticResource TextBrush}" RowBackground="#17202D" AlternatingRowBackground="#202837"
                               BorderThickness="0" HeadersVisibility="Column">
                         <DataGrid.ColumnHeaderStyle>
-                            <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-                                <Setter Property="Background" Value="{StaticResource UiControlBackgroundBrush}" />
-                                <Setter Property="BorderBrush" Value="{StaticResource UiControlBorderBrush}" />
+                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
                                 <Setter Property="Padding" Value="5,6" />
                                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                             </Style>
@@ -121,13 +112,9 @@
                               PreviewMouseLeftButtonDown="VideoList_PreviewMouseLeftButtonDown" SelectionChanged="VideoList_SelectionChanged" Sorting="VideoList_Sorting"
                               AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                               CanUserDeleteRows="False" CanUserReorderColumns="True" RowHeaderWidth="0"
-                              Background="#17202D" Foreground="{StaticResource TextBrush}" RowBackground="#17202D" AlternatingRowBackground="#202837"
                               BorderThickness="0" HeadersVisibility="Column">
                         <DataGrid.ColumnHeaderStyle>
-                            <Style TargetType="DataGridColumnHeader">
-                                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-                                <Setter Property="Background" Value="{StaticResource UiControlBackgroundBrush}" />
-                                <Setter Property="BorderBrush" Value="{StaticResource UiControlBorderBrush}" />
+                            <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
                                 <Setter Property="Padding" Value="5,6" />
                                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                             </Style>
@@ -153,7 +140,8 @@
 
             <GridSplitter Name="SidebarSplitter" Template="{StaticResource ResizeBarTemplate}" Tag="Vertical" Cursor="SizeWE" ToolTip="動画一覧の幅を変更" AutomationProperties.Name="動画一覧の幅を変更" Grid.Column="1" Margin="0,36,0,0" Width="10" HorizontalAlignment="Center" VerticalAlignment="Stretch" Background="#405066" />
             <Button Name="SidebarToggleButton" Grid.Column="1" Content="◀" ToolTip="一覧を最小化" AutomationProperties.Name="一覧を最小化"
-                    Click="SidebarToggle_Click" Width="18" Height="30" MinWidth="0" Padding="0" Margin="1,0,1,0" VerticalAlignment="Top" />
+                    Click="SidebarToggle_Click" Width="18" Height="30" MinWidth="0" Padding="0" Margin="1,0,1,0" VerticalAlignment="Top"
+                    Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}" />
             <Grid Grid.Column="2" Name="PreviewLayout">
                 <Grid.RowDefinitions>
                     <RowDefinition Name="PreviewRow" Height="1.2*" MinHeight="120" />
@@ -162,9 +150,9 @@
                     <RowDefinition Height="20" />
                     <RowDefinition Name="QualityGraphRow" Height="*" MinHeight="200" />
                 </Grid.RowDefinitions>
-                <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0" Background="{StaticResource BackgroundBrush}">
+                <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0">
                     <TabItem>
-                        <TabItem.Header><TextBlock Text="2画面" Foreground="{StaticResource TextBrush}" /></TabItem.Header>
+                        <TabItem.Header><TextBlock Text="2画面" /></TabItem.Header>
                 <Grid Name="LegacyPreviewGrid">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
@@ -206,12 +194,12 @@
                 </Grid>
                     </TabItem>
                     <TabItem>
-                        <TabItem.Header><TextBlock Text="ワイプ" Foreground="{StaticResource TextBrush}" /></TabItem.Header>
-                        <TextBlock Text="比較する動画を2本選択してください。" Foreground="{StaticResource TextBrush}" Margin="12" />
+                        <TabItem.Header><TextBlock Text="ワイプ" /></TabItem.Header>
+                        <TextBlock Text="比較する動画を2本選択してください。" Margin="12" />
                     </TabItem>
                     <TabItem>
-                        <TabItem.Header><TextBlock Text="差分ヒートマップ" Foreground="{StaticResource TextBrush}" /></TabItem.Header>
-                        <TextBlock Text="比較する動画を2本選択してください。" Foreground="{StaticResource TextBrush}" Margin="12" />
+                        <TabItem.Header><TextBlock Text="差分ヒートマップ" /></TabItem.Header>
+                        <TextBlock Text="比較する動画を2本選択してください。" Margin="12" />
                     </TabItem>
                 </TabControl>
                 <ContentControl Grid.Row="0" Name="ComparisonHost" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
@@ -259,11 +247,11 @@
                 </local:PriorityWrapPanel>
             </StackPanel>
         </Border>
-                <Button Name="PreviewToggleButton" Grid.Row="3" HorizontalAlignment="Right" Margin="0,0,34,0" Width="30" Height="18" MinWidth="0" Padding="0" Content="▲" ToolTip="プレビューを最小化" Click="PreviewToggle_Click" />
+                <Button Name="PreviewToggleButton" Grid.Row="3" HorizontalAlignment="Right" Margin="0,0,34,0" Width="30" Height="18" MinWidth="0" Padding="0" Content="▲" ToolTip="プレビューを最小化" Click="PreviewToggle_Click" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}" />
                 <Thumb Margin="0,0,68,0" Name="QualityGraphResizeBar" Template="{StaticResource ResizeBarTemplate}" Focusable="True" KeyDown="QualityGraphResize_KeyDown" Grid.Row="3" Height="10" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                        Cursor="SizeNS" ToolTip="品質グラフの高さを変更" DragDelta="QualityGraphResize_DragDelta"
                        AutomationProperties.Name="品質グラフの高さを変更" Background="#405066" />
-                <Button Name="GraphToggleButton" Grid.Row="3" HorizontalAlignment="Right" Width="30" Height="18" MinWidth="0" Padding="0" Content="▼" ToolTip="グラフを最小化" Click="GraphToggle_Click" />
+                <Button Name="GraphToggleButton" Grid.Row="3" HorizontalAlignment="Right" Width="30" Height="18" MinWidth="0" Padding="0" Content="▼" ToolTip="グラフを最小化" Click="GraphToggle_Click" Background="{StaticResource PanelBrush}" Foreground="{StaticResource TextBrush}" />
                 <ContentControl Name="QualityGraphHost" Grid.Row="4" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
 
             </Grid>
