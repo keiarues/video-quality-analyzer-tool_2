@@ -30,7 +30,7 @@ public partial class MainWindow : Window
     private string? previousRightId;
     private long selectionGeneration;
     private TimeSpan basePosition;
-    private DateTimeOffset? driftStart;
+    private readonly PlaybackDriftTracker playbackDrift = new();
     private long previousSampleStamp;
     private TimeSpan previousCpuTime;
     private double? cpuPercent;

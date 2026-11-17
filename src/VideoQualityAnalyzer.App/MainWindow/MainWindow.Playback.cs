@@ -13,6 +13,7 @@ public partial class MainWindow
         if (slot.Video?.Id == video?.Id)
             return;
 
+        playbackDrift.Reset();
         slot.Av1.Close();
         slot.Media.Close();
         slot.Media.Source = null;
@@ -138,6 +139,7 @@ public partial class MainWindow
         if (!isPlaying)
             return;
         basePosition = ClampToCommon(CurrentPosition());
+        playbackDrift.Reset();
         comparisonPanel?.Pause();
         playbackClock.Stop();
         isPlaying = false;
@@ -155,6 +157,7 @@ public partial class MainWindow
     private void StopPlayback()
     {
         playbackClock.Reset();
+        playbackDrift.Reset();
         isPlaying = false;
         UpdatePlayPauseButton();
         left.LastShownPosition = right.LastShownPosition = null;
@@ -181,6 +184,7 @@ public partial class MainWindow
     {
         if (left.Video is null)
             return;
+        playbackDrift.Reset();
         left.LastShownPosition = right.LastShownPosition = null;
         evaluatedPlaybackEnded = false;
         basePosition = ClampToCommon(NormalizeEvaluatedSeek(position, direction));

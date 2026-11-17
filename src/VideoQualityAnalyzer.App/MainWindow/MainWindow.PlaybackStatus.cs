@@ -11,6 +11,7 @@ public partial class MainWindow
     {
         if (comparisonActive)
         {
+            playbackDrift.Reset();
             UpdateResourceSample();
             UpdatePerformanceDisplay();
             return;
@@ -26,25 +27,17 @@ public partial class MainWindow
         {
             // Position差は提示PTS差ではない。再同期は持続した大きなずれだけに限定する。
             var difference = (SlotPosition(left) - SlotPosition(right)).Duration();
-            if (difference >= TimeSpan.FromMilliseconds(100))
+            if (playbackDrift.ShouldResync(difference, DateTimeOffset.UtcNow))
             {
-                driftStart ??= DateTimeOffset.UtcNow;
-                if (DateTimeOffset.UtcNow - driftStart >= TimeSpan.FromSeconds(1))
-                {
-                    if (right.Av1.IsOpen)
-                        right.Av1.Seek(ClampToVideo(CurrentPosition(), right.Video!));
-                    else
-                        right.Media.Position = ClampToVideo(CurrentPosition(), right.Video!);
-                    log.Record("resync", "right", right.Video?.Id, "position_estimate",
-                        detail: $"position_difference_ms={difference.TotalMilliseconds:F0};presented_pts_difference=unmeasured");
-                    driftStart = null;
-                }
-            }
-            else
-            {
-                driftStart = null;
+                if (right.Av1.IsOpen)
+                    right.Av1.Seek(ClampToVideo(CurrentPosition(), right.Video!));
+                else
+                    right.Media.Position = ClampToVideo(CurrentPosition(), right.Video!);
+                log.Record("resync", "right", right.Video?.Id, "position_estimate",
+                    detail: $"position_difference_ms={difference.TotalMilliseconds:F0};presented_pts_difference=unmeasured");
             }
         }
+        else playbackDrift.Reset();
         UpdatePerformanceDisplay();
     }
 
