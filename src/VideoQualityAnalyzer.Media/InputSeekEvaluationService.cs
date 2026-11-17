@@ -111,15 +111,8 @@ public sealed class InputSeekEvaluationService(string executable, string probeEx
 
     private async Task ExecuteAsync(IReadOnlyList<string> arguments, string directory, Action<long> report, CancellationToken token)
     {
-        var info = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = directory };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info) ?? throw new InvalidOperationException("検証用FFmpegを起動できません。");
-        using var registration = token.Register(() =>
-        {
-            try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
-            catch (InvalidOperationException) { }
-        });
+        using var process = EvaluationProcess.Start(executable, arguments, directory, "検証用FFmpegを起動できません。");
+        using var registration = token.Register(() => EvaluationProcess.Kill(process));
         var errors = process.StandardError.ReadToEndAsync();
         try
         {
@@ -129,7 +122,7 @@ public sealed class InputSeekEvaluationService(string executable, string probeEx
         }
         finally
         {
-            if (!process.HasExited) process.Kill(entireProcessTree: true);
+            EvaluationProcess.Kill(process);
             await process.WaitForExitAsync(CancellationToken.None); await errors;
         }
         token.ThrowIfCancellationRequested();

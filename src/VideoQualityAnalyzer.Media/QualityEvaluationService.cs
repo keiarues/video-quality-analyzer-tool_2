@@ -66,23 +66,14 @@ public sealed class QualityEvaluationService(string executable, Action<QualityEv
                 QualityMetric.Ssim => "ssim=stats_file=metric.log:shortest=1",
                 _ => "psnr=stats_file=metric.log:shortest=1"
             };
-            var info = new ProcessStartInfo(executable)
-            {
-                UseShellExecute = false, CreateNoWindow = true,
-                RedirectStandardOutput = true, RedirectStandardError = true, WorkingDirectory = directory
-            };
             const string selection = "setpts=PTS-STARTPTS";
-            foreach (var argument in new[] { "-hide_banner", "-loglevel", "error", "-i", Path.GetFullPath(candidate.Path),
+            var arguments = new[] { "-hide_banner", "-loglevel", "error", "-i", Path.GetFullPath(candidate.Path),
                 "-i", Path.GetFullPath(reference.Path), "-filter_complex",
                 $"[0:v:0]{selection}[dist];[1:v:0]{selection}[ref];[dist][ref]" + filter,
-                "-an", "-progress", "pipe:1", "-f", "null", "-" }) info.ArgumentList.Add(argument);
+                "-an", "-progress", "pipe:1", "-f", "null", "-" };
             var ffmpegClock = timing is null ? null : Stopwatch.StartNew();
-            using var process = Process.Start(info) ?? throw new InvalidOperationException("FFmpegを起動できません。");
-            using var registration = token.Register(() =>
-            {
-                try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
-                catch (InvalidOperationException) { }
-            });
+            using var process = EvaluationProcess.Start(executable, arguments, directory, "FFmpegを起動できません。");
+            using var registration = token.Register(() => EvaluationProcess.Kill(process));
             var errors = DrainErrorsAsync(process.StandardError);
             try
             {
@@ -93,7 +84,7 @@ public sealed class QualityEvaluationService(string executable, Action<QualityEv
             }
             finally
             {
-                if (!process.HasExited) process.Kill(entireProcessTree: true);
+                EvaluationProcess.Kill(process);
                 await process.WaitForExitAsync(CancellationToken.None);
                 await errors;
             }

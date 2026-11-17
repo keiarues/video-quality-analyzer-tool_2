@@ -146,8 +146,8 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
                                 : $"trim=end_frame={batch[^1].End},select='" + string.Join("+", batch.Select(range => $"between(n,{range.Start},{range.End - 1})")) + "'";
                             decoderArguments.AddRange(["-i", Path.GetFullPath(video.Path), "-map", "0:v:0", "-vf", select, "-an", "-sn", "-dn",
                                 "-c:v", "rawvideo", "-threads:v", "1", "-pix_fmt", "yuv420p", "-fps_mode", "passthrough", "-f", "rawvideo", "pipe:1"]);
-                            using var decoder = Start(decoderArguments, directory);
-                            using var registration = stop.Register(() => Kill(decoder));
+                            using var decoder = EvaluationProcess.Start(executable, decoderArguments, directory, "連続入力用FFmpegを起動できません。");
+                            using var registration = stop.Register(() => EvaluationProcess.Kill(decoder));
                             var errors = decoder.StandardError.ReadToEndAsync();
                             try
                             {
@@ -163,7 +163,7 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
                                 await decoder.WaitForExitAsync(stop);
                                 if (decoder.ExitCode != 0) throw new InvalidOperationException("区間復号に失敗しました。");
                             }
-                            finally { Kill(decoder); await decoder.WaitForExitAsync(CancellationToken.None); await errors; Interlocked.Add(ref cpuTicks, decoder.TotalProcessorTime.Ticks); }
+                            finally { EvaluationProcess.Kill(decoder); await decoder.WaitForExitAsync(CancellationToken.None); await errors; Interlocked.Add(ref cpuTicks, decoder.TotalProcessorTime.Ticks); }
                         }
                     }
                     catch (EndOfStreamException) { throw new InvalidDataException("区間復号のフレームが不足しています。"); }
@@ -229,23 +229,10 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
         return parsed with { Frames = parsed.Frames.Select(frame => frame with { Number = numbers[checked((int)frame.Number)] }).ToArray() };
     }
 
-    private Process Start(IReadOnlyList<string> arguments, string directory)
-    {
-        var info = new ProcessStartInfo(executable) { WorkingDirectory = directory, UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardOutput = true, RedirectStandardError = true };
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
-        return Process.Start(info) ?? throw new InvalidOperationException("連続入力用FFmpegを起動できません。");
-    }
-    private static void Kill(Process process)
-    {
-        try { if (!process.HasExited) process.Kill(entireProcessTree: true); }
-        catch (InvalidOperationException) { }
-        catch (System.ComponentModel.Win32Exception) when (process.HasExited) { }
-    }
     private async Task EvaluateAsync(IReadOnlyList<string> arguments, string directory, Action<long> report, CancellationToken token, Action<TimeSpan>? cpu = null)
     {
-        using var process = Start(arguments, directory);
-        using var registration = token.Register(() => Kill(process));
+        using var process = EvaluationProcess.Start(executable, arguments, directory, "連続入力用FFmpegを起動できません。");
+        using var registration = token.Register(() => EvaluationProcess.Kill(process));
         var errors = process.StandardError.ReadToEndAsync();
         try
         {
@@ -255,19 +242,17 @@ public sealed class ContinuousInputEvaluationService(string executable, string p
             token.ThrowIfCancellationRequested();
             if (process.ExitCode != 0) throw new InvalidOperationException($"連続評価に失敗しました（終了コード{process.ExitCode}）。");
         }
-        finally { Kill(process); await process.WaitForExitAsync(CancellationToken.None); await errors; cpu?.Invoke(process.TotalProcessorTime); }
+        finally { EvaluationProcess.Kill(process); await process.WaitForExitAsync(CancellationToken.None); await errors; cpu?.Invoke(process.TotalProcessorTime); }
     }
     private async Task<Raster> ReadRasterAsync(string path, CancellationToken token)
     {
-        var info = new ProcessStartInfo(probeExecutable) { UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardOutput = true, RedirectStandardError = true };
-        foreach (var argument in new[] { "-v", "error", "-select_streams", "v:0", "-show_entries",
-            "stream=pix_fmt,start_time,color_space,color_range,color_primaries,color_transfer", "-of", "json", "-i", path }) info.ArgumentList.Add(argument);
-        using var process = Process.Start(info) ?? throw new InvalidOperationException("映像情報を取得できません。");
-        using var registration = token.Register(() => Kill(process));
+        var arguments = new[] { "-v", "error", "-select_streams", "v:0", "-show_entries",
+            "stream=pix_fmt,start_time,color_space,color_range,color_primaries,color_transfer", "-of", "json", "-i", path };
+        using var process = EvaluationProcess.Start(probeExecutable, arguments, null, "映像情報を取得できません。");
+        using var registration = token.Register(() => EvaluationProcess.Kill(process));
         var output = process.StandardOutput.ReadToEndAsync(); var errors = process.StandardError.ReadToEndAsync();
         try { await process.WaitForExitAsync(token); }
-        finally { Kill(process); await process.WaitForExitAsync(CancellationToken.None); await errors; }
+        finally { EvaluationProcess.Kill(process); await process.WaitForExitAsync(CancellationToken.None); await errors; }
         token.ThrowIfCancellationRequested();
         if (process.ExitCode != 0) throw new InvalidOperationException("映像形式の取得に失敗しました。");
         using var json = JsonDocument.Parse(await output);
