@@ -1,10 +1,5 @@
-using System.IO;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Input;
-using Microsoft.Win32;
 using VideoQualityAnalyzer.Core;
-using VideoQualityAnalyzer.Media;
 
 namespace VideoQualityAnalyzer.App;
 
@@ -22,9 +17,7 @@ public partial class MainWindow
         foreach (var item in videos)
             item.IsReference = item.Descriptor.Id == referenceId;
         RefreshQualityValues();
-        suppressSelection = true;
-        VideoList.Items.Refresh();
-        suppressSelection = false;
+        WithSelectionSuppressed(() => VideoList.Items.Refresh());
         ClearLibrarySelection();
         UpdateSelection();
         ClearLibrarySelection();
@@ -51,23 +44,24 @@ public partial class MainWindow
     {
         if (removed.Any(item => item.Descriptor.Id == referenceId) && evaluationResults.HasResults &&
             !ConfirmEvaluationReset("基準動画を削除すると、計算済みの評価値がすべて削除されます。続行しますか？")) return;
-        suppressSelection = true;
-        foreach (var item in removed)
+        WithSelectionSuppressed(() =>
         {
-            videos.Remove(item);
-            log.Record("file_removed", "none", item.Descriptor.Id, "ok");
-        }
-        if (!videos.Any(item => item.Descriptor.Id == referenceId))
-        {
-            evaluationResults.Clear();
-            referenceId = videos.FirstOrDefault()?.Descriptor.Id;
-        }
-        foreach (var item in removed) evaluationResults.RemoveVideo(item.Descriptor.Id);
-        foreach (var item in videos)
-            item.IsReference = item.Descriptor.Id == referenceId;
-        RefreshQualityValues();
-        VideoList.Items.Refresh();
-        suppressSelection = false;
+            foreach (var item in removed)
+            {
+                videos.Remove(item);
+                log.Record("file_removed", "none", item.Descriptor.Id, "ok");
+            }
+            if (!videos.Any(item => item.Descriptor.Id == referenceId))
+            {
+                evaluationResults.Clear();
+                referenceId = videos.FirstOrDefault()?.Descriptor.Id;
+            }
+            foreach (var item in removed) evaluationResults.RemoveVideo(item.Descriptor.Id);
+            foreach (var item in videos)
+                item.IsReference = item.Descriptor.Id == referenceId;
+            RefreshQualityValues();
+            VideoList.Items.Refresh();
+        });
         UpdateSelection();
     }
 

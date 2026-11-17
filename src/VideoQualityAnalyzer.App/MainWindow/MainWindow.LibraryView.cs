@@ -51,17 +51,19 @@ public partial class MainWindow
     private IEnumerable<VideoEntry> SelectedOrAllVideoEntries() =>
         VideoList.SelectedItems.Count == 0 ? videos : VideoList.SelectedItems.Cast<VideoEntry>();
 
-    private void ClearLibrarySelection()
+    private void WithSelectionSuppressed(Action action)
     {
         var wasSuppressed = suppressSelection;
         suppressSelection = true;
-        try
-        {
-            VideoList.UnselectAll();
-            ReferenceList.UnselectAll();
-        }
+        try { action(); }
         finally { suppressSelection = wasSuppressed; }
     }
+
+    private void ClearLibrarySelection() => WithSelectionSuppressed(() =>
+    {
+        VideoList.UnselectAll();
+        ReferenceList.UnselectAll();
+    });
 
     private void ReferenceList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
@@ -73,19 +75,19 @@ public partial class MainWindow
 
     private void RefreshLibraryLists()
     {
-        var wasSuppressed = suppressSelection;
-        suppressSelection = true;
-        var selected = VideoList.SelectedItems.Cast<VideoEntry>().Where(entry => entry.Descriptor.Id != referenceId).ToArray();
-        var reference = videos.FirstOrDefault(entry => entry.Descriptor.Id == referenceId);
-        if (ReferenceList.Items.Count != (reference is null ? 0 : 1) || ReferenceList.Items.Cast<VideoEntry>().FirstOrDefault() != reference)
-            ReferenceList.ItemsSource = reference is null ? Array.Empty<VideoEntry>() : new[] { reference };
-        if (displayedReferenceId != referenceId)
-            VideoList.ItemsSource = new System.Windows.Data.ListCollectionView(videos)
-            { Filter = item => item is VideoEntry entry && entry.Descriptor.Id != referenceId };
-        displayedReferenceId = referenceId;
-        foreach (var entry in selected.Where(videos.Contains))
-            if (!VideoList.SelectedItems.Contains(entry)) VideoList.SelectedItems.Add(entry);
-        suppressSelection = wasSuppressed;
+        WithSelectionSuppressed(() =>
+        {
+            var selected = VideoList.SelectedItems.Cast<VideoEntry>().Where(entry => entry.Descriptor.Id != referenceId).ToArray();
+            var reference = videos.FirstOrDefault(entry => entry.Descriptor.Id == referenceId);
+            if (ReferenceList.Items.Count != (reference is null ? 0 : 1) || ReferenceList.Items.Cast<VideoEntry>().FirstOrDefault() != reference)
+                ReferenceList.ItemsSource = reference is null ? Array.Empty<VideoEntry>() : new[] { reference };
+            if (displayedReferenceId != referenceId)
+                VideoList.ItemsSource = new System.Windows.Data.ListCollectionView(videos)
+                { Filter = item => item is VideoEntry entry && entry.Descriptor.Id != referenceId };
+            displayedReferenceId = referenceId;
+            foreach (var entry in selected.Where(videos.Contains))
+                if (!VideoList.SelectedItems.Contains(entry)) VideoList.SelectedItems.Add(entry);
+        });
     }
 
     private void VideoList_Sorting(object sender, DataGridSortingEventArgs e)
@@ -116,12 +118,13 @@ public partial class MainWindow
     {
         var selected = VideoList.SelectedItems.Cast<VideoEntry>().ToArray();
         var ordered = VideoLibrary.Sort(videos, activeSort, sortDescending);
-        suppressSelection = true;
-        for (var index = 0; index < ordered.Length; index++) videos.Move(videos.IndexOf(ordered[index]), index);
-        VideoList.Items.Refresh();
-        VideoList.SelectedItems.Clear();
-        foreach (var entry in selected) VideoList.SelectedItems.Add(entry);
-        suppressSelection = false;
+        WithSelectionSuppressed(() =>
+        {
+            for (var index = 0; index < ordered.Length; index++) videos.Move(videos.IndexOf(ordered[index]), index);
+            VideoList.Items.Refresh();
+            VideoList.SelectedItems.Clear();
+            foreach (var entry in selected) VideoList.SelectedItems.Add(entry);
+        });
         UpdateSelection();
     }
 }
