@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>VideoQualityAnalyzer</AssemblyName>
+    <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
     <!-- 公開バージョンはリリース時に手動で更新する。 -->
     <Version>1.3.0</Version>
   </PropertyGroup>
