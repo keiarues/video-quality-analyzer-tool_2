@@ -61,7 +61,8 @@
         <Setter Property="Foreground" Value="{StaticResource UiVideoTextBrush}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="True">
-                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource UiEmphasisBrush}" />
+                <Setter Property="FontWeight" Value="SemiBold" />
             </DataTrigger>
         </Style.Triggers>
     </Style>

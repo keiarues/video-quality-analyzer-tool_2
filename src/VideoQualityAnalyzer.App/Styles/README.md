@@ -27,7 +27,7 @@
 
 プレビューのタブ周辺と動画情報帯には `UiPreviewChromeBrush`・`UiVideoOverlayBrush` を使い、その上の文字色は `UiVideoTextBrush`・`UiVideoMutedBrush` で揃える。ライトでは明るいグレーと暗い文字、ダークでは暗い背景と明るい文字を指定する。タブは標準テンプレートを保ったまま `UiControlBorderBrush` の細い枠線を付ける。映像の余白は黒を維持する。
 
-グラフの指標タブもプレビュータブと同じ `UiPreviewTabHeaderStyle`、背景色、枠線色を使う。プレビューの動画詳細・元フレーム位置の表示には左6pxの余白を付ける。
+グラフの指標タブもプレビュータブと同じ `UiPreviewTabHeaderStyle`、背景色、枠線色を使う。選択中のタブ文字だけをアクセント色・SemiBoldにして識別しやすくする。プレビューの動画詳細・元フレーム位置の表示には左6pxの余白を付ける。
 
 通常のボタン・入力欄・選択欄・タブは `UiControlMinHeight`（32）を最小高さにし、内容に応じて幅・高さが伸びるようにする。ボタンの内側余白は `UiButtonPadding`（横12・縦4）、入力欄は `UiInputPadding`（横8・縦4）とする。横並びのボタン間は8、内容群の間は12、パネル内側は16を基本にし、`UiSpace4`・`UiSpace8`・`UiSpace12`・`UiSpace16` を使う。映像の折りたたみやグラフの小型操作ボタンは用途に応じて小さくできる。
 

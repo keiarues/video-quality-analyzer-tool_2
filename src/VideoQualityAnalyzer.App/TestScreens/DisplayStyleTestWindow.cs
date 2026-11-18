@@ -79,10 +79,14 @@ internal sealed class DisplayStyleTestWindow : Window
                 throw new InvalidOperationException("ライト表示のボタン罫線が適用されていません。");
             var previewBackground = ((SolidColorBrush)preview.Background).Color;
             var previewText = ((SolidColorBrush)((TextBlock)((TabItem)preview.Items[1]).Header).Foreground).Color;
+            var selectedHeader = (TextBlock)((TabItem)preview.Items[0]).Header;
             if (previewBackground != ((SolidColorBrush)FindResource("UiPreviewChromeBrush")).Color ||
                 previewText != ((SolidColorBrush)FindResource("UiVideoTextBrush")).Color ||
+                ((SolidColorBrush)selectedHeader.Foreground).Color !=
+                    ((SolidColorBrush)FindResource("UiEmphasisBrush")).Color ||
+                selectedHeader.FontWeight != FontWeights.SemiBold ||
                 ((TabItem)preview.Items[1]).BorderThickness.Left != 1)
-                throw new InvalidOperationException("プレビューのタブ文字・背景・枠線が不正です。");
+                throw new InvalidOperationException("プレビューの選択表示・背景・枠線が不正です。");
 #pragma warning disable WPF0001 // .NET 10のFluentテーマは実験的API。
             var actualMode = Application.Current.ThemeMode;
             var expectedMode = mode switch
