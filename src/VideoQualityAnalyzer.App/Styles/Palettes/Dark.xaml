@@ -19,6 +19,8 @@
     <SolidColorBrush x:Key="UiVideoTextBrush" Color="#F1F5FA" />
     <SolidColorBrush x:Key="UiVideoMutedBrush" Color="#BFCBDB" />
     <SolidColorBrush x:Key="UiPreviewChromeBrush" Color="#111920" />
+    <SolidColorBrush x:Key="UiActiveTabBrush" Color="#2C3E53" />
+    <SolidColorBrush x:Key="UiActiveTabBorderBrush" Color="#8CA6C1" />
     <SolidColorBrush x:Key="GraphSurfaceBrush" Color="#202837" />
     <SolidColorBrush x:Key="GraphPlotBrush" Color="#17202D" />
     <SolidColorBrush x:Key="GraphTextBrush" Color="#F1F5FA" />

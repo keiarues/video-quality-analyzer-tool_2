@@ -37,6 +37,7 @@ internal sealed class DisplayStyleTestWindow : Window
         {
             var tab = new TabItem { BorderBrush = (Brush)FindResource("UiControlBorderBrush"),
                 BorderThickness = new Thickness(1),
+                HeaderTemplate = (DataTemplate)FindResource("UiPreviewTabHeaderTemplate"),
                 Header = new TextBlock { Text = name, Style = (Style)FindResource("UiPreviewTabHeaderStyle") } };
             tab.Content = new Border { Background = (Brush)FindResource("UiVideoOverlayBrush"),
                 Padding = new Thickness(10),
@@ -59,6 +60,7 @@ internal sealed class DisplayStyleTestWindow : Window
     {
         try
         {
+            UpdateLayout();
             var mode = DisplayStyleSettings.ActiveMode;
             if (DisplayStyleSettings.PaletteFor("System", true) != "Light" ||
                 DisplayStyleSettings.PaletteFor("System", false) != "Dark" ||
@@ -80,13 +82,34 @@ internal sealed class DisplayStyleTestWindow : Window
             var previewBackground = ((SolidColorBrush)preview.Background).Color;
             var previewText = ((SolidColorBrush)((TextBlock)((TabItem)preview.Items[1]).Header).Foreground).Color;
             var selectedHeader = (TextBlock)((TabItem)preview.Items[0]).Header;
+            var selectedFrame = FindTaggedBorder((TabItem)preview.Items[0], "SelectedTabFrame");
+            var selectedMarker = FindTaggedBorder((TabItem)preview.Items[0], "SelectedTabTopMarker");
+            var inactiveFrame = FindTaggedBorder((TabItem)preview.Items[1], "SelectedTabFrame");
             if (previewBackground != ((SolidColorBrush)FindResource("UiPreviewChromeBrush")).Color ||
                 previewText != ((SolidColorBrush)FindResource("UiVideoTextBrush")).Color ||
                 ((SolidColorBrush)selectedHeader.Foreground).Color !=
-                    ((SolidColorBrush)FindResource("UiEmphasisBrush")).Color ||
+                    ((SolidColorBrush)FindResource("TextBrush")).Color ||
                 selectedHeader.FontWeight != FontWeights.SemiBold ||
+                selectedFrame?.Background is not SolidColorBrush selectedBackground ||
+                selectedBackground.Color != ((SolidColorBrush)FindResource("UiActiveTabBrush")).Color ||
+                selectedFrame.BorderBrush is not SolidColorBrush selectedBorder ||
+                selectedBorder.Color != ((SolidColorBrush)FindResource("UiActiveTabBorderBrush")).Color ||
+                selectedFrame.BorderThickness.Left != 1 ||
+                selectedMarker?.Background is not SolidColorBrush markerBrush ||
+                markerBrush.Color != selectedBorder.Color ||
+                inactiveFrame?.BorderThickness.Left != 0 ||
                 ((TabItem)preview.Items[1]).BorderThickness.Left != 1)
                 throw new InvalidOperationException("プレビューの選択表示・背景・枠線が不正です。");
+            preview.SelectedIndex = 1;
+            UpdateLayout();
+            var switchedFrame = FindTaggedBorder((TabItem)preview.Items[1], "SelectedTabFrame");
+            if (switchedFrame?.BorderThickness.Left != 1 ||
+                selectedFrame.BorderThickness.Left != 0 ||
+                ((TextBlock)((TabItem)preview.Items[1]).Header).FontWeight != FontWeights.SemiBold ||
+                selectedHeader.FontWeight == FontWeights.SemiBold)
+                throw new InvalidOperationException("タブの選択変更が表示に反映されません。");
+            preview.SelectedIndex = 0;
+            UpdateLayout();
 #pragma warning disable WPF0001 // .NET 10のFluentテーマは実験的API。
             var actualMode = Application.Current.ThemeMode;
             var expectedMode = mode switch
@@ -122,5 +145,17 @@ internal sealed class DisplayStyleTestWindow : Window
             Application.Current.Shutdown(0);
         }
         catch (Exception error) { Console.Error.WriteLine(error); Application.Current.Shutdown(1); }
+    }
+
+    private static Border? FindTaggedBorder(DependencyObject root, string tag)
+    {
+        for (var i = 0; i < VisualTreeHelper.GetChildrenCount(root); i++)
+        {
+            var child = VisualTreeHelper.GetChild(root, i);
+            if (child is Border border && Equals(border.Tag, tag)) return border;
+            var nested = FindTaggedBorder(child, tag);
+            if (nested is not null) return nested;
+        }
+        return null;
     }
 }

@@ -21,11 +21,11 @@
             <TabControl Name="ViewSelect" SelectionChanged="ViewSelect_SelectionChanged"
                         Background="{StaticResource UiPreviewChromeBrush}"
                         BorderBrush="{StaticResource UiPanelBorderBrush}" BorderThickness="1">
-                <TabItem Name="TwoScreenTab" MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                <TabItem Name="TwoScreenTab" MinHeight="{StaticResource UiControlMinHeight}" HeaderTemplate="{StaticResource UiPreviewTabHeaderTemplate}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                     <TabItem.Header><TextBlock Text="2画面" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                     <ContentControl Name="TwoScreenContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 </TabItem>
-                <TabItem Name="WipeTab" MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                <TabItem Name="WipeTab" MinHeight="{StaticResource UiControlMinHeight}" HeaderTemplate="{StaticResource UiPreviewTabHeaderTemplate}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                     <TabItem.Header><TextBlock Text="ワイプ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
             <DockPanel Name="WipeViewGrid" Visibility="Collapsed">
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
@@ -59,7 +59,7 @@
             </DockPanel>
                 </TabItem>
 
-                <TabItem Name="HeatmapTab" MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                <TabItem Name="HeatmapTab" MinHeight="{StaticResource UiControlMinHeight}" HeaderTemplate="{StaticResource UiPreviewTabHeaderTemplate}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                     <TabItem.Header><TextBlock Text="差分ヒートマップ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                     <DockPanel>
                         <WrapPanel Name="HeatmapOptions" TextElement.Foreground="{StaticResource TextBrush}" DockPanel.Dock="Top" Margin="0,8,0,8">

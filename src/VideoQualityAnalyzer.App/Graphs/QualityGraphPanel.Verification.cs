@@ -19,7 +19,8 @@ public sealed partial class QualityGraphPanel
         {
             UpdateLayout();
             if (metric.Items.OfType<TabItem>().Any(tab =>
-                    tab.Header is not TextBlock { Style: not null } || tab.BorderThickness.Left != 1) ||
+                    tab.Header is not TextBlock { Style: not null } ||
+                    tab.HeaderTemplate is null || tab.BorderThickness.Left != 1) ||
                 metric.BorderThickness.Left != 1 ||
                 metric.Background is not SolidColorBrush tabBackground ||
                 tabBackground.Color != ((SolidColorBrush)FindResource("UiPreviewChromeBrush")).Color)

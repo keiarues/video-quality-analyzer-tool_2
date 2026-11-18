@@ -160,7 +160,7 @@
                 <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0"
                             Background="{StaticResource UiPreviewChromeBrush}" Foreground="{StaticResource UiVideoTextBrush}"
                             BorderBrush="{StaticResource UiPanelBorderBrush}" BorderThickness="1">
-                    <TabItem MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                    <TabItem MinHeight="{StaticResource UiControlMinHeight}" HeaderTemplate="{StaticResource UiPreviewTabHeaderTemplate}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                         <TabItem.Header><TextBlock Text="2画面" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                 <Grid Name="LegacyPreviewGrid">
                     <Grid.ColumnDefinitions>
@@ -202,11 +202,11 @@
                     </Border>
                 </Grid>
                     </TabItem>
-                    <TabItem MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                    <TabItem MinHeight="{StaticResource UiControlMinHeight}" HeaderTemplate="{StaticResource UiPreviewTabHeaderTemplate}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                         <TabItem.Header><TextBlock Text="ワイプ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                         <TextBlock Text="比較する動画を2本選択してください。" Margin="12" />
                     </TabItem>
-                    <TabItem MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                    <TabItem MinHeight="{StaticResource UiControlMinHeight}" HeaderTemplate="{StaticResource UiPreviewTabHeaderTemplate}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                         <TabItem.Header><TextBlock Text="差分ヒートマップ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                         <TextBlock Text="比較する動画を2本選択してください。" Margin="12" />
                     </TabItem>

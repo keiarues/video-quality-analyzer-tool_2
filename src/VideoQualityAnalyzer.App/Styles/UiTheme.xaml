@@ -61,11 +61,27 @@
         <Setter Property="Foreground" Value="{StaticResource UiVideoTextBrush}" />
         <Style.Triggers>
             <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="True">
-                <Setter Property="Foreground" Value="{StaticResource UiEmphasisBrush}" />
+                <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
                 <Setter Property="FontWeight" Value="SemiBold" />
             </DataTrigger>
         </Style.Triggers>
     </Style>
+    <DataTemplate x:Key="UiPreviewTabHeaderTemplate">
+        <Border x:Name="SelectionFrame" Tag="SelectedTabFrame" Margin="-6,-5,-6,-6" Padding="11,8,11,8" Background="Transparent">
+            <Grid>
+                <Border x:Name="TopMarker" Tag="SelectedTabTopMarker" Height="2" Margin="6,-7,6,0" VerticalAlignment="Top" Background="Transparent" />
+                <ContentPresenter Content="{Binding}" />
+            </Grid>
+        </Border>
+        <DataTemplate.Triggers>
+            <DataTrigger Binding="{Binding IsSelected, RelativeSource={RelativeSource AncestorType=TabItem}}" Value="True">
+                <Setter TargetName="SelectionFrame" Property="Background" Value="{StaticResource UiActiveTabBrush}" />
+                <Setter TargetName="SelectionFrame" Property="BorderBrush" Value="{StaticResource UiActiveTabBorderBrush}" />
+                <Setter TargetName="SelectionFrame" Property="BorderThickness" Value="1" />
+                <Setter TargetName="TopMarker" Property="Background" Value="{StaticResource UiActiveTabBorderBrush}" />
+            </DataTrigger>
+        </DataTemplate.Triggers>
+    </DataTemplate>
     <Style TargetType="ToolTip">
         <Setter Property="FontFamily" Value="{StaticResource UiFontFamily}" />
         <Setter Property="FontSize" Value="{StaticResource UiFontMedium}" />
