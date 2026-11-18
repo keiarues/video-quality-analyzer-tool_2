@@ -1,7 +1,8 @@
-"""アプリのワイプ比較アイコンを PNG と ICO に描画する。"""
+"""フレーム品質グラフと差分ヒートマップのアプリアイコンを生成する。"""
 
 from pathlib import Path
-from PIL import Image, ImageDraw
+
+from PIL import Image, ImageDraw, ImageFilter
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -17,40 +18,60 @@ def box(*values):
     return tuple(scale(value) for value in values)
 
 
+def points(values):
+    return [tuple(map(scale, pair)) for pair in values]
+
+
 image = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
 draw = ImageDraw.Draw(image)
+draw.rounded_rectangle(box(8, 8, 248, 248), radius=scale(48), fill="#17202D")
 
-# 外枠は Windows の明暗どちらの背景でも輪郭が見える配色にする。
-draw.rounded_rectangle(box(8, 8, 248, 248), radius=scale(48), fill="#172638")
-draw.rounded_rectangle(box(20, 20, 236, 236), radius=scale(38), fill="#20364B")
+# 添付の品質グラフに合わせ、左は暗いグラフ面と水色の線にする。
+chart = Image.new("RGBA", (SIZE, SIZE), "#182330")
+chart_draw = ImageDraw.Draw(chart)
+chart_draw.rectangle(box(128, 37, 226, 219), fill="#3A0808")
 
-# 左右は同じ映像領域。左は通常映像、右は差分ヒートマップ。
-viewport_mask = Image.new("L", (SIZE, SIZE), 0)
-mask_draw = ImageDraw.Draw(viewport_mask)
-mask_draw.rounded_rectangle(box(32, 49, 224, 207), radius=scale(18), fill=255)
+# ヒートマップ側は赤い地に橙色の広がりを置き、線の周囲を発光させる。
+heat = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+heat_draw = ImageDraw.Draw(heat)
+heat_draw.ellipse(box(130, 66, 204, 153), fill=(205, 34, 4, 170))
+heat_draw.ellipse(box(165, 116, 243, 219), fill=(226, 62, 5, 165))
+heat_draw.ellipse(box(119, 147, 178, 211), fill=(173, 29, 2, 135))
+heat = heat.filter(ImageFilter.GaussianBlur(scale(13)))
+chart.alpha_composite(heat)
+chart_draw = ImageDraw.Draw(chart)
 
-scene = Image.new("RGBA", (SIZE, SIZE), "#12314B")
-scene_draw = ImageDraw.Draw(scene)
-scene_draw.rectangle(box(32, 49, 128, 207), fill="#75BFE3")
-scene_draw.ellipse(box(55, 68, 91, 104), fill="#FFF0B0")
-scene_draw.polygon([tuple(map(scale, pair)) for pair in [(32, 169), (77, 111), (128, 166), (128, 207), (32, 207)]], fill="#2D8196")
-scene_draw.polygon([tuple(map(scale, pair)) for pair in [(32, 188), (72, 146), (105, 179), (128, 159), (128, 207), (32, 207)]], fill="#226476")
+for y in (84, 129, 174):
+    chart_draw.line(points([(35, y), (222, y)]), fill="#344353", width=scale(2))
+chart_draw.line(points([(39, 46), (39, 209), (218, 209)]), fill="#A5BBCB", width=scale(4), joint="curve")
 
-# 色の島は小さいサイズでも残るよう、大きな形だけを使う。
-scene_draw.polygon([tuple(map(scale, pair)) for pair in [(128, 166), (166, 108), (224, 156), (224, 207), (128, 207)]], fill="#176C9C")
-scene_draw.ellipse(box(143, 71, 211, 132), fill="#26C7DD")
-scene_draw.ellipse(box(154, 79, 207, 127), fill="#F4C653")
-scene_draw.ellipse(box(164, 86, 201, 120), fill="#F26640")
-scene_draw.ellipse(box(180, 92, 197, 111), fill="#E8394F")
-scene_draw.ellipse(box(139, 149, 213, 197), fill="#28B4D5")
-scene_draw.ellipse(box(156, 157, 204, 191), fill="#F4C653")
-scene_draw.ellipse(box(171, 164, 196, 183), fill="#ED6540")
-image.paste(scene, (0, 0), viewport_mask)
+# 実グラフの細かな鋭い変動を、太く少数の山と谷へ簡略化する。
+graph = [
+    (43, 82), (52, 71), (59, 153), (70, 149), (79, 92),
+    (91, 101), (103, 91), (115, 115), (128, 104),
+    (140, 120), (150, 93), (163, 109), (174, 75),
+    (185, 142), (196, 95), (207, 102), (217, 134),
+]
+left = [pair for pair in graph if pair[0] <= 128]
+right = [pair for pair in graph if pair[0] >= 128]
+chart_draw.line(points(left), fill="#91C9FF", width=scale(11), joint="curve")
 
+glow = Image.new("RGBA", (SIZE, SIZE), (0, 0, 0, 0))
+glow_draw = ImageDraw.Draw(glow)
+glow_draw.line(points(right), fill=(255, 67, 0, 245), width=scale(24), joint="curve")
+chart.alpha_composite(glow.filter(ImageFilter.GaussianBlur(scale(8))))
+chart_draw = ImageDraw.Draw(chart)
+chart_draw.line(points(right), fill="#F06412", width=scale(16), joint="curve")
+chart_draw.line(points(right), fill="#FFE35C", width=scale(9), joint="curve")
+
+# グラフの左右を同じ位置で切り替え、ワイプの境界を明確にする。
+mask = Image.new("L", (SIZE, SIZE), 0)
+mask_draw = ImageDraw.Draw(mask)
+mask_draw.rounded_rectangle(box(27, 32, 229, 224), radius=scale(24), fill=255)
+image.paste(chart, (0, 0), mask)
 draw = ImageDraw.Draw(image)
-draw.rounded_rectangle(box(32, 49, 224, 207), radius=scale(18), outline="#D8E7F1", width=scale(5))
-draw.line([tuple(map(scale, pair)) for pair in [(128, 52), (128, 204)]], fill="#F8FBFF", width=scale(7))
-draw.ellipse(box(119, 119, 137, 137), fill="#F8FBFF")
+draw.rounded_rectangle(box(27, 32, 229, 224), radius=scale(24), outline="#B6C9D8", width=scale(5))
+draw.line(points([(128, 35), (128, 221)]), fill="#EDF5FA", width=scale(5))
 
 ASSETS.mkdir(parents=True, exist_ok=True)
 png_path = ASSETS / "AppIcon.png"
