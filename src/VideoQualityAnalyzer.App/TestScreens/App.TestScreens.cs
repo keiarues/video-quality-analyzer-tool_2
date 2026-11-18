@@ -18,6 +18,8 @@ public partial class App
             createWindow = () => new DarkPaletteTestWindow(automatic);
         else if (e.Args.Contains("--test-display-style"))
             createWindow = () => new DisplayStyleTestWindow(automatic);
+        else if (e.Args.Contains("--test-ui-sizing"))
+            createWindow = () => new UiSizingTestWindow(automatic);
         else if (e.Args.Contains("--test-evaluated-playback"))
             createWindow = () => new EvaluatedPlaybackTestWindow(Files());
         else if (e.Args.Contains("--test-production-partial"))

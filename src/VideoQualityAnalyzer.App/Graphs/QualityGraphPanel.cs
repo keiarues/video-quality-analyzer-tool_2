@@ -81,6 +81,7 @@ public sealed partial class QualityGraphPanel : UserControl
                 Header = new TextBlock { Text = value.ToString().ToUpperInvariant(),
                     Style = (Style)FindResource("UiPreviewTabHeaderStyle") },
                 Tag = value,
+                MinHeight = UiTheme.ControlMinHeight,
                 BorderBrush = (Brush)FindResource("UiControlBorderBrush"),
                 BorderThickness = new Thickness(1)
             });

@@ -68,7 +68,7 @@ internal sealed partial class GraphImageSaveWindow : Window
         var saveOptions = new WrapPanel { VerticalAlignment = VerticalAlignment.Center };
         foreach (Control input in new Control[] { target, metricSelection, imageTheme, size, dimension, heightDimension, font })
         {
-            input.Height = 32;
+            UiTheme.ApplyStandardSizing(input);
             input.Margin = new Thickness(3, 2, 3, 2);
             input.VerticalContentAlignment = VerticalAlignment.Center;
         }
@@ -199,8 +199,8 @@ internal sealed partial class GraphImageSaveWindow : Window
     }
     private static Button BarButton(string text, double width) => new()
     {
-        Content = text, Width = width, MinWidth = width, Height = UiTheme.ActionButtonHeight,
-        Padding = new Thickness(4, 0, 4, 0), Margin = new Thickness(3, 2, 3, 2),
+        Content = text, MinWidth = width, MinHeight = UiTheme.ControlMinHeight,
+        Padding = (Thickness)Application.Current.FindResource("UiButtonPadding"), Margin = new Thickness(3, 2, 3, 2),
         VerticalContentAlignment = VerticalAlignment.Center, BorderBrush = UiTheme.ControlBorder
     };
     private void SetGraph(VideoDescriptor[] selectedVideos, VideoDescriptor[] allVideos,

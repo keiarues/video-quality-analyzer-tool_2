@@ -18,6 +18,7 @@ public sealed class AboutWindow : Window
         panel.Children.Add(new TextBlock { Text = "動画品質アナライザー", Style = (Style)Application.Current.FindResource("UiTitleStyle") });
         panel.Children.Add(new TextBlock { Text = $"バージョン {typeof(AboutWindow).Assembly.GetName().Version?.ToString(3)}", Margin = new Thickness(0, 12, 0, 12) });
         var close = new Button { Content = "閉じる", IsCancel = true, IsDefault = true, HorizontalAlignment = HorizontalAlignment.Right };
+        UiTheme.ApplyStandardSizing(close);
         close.Click += (_, _) => Close();
         panel.Children.Add(close);
     }

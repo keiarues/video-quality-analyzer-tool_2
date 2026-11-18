@@ -49,20 +49,26 @@ public sealed class EvaluationWindow : Window
         {
             var check = new CheckBox { Content = metric.ToString().ToUpperInvariant(),
                 IsChecked = metric == QualityMetric.Ssim, Margin = new Thickness(8), VerticalAlignment = VerticalAlignment.Center };
+            UiTheme.ApplyStandardSizing(check);
             check.ToolTip = new TextBlock { MaxWidth = 380, TextWrapping = TextWrapping.Wrap, Text = QualityMetricHelp.GetText(metric) };
             metrics.Add(metric, check);
             buttons.Children.Add(check);
         }
+        UiTheme.ApplyStandardSizing(start);
         buttons.Children.Add(start);
         var cancel = new Button { Content = "中断" };
+        UiTheme.ApplyStandardSizing(cancel);
         buttons.Children.Add(cancel);
+        UiTheme.ApplyStandardSizing(reset);
         buttons.Children.Add(reset);
         var graphs = new Button { Content = "グラフ" };
+        UiTheme.ApplyStandardSizing(graphs);
         buttons.Children.Add(graphs);
         graphs.Click += (_, _) => new QualityGraphWindow(candidates, results, seek, select, allVideos: allVideos, groups: groups) { Owner = this }.ShowDialog();
         foreach (var frameCsv in new[] { false, true })
         {
             var export = new Button { Content = frameCsv ? "フレームCSV" : "動画CSV" };
+            UiTheme.ApplyStandardSizing(export);
             buttons.Children.Add(export);
             export.Click += async (_, _) =>
             {

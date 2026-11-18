@@ -27,6 +27,7 @@ public sealed class GroupWindow : Window
             ItemsSource = groups,
             Text = selected.Length > 0 && selected.Select(entry => entry.Group).Distinct().Count() == 1 ? selected[0].Group : ""
         };
+        UiTheme.ApplyStandardSizing(name);
         panel.Children.Add(name);
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
         panel.Children.Add(buttons);
@@ -35,6 +36,8 @@ public sealed class GroupWindow : Window
             Margin = new Thickness(0, 0, 8, 0), BorderBrush = UiTheme.ControlBorder };
         var cancel = new Button { Content = "キャンセル", IsCancel = true,
             Height = UiTheme.ActionButtonHeight, MinWidth = 96, BorderBrush = UiTheme.ControlBorder };
+        UiTheme.ApplyStandardSizing(apply);
+        UiTheme.ApplyStandardSizing(cancel);
         buttons.Children.Add(apply);
         buttons.Children.Add(cancel);
         apply.Click += (_, _) => { VideoLibrary.SetGroup(selected, name.Text); DialogResult = true; };

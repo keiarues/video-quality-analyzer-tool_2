@@ -4,8 +4,15 @@
     <!-- 大: 画面見出し、中: 操作・本文、小: 補足・目盛り。色は用途で選ぶ。 -->
     <FontFamily x:Key="UiFontFamily">Yu Gothic UI</FontFamily>
     <sys:Double x:Key="UiFontLarge">20</sys:Double>
-    <sys:Double x:Key="UiFontMedium">13</sys:Double>
-    <sys:Double x:Key="UiFontSmall">11</sys:Double>
+    <sys:Double x:Key="UiFontMedium">14</sys:Double>
+    <sys:Double x:Key="UiFontSmall">12</sys:Double>
+    <sys:Double x:Key="UiControlMinHeight">32</sys:Double>
+    <sys:Double x:Key="UiSpace4">4</sys:Double>
+    <sys:Double x:Key="UiSpace8">8</sys:Double>
+    <sys:Double x:Key="UiSpace12">12</sys:Double>
+    <sys:Double x:Key="UiSpace16">16</sys:Double>
+    <Thickness x:Key="UiButtonPadding">12,4</Thickness>
+    <Thickness x:Key="UiInputPadding">8,4</Thickness>
     <!-- Fluent Darkで明色になる一覧の選択行だけを補正する。 -->
     <Style TargetType="DataGridRow">
         <Style.Triggers>

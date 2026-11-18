@@ -6,8 +6,8 @@
 | --- | --- | --- |
 | フォント | UiFontFamily | Yu Gothic UI |
 | 大・画面見出し | UiFontLarge | 20 |
-| 中・本文、操作、一覧 | UiFontMedium | 13 |
-| 小・補足、状態、目盛り | UiFontSmall | 11 |
+| 中・本文、操作、一覧 | UiFontMedium | 14 |
+| 小・補足、状態、目盛り | UiFontSmall | 12 |
 | デフォルト文字 | TextBrush | パレットに応じた標準文字 |
 | 強調・処理中や完了通知 | UiEmphasisBrush | 青 |
 | 警告・中止や測定上の注意 | UiWarningBrush | パレットに応じた警告色 |
@@ -29,7 +29,9 @@
 
 グラフの指標タブもプレビュータブと同じ `UiPreviewTabHeaderStyle`、背景色、枠線色を使う。プレビューの動画詳細・元フレーム位置の表示には左6pxの余白を付ける。
 
-主要な操作ボタンは `UiControlBorderBrush` を使い、高さを `UiTheme.ActionButtonHeight`（32）に揃える。横並びのボタン間は8pxを目安に空ける。XAML側も同じ値を指定し、標準テンプレートは維持する。
+通常のボタン・入力欄・選択欄・タブは `UiControlMinHeight`（32）を最小高さにし、内容に応じて幅・高さが伸びるようにする。ボタンの内側余白は `UiButtonPadding`（横12・縦4）、入力欄は `UiInputPadding`（横8・縦4）とする。横並びのボタン間は8、内容群の間は12、パネル内側は16を基本にし、`UiSpace4`・`UiSpace8`・`UiSpace12`・`UiSpace16` を使う。映像の折りたたみやグラフの小型操作ボタンは用途に応じて小さくできる。
+
+WPFの `Button`・`ComboBox`・`TextBox` などに独自の共通 `Style` を適用すると `ThemeMode` の部品書式が変わる場合がある。このアプリでは標準テンプレートを保つ寸法指定に、XAMLでは共通リソース、C#では `UiTheme.ApplyStandardSizing` を使う。配色・状態表示は `ThemeMode` と既存パレットに任せる。グラフ画像出力の18px・22pxは独立した仕様を維持する。
 
 ## グラフ画像出力の文字サイズ
 

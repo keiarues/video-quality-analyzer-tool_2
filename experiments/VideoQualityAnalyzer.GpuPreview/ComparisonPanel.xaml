@@ -6,37 +6,37 @@
         <StackPanel Name="CommonControls" DockPanel.Dock="Top" Margin="0,0,0,10">
           <StackPanel Orientation="Horizontal">
             <TextBlock Text="左" VerticalAlignment="Center" Margin="0,0,6,0" />
-            <ComboBox Name="LeftSelect" Width="360" DisplayMemberPath="Name" />
+            <ComboBox Name="LeftSelect" Width="360" DisplayMemberPath="Name" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" />
             <TextBlock Text="右" VerticalAlignment="Center" Margin="12,0,6,0" />
-            <ComboBox Name="RightSelect" Width="360" DisplayMemberPath="Name" />
+            <ComboBox Name="RightSelect" Width="360" DisplayMemberPath="Name" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" />
             <TextBlock Text="元フレーム番号" VerticalAlignment="Center" Margin="12,0,6,0" />
-            <TextBox Name="FrameNumberBox" Width="80" VerticalContentAlignment="Center" />
-            <Button Name="PlayPauseButton" Content="再生" Margin="8,0,0,0" Padding="12,4" Click="PlayPause_Click" />
-            <Button Content="停止" Margin="6,0,0,0" Padding="12,4" Click="Stop_Click" />
+            <TextBox Name="FrameNumberBox" Width="80" VerticalContentAlignment="Center" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" />
+            <Button Name="PlayPauseButton" Content="再生" Margin="8,0,0,0" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" Click="PlayPause_Click" />
+            <Button Content="停止" Margin="8,0,0,0" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" Click="Stop_Click" />
           </StackPanel>
-          <Button Content="指定番号へ移動して再生" HorizontalAlignment="Left" Margin="0,6,0,0" Padding="9,4" Click="SeekPlay_Click" />
+          <Button Content="指定番号へ移動して再生" HorizontalAlignment="Left" Margin="0,8,0,0" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" Click="SeekPlay_Click" />
         </StackPanel>
         <StackPanel Name="ZoomControls" DockPanel.Dock="Top" Margin="0,0,0,8" />
         <Grid>
             <TabControl Name="ViewSelect" SelectionChanged="ViewSelect_SelectionChanged"
                         Background="{StaticResource UiPreviewChromeBrush}"
                         BorderBrush="{StaticResource UiPanelBorderBrush}" BorderThickness="1">
-                <TabItem Name="TwoScreenTab" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                <TabItem Name="TwoScreenTab" MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                     <TabItem.Header><TextBlock Text="2画面" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                     <ContentControl Name="TwoScreenContent" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
                 </TabItem>
-                <TabItem Name="WipeTab" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                <TabItem Name="WipeTab" MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                     <TabItem.Header><TextBlock Text="ワイプ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
             <DockPanel Name="WipeViewGrid" Visibility="Collapsed">
                 <Grid DockPanel.Dock="Top" Margin="0,0,0,5">
                     <Grid.ColumnDefinitions><ColumnDefinition /><ColumnDefinition /></Grid.ColumnDefinitions>
                     <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                        <ComboBox Name="WipeLeftPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=LeftSelect}" SelectedItem="{Binding SelectedItem, ElementName=LeftSelect, Mode=TwoWay}" />
+                        <ComboBox Name="WipeLeftPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=LeftSelect}" SelectedItem="{Binding SelectedItem, ElementName=LeftSelect, Mode=TwoWay}" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" />
                         <TextBlock Text="{Binding Text, ElementName=LeftDetails}" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,0" />
                         <TextBlock Text="{Binding Text, ElementName=LeftFrameStatus}" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,0" />
                     </StackPanel>
                     <StackPanel Grid.Column="1">
-                        <ComboBox Name="WipeRightPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=RightSelect}" SelectedItem="{Binding SelectedItem, ElementName=RightSelect, Mode=TwoWay}" />
+                        <ComboBox Name="WipeRightPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=RightSelect}" SelectedItem="{Binding SelectedItem, ElementName=RightSelect, Mode=TwoWay}" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" />
                         <TextBlock Text="{Binding Text, ElementName=RightDetails}" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,0" />
                         <TextBlock Text="{Binding Text, ElementName=RightFrameStatus}" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,0" />
                     </StackPanel>
@@ -59,12 +59,12 @@
             </DockPanel>
                 </TabItem>
 
-                <TabItem Name="HeatmapTab" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                <TabItem Name="HeatmapTab" MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                     <TabItem.Header><TextBlock Text="差分ヒートマップ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                     <DockPanel>
                         <WrapPanel Name="HeatmapOptions" TextElement.Foreground="{StaticResource TextBrush}" DockPanel.Dock="Top" Margin="0,8,0,8">
             <TextBlock Name="BlurLabel" Text="ヒートマップのぼかし" VerticalAlignment="Center" Margin="16,0,6,0" />
-            <ComboBox Name="BlurSelect" Width="105" SelectionChanged="BlurSelect_SelectionChanged">
+            <ComboBox Name="BlurSelect" Width="105" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" SelectionChanged="BlurSelect_SelectionChanged">
                 <ComboBoxItem Content="ぼかしなし" Tag="0" />
                 <ComboBoxItem Content="弱" Tag="1" />
                 <ComboBoxItem Content="中" Tag="2" />
@@ -85,7 +85,7 @@
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0">
                         <TextBlock Name="LeftFrameLabel" Text="左フレーム" TextTrimming="CharacterEllipsis" Margin="0,0,0,5" Visibility="Collapsed" />
-                        <ComboBox Name="LeftPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=LeftSelect}" SelectedItem="{Binding SelectedItem, ElementName=LeftSelect, Mode=TwoWay}" Margin="0,0,0,5" />
+                        <ComboBox Name="LeftPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=LeftSelect}" SelectedItem="{Binding SelectedItem, ElementName=LeftSelect, Mode=TwoWay}" Margin="0,0,0,5" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" />
                         <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="6,0,0,5" />
                         <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,5" />
                     </StackPanel>
@@ -98,7 +98,7 @@
                     </Grid.RowDefinitions>
                     <StackPanel Grid.Row="0">
                         <TextBlock Name="RightFrameLabel" Text="右フレーム" TextTrimming="CharacterEllipsis" Margin="0,0,0,5" Visibility="Collapsed" />
-                        <ComboBox Name="RightPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=RightSelect}" SelectedItem="{Binding SelectedItem, ElementName=RightSelect, Mode=TwoWay}" Margin="0,0,0,5" />
+                        <ComboBox Name="RightPreviewSelect" DisplayMemberPath="Name" ItemsSource="{Binding Items, ElementName=RightSelect}" SelectedItem="{Binding SelectedItem, ElementName=RightSelect, Mode=TwoWay}" Margin="0,0,0,5" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" />
                         <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiMutedBrush}" Margin="6,0,0,5" />
                         <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" Margin="6,0,0,5" />
                     </StackPanel>
@@ -112,7 +112,7 @@
                     <StackPanel Grid.Row="0">
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
                             <TextBlock Text="差分ヒートマップ" VerticalAlignment="Center" />
-            <ComboBox Name="GainSelect" ToolTip="差分強調" Margin="8,0,0,0" Width="112" SelectionChanged="GainSelect_SelectionChanged">
+            <ComboBox Name="GainSelect" ToolTip="差分強調" Margin="8,0,0,0" Width="112" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" SelectionChanged="GainSelect_SelectionChanged">
                 <ComboBoxItem Content="4倍" Tag="4" />
                 <ComboBoxItem Content="16倍" Tag="16" />
                 <ComboBoxItem Content="64倍" Tag="64" />

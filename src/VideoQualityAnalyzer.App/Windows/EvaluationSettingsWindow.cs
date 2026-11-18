@@ -30,6 +30,8 @@ public sealed class EvaluationSettingsWindow : Window
         selectedVideos = (comparisonVideos ?? []).ToArray();
         var root = new DockPanel { Margin = new Thickness(16), Background = (System.Windows.Media.Brush)FindResource("BackgroundBrush") }; Content = root;
         var actions = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        UiTheme.ApplyStandardSizing(start);
+        UiTheme.ApplyStandardSizing(cancel);
         DockPanel.SetDock(actions, Dock.Bottom); root.Children.Add(actions);
         cancel.BorderBrush = UiTheme.ControlBorder;
         actions.Children.Add(cancel);

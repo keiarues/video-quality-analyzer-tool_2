@@ -16,7 +16,7 @@
             <Setter Property="TextAlignment" Value="Right" />
         </Style>
         <Style x:Key="CenteredFileHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-            <Setter Property="Padding" Value="5,6" />
+            <Setter Property="Padding" Value="8,4" />
             <Setter Property="HorizontalContentAlignment" Value="Center" />
         </Style>
         <Style x:Key="RightFileHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource CenteredFileHeaderStyle}">
@@ -45,7 +45,7 @@
                 <MenuItem Header="バージョン情報" Click="About_Click" />
             </MenuItem>
         </Menu>
-    <Grid Margin="14">
+    <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -59,15 +59,15 @@
             </Grid.ColumnDefinitions>
 
             <Border Name="SidebarPanel" Grid.Column="0" Background="{StaticResource PanelBrush}"
-                    BorderBrush="{StaticResource UiPanelBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="10">
+                    BorderBrush="{StaticResource UiPanelBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="12">
                 <DockPanel>
                     <StackPanel DockPanel.Dock="Top">
                         <WrapPanel Margin="0,0,0,8">
-                            <Button Name="AddVideoButton" Content="動画ファイルを追加" Click="Add_Click" Margin="0,0,8,0" BorderBrush="{StaticResource UiControlBorderBrush}" />
-                            <Button Name="RemoveVideoButton" Content="動画を削除" Click="Remove_Click" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                            <Button Name="AddVideoButton" Content="動画ファイルを追加" Click="Add_Click" Margin="0,0,8,0" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                            <Button Name="RemoveVideoButton" Content="動画を削除" Click="Remove_Click" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
                         </WrapPanel>
                     <TextBlock Text="基準動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
-                    <DataGrid Name="ReferenceList" Height="82" Margin="0,0,0,8" SelectionMode="Single" SelectionUnit="FullRow"
+                    <DataGrid Name="ReferenceList" Height="82" Margin="0,0,0,8" RowHeight="32" ColumnHeaderHeight="32" SelectionMode="Single" SelectionUnit="FullRow"
                               SelectionChanged="ReferenceList_SelectionChanged" CanUserSortColumns="False"
                               AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                               CanUserDeleteRows="False" CanUserReorderColumns="True" RowHeaderWidth="0"
@@ -77,7 +77,7 @@
                               BorderThickness="0" HeadersVisibility="Column">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-                                <Setter Property="Padding" Value="5,6" />
+                                <Setter Property="Padding" Value="8,4" />
                                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
@@ -98,21 +98,21 @@
                         </DataGrid.Columns>
                     </DataGrid>
                         <DockPanel Margin="0,0,0,8">
-                            <Button Name="SetReferenceButton" DockPanel.Dock="Left" HorizontalAlignment="Left" Content="▲基準動画に設定" Click="SetReference_Click" MinWidth="100" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                            <Button Name="SetReferenceButton" DockPanel.Dock="Left" HorizontalAlignment="Left" Content="▲基準動画に設定" Click="SetReference_Click" MinWidth="100" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="グループ設定" Click="SetGroup_Click" BorderBrush="{StaticResource UiControlBorderBrush}" />
-                                <Button Content="グループ解除" Click="ClearGroup_Click" ToolTip="選択した比較動画のグループ設定を解除します。" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                                <Button Content="グループ設定" Click="SetGroup_Click" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                                <Button Content="グループ解除" Click="ClearGroup_Click" ToolTip="選択した比較動画のグループ設定を解除します。" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
                             </StackPanel>
                         </DockPanel>
                     </StackPanel>
                     <StackPanel Name="EvaluationControls" DockPanel.Dock="Bottom" Margin="3,10,3,0">
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
-                            <Button Name="EvaluationClearButton" Content="評価クリア" Click="ClearEvaluation_Click" Height="32" Margin="0,0,8,0" BorderBrush="{StaticResource UiControlBorderBrush}" />
-                            <Button Name="EvaluationRangeButton" Content="評価を開始" Click="Evaluate_Click" Width="220" Height="32" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                            <Button Name="EvaluationClearButton" Content="評価クリア" Click="ClearEvaluation_Click" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" Margin="0,0,8,0" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                            <Button Name="EvaluationRangeButton" Content="評価を開始" Click="Evaluate_Click" MinWidth="220" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
                         </StackPanel>
                     </StackPanel>
                     <TextBlock DockPanel.Dock="Top" Text="評価対象動画" Style="{StaticResource UiSectionStyle}" Margin="0,0,0,6" />
-                    <DataGrid Name="VideoList" SelectionMode="Extended" SelectionUnit="FullRow"
+                    <DataGrid Name="VideoList" RowHeight="32" ColumnHeaderHeight="32" SelectionMode="Extended" SelectionUnit="FullRow"
                               PreviewMouseLeftButtonDown="VideoList_PreviewMouseLeftButtonDown" SelectionChanged="VideoList_SelectionChanged" Sorting="VideoList_Sorting"
                               AutoGenerateColumns="False" IsReadOnly="True" CanUserAddRows="False"
                               CanUserDeleteRows="False" CanUserReorderColumns="True" RowHeaderWidth="0"
@@ -122,7 +122,7 @@
                               BorderThickness="0" HeadersVisibility="Column">
                         <DataGrid.ColumnHeaderStyle>
                             <Style TargetType="DataGridColumnHeader" BasedOn="{StaticResource {x:Type DataGridColumnHeader}}">
-                                <Setter Property="Padding" Value="5,6" />
+                                <Setter Property="Padding" Value="8,4" />
                                 <Setter Property="HorizontalContentAlignment" Value="Left" />
                             </Style>
                         </DataGrid.ColumnHeaderStyle>
@@ -160,7 +160,7 @@
                 <TabControl Name="InitialPreviewTabs" Grid.Row="0" SelectedIndex="0"
                             Background="{StaticResource UiPreviewChromeBrush}" Foreground="{StaticResource UiVideoTextBrush}"
                             BorderBrush="{StaticResource UiPanelBorderBrush}" BorderThickness="1">
-                    <TabItem BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                    <TabItem MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                         <TabItem.Header><TextBlock Text="2画面" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                 <Grid Name="LegacyPreviewGrid">
                     <Grid.ColumnDefinitions>
@@ -177,7 +177,7 @@
                             <Border VerticalAlignment="Top" Background="{StaticResource UiVideoOverlayBrush}" Padding="10,7">
                                 <StackPanel>
                                     <TextBlock Name="LeftName" Text="左: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" Foreground="{StaticResource UiVideoTextBrush}" />
-                                    <ComboBox Name="PreviewLeftSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                                    <ComboBox Name="PreviewLeftSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
                                     <TextBlock Name="LeftDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiVideoMutedBrush}" Margin="6,0,0,0" />
                                     <TextBlock Name="LeftFrameStatus" Style="{StaticResource UiSmallTextStyle}" Foreground="{StaticResource UiVideoMutedBrush}" Margin="6,0,0,0" />
                                 </StackPanel>
@@ -193,7 +193,7 @@
                             <Border VerticalAlignment="Top" Background="{StaticResource UiVideoOverlayBrush}" Padding="10,7">
                                 <StackPanel>
                                     <TextBlock Name="RightName" Text="右: 未選択" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" Visibility="Collapsed" Foreground="{StaticResource UiVideoTextBrush}" />
-                                    <ComboBox Name="PreviewRightSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                                    <ComboBox Name="PreviewRightSelect" DisplayMemberPath="Descriptor.Name" SelectionChanged="PreviewVideo_SelectionChanged" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiInputPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
                                     <TextBlock Name="RightDetails" FontSize="{StaticResource UiFontSmall}" Foreground="{StaticResource UiVideoMutedBrush}" Margin="6,0,0,0" />
                                     <TextBlock Name="RightFrameStatus" Style="{StaticResource UiSmallTextStyle}" Foreground="{StaticResource UiVideoMutedBrush}" Margin="6,0,0,0" />
                                 </StackPanel>
@@ -202,11 +202,11 @@
                     </Border>
                 </Grid>
                     </TabItem>
-                    <TabItem BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                    <TabItem MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                         <TabItem.Header><TextBlock Text="ワイプ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                         <TextBlock Text="比較する動画を2本選択してください。" Margin="12" />
                     </TabItem>
-                    <TabItem BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
+                    <TabItem MinHeight="{StaticResource UiControlMinHeight}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                         <TabItem.Header><TextBlock Text="差分ヒートマップ" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
                         <TextBlock Text="比較する動画を2本選択してください。" Margin="12" />
                     </TabItem>
@@ -226,7 +226,8 @@
                     <local:PriorityWrapPanel.Resources>
                         <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
                             <Setter Property="MinWidth" Value="32" />
-                            <Setter Property="Padding" Value="7,5" />
+                            <Setter Property="MinHeight" Value="{StaticResource UiControlMinHeight}" />
+                            <Setter Property="Padding" Value="8,4" />
                         </Style>
                     </local:PriorityWrapPanel.Resources>
                     <StackPanel Orientation="Horizontal" local:PriorityWrapPanel.Priority="99">
