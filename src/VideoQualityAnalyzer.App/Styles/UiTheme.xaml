@@ -67,9 +67,9 @@
         </Style.Triggers>
     </Style>
     <DataTemplate x:Key="UiPreviewTabHeaderTemplate">
-        <Border x:Name="SelectionFrame" Tag="SelectedTabFrame" Margin="-6,-5,-6,-6" Padding="11,8,11,8" Background="Transparent">
+        <Border x:Name="SelectionFrame" Tag="SelectedTabFrame" Margin="-6,-5,-6,-6" Padding="11,5,11,5" Background="Transparent">
             <Grid>
-                <Border x:Name="TopMarker" Tag="SelectedTabTopMarker" Height="2" Margin="6,-7,6,0" VerticalAlignment="Top" Background="Transparent" />
+                <Border x:Name="TopMarker" Tag="SelectedTabTopMarker" Height="2" Margin="6,-4,6,0" VerticalAlignment="Top" Background="Transparent" />
                 <ContentPresenter Content="{Binding}" />
             </Grid>
         </Border>

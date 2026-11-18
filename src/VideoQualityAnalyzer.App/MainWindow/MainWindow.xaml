@@ -45,7 +45,7 @@
                 <MenuItem Header="バージョン情報" Click="About_Click" />
             </MenuItem>
         </Menu>
-    <Grid Margin="16">
+    <Grid Margin="16,4,16,16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
@@ -100,7 +100,7 @@
                         <DockPanel Margin="0,0,0,8">
                             <Button Name="SetReferenceButton" DockPanel.Dock="Left" HorizontalAlignment="Left" Content="▲基準動画に設定" Click="SetReference_Click" MinWidth="100" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="グループ設定" Click="SetGroup_Click" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
+                                <Button Content="グループ設定" Click="SetGroup_Click" Margin="0,0,8,0" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
                                 <Button Content="グループ解除" Click="ClearGroup_Click" ToolTip="選択した比較動画のグループ設定を解除します。" MinHeight="{StaticResource UiControlMinHeight}" Padding="{StaticResource UiButtonPadding}" BorderBrush="{StaticResource UiControlBorderBrush}" />
                             </StackPanel>
                         </DockPanel>
