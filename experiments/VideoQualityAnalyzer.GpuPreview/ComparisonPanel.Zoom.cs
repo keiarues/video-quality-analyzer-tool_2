@@ -2,6 +2,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Input;
 
 namespace VideoQualityAnalyzer.GpuPreview;
 
@@ -38,9 +39,11 @@ public partial class ComparisonPanel
         var scale = 1.0;
         var x = 0.0;
         var y = 0.0;
+        var zoomWheelRemainder = 0;
         var externalControls = controls is not null;
         controls ??= new ZoomControlBar();
         var label = controls.ScaleLabel;
+        var slider = controls.ScaleSlider;
         void Apply()
         {
             updating = true;
@@ -98,13 +101,51 @@ public partial class ComparisonPanel
             label.Text = fit ? "自動" : $"{scale * 100:0}%";
             updating = false;
         }
+        void ZoomAt(FrameworkElement viewport, Point pointer, int delta, BitmapSource? bitmap)
+        {
+            if (bitmap is null) return;
+            zoomWheelRemainder += delta;
+            var steps = zoomWheelRemainder / Mouse.MouseWheelDeltaForOneLine;
+            zoomWheelRemainder %= Mouse.MouseWheelDeltaForOneLine;
+            if (steps == 0) return;
+            var dpi = VisualTreeHelper.GetDpi(this);
+            var previousScale = fit ? Math.Min(viewport.ActualWidth * dpi.DpiScaleX / bitmap.PixelWidth,
+                viewport.ActualHeight * dpi.DpiScaleY / bitmap.PixelHeight) : scale;
+            if (!double.IsFinite(previousScale) || previousScale <= 0) previousScale = scale;
+            var oldWidth = bitmap.PixelWidth * previousScale / dpi.DpiScaleX;
+            var oldHeight = bitmap.PixelHeight * previousScale / dpi.DpiScaleY;
+            var originX = Math.Max(0, (viewport.ActualWidth - oldWidth) / 2);
+            var originY = Math.Max(0, (viewport.ActualHeight - oldHeight) / 2);
+            var sourceX = Math.Clamp(((pointer.X - originX) * dpi.DpiScaleX + (fit ? 0 : x)) / previousScale, 0, bitmap.PixelWidth);
+            var sourceY = Math.Clamp(((pointer.Y - originY) * dpi.DpiScaleY + (fit ? 0 : y)) / previousScale, 0, bitmap.PixelHeight);
+            var targetPercent = Math.Clamp(Math.Round(previousScale * 100 / 10) * 10 + steps * 10,
+                slider.Minimum, slider.Maximum);
+            if (!fit && Math.Abs(targetPercent - scale * 100) < 0.001) return;
+            var targetScale = targetPercent / 100;
+            x = Math.Clamp(sourceX * targetScale - pointer.X * dpi.DpiScaleX, 0,
+                Math.Max(0, bitmap.PixelWidth * targetScale - viewport.ActualWidth * dpi.DpiScaleX));
+            y = Math.Clamp(sourceY * targetScale - pointer.Y * dpi.DpiScaleY, 0,
+                Math.Max(0, bitmap.PixelHeight * targetScale - viewport.ActualHeight * dpi.DpiScaleY));
+            fit = false;
+            scale = targetScale;
+            slider.Value = targetPercent;
+            Apply();
+        }
         foreach (var image in images)
         {
+            image.Focusable = true;
+            image.PreviewMouseLeftButtonDown += (_, _) => image.Focus();
             var border = (Border)image.Parent;
             border.Child = null;
             var viewer = new ScrollViewer { Content = image, HorizontalContentAlignment = HorizontalAlignment.Center, VerticalContentAlignment = VerticalAlignment.Center };
             border.Child = viewer;
             viewers.Add(viewer);
+            viewer.PreviewMouseWheel += (_, e) =>
+            {
+                if (Keyboard.Modifiers != ModifierKeys.Control) return;
+                ZoomAt(viewer, e.GetPosition(viewer), e.Delta, image.Source as BitmapSource);
+                e.Handled = true;
+            };
             Point? dragStart = null;
             double startX = 0, startY = 0;
             image.Cursor = System.Windows.Input.Cursors.Hand;
@@ -144,7 +185,6 @@ public partial class ComparisonPanel
                 Apply();
             };
         }
-        var slider = controls.ScaleSlider;
         slider.ValueChanged += (_, _) => { fit = false; scale = slider.Value / 100; Apply(); };
         buttonControls ??= controls;
         buttonControls.FitButton.Click += (_, _) => { fit = true; x = y = 0; Apply(); };
@@ -153,6 +193,37 @@ public partial class ComparisonPanel
         if (!externalControls) ZoomControls.Children.Add(controls);
         {
             WipeTab.Visibility = Visibility.Visible;
+            WipeViewport.Focusable = true;
+            WipeViewport.PreviewMouseLeftButtonDown += (_, _) => WipeViewport.Focus();
+            var boundaryDragging = false;
+            WipeViewport.PreviewMouseLeftButtonDown += (_, e) =>
+            {
+                if (Keyboard.Modifiers != ModifierKeys.Shift || !WipeViewport.CaptureMouse()) return;
+                boundaryDragging = true;
+                wipeBoundaryController.SetFromViewportX(e.GetPosition(WipeViewport).X);
+                e.Handled = true;
+            };
+            WipeViewport.PreviewMouseMove += (_, e) =>
+            {
+                if (!boundaryDragging || !WipeViewport.IsMouseCaptured) return;
+                wipeBoundaryController.SetFromViewportX(e.GetPosition(WipeViewport).X);
+                e.Handled = true;
+            };
+            WipeViewport.PreviewMouseLeftButtonUp += (_, e) =>
+            {
+                if (!boundaryDragging) return;
+                wipeBoundaryController.SetFromViewportX(e.GetPosition(WipeViewport).X);
+                boundaryDragging = false;
+                WipeViewport.ReleaseMouseCapture();
+                e.Handled = true;
+            };
+            WipeViewport.LostMouseCapture += (_, _) => boundaryDragging = false;
+            WipeViewport.PreviewMouseWheel += (_, e) =>
+            {
+                if (Keyboard.Modifiers != ModifierKeys.Control) return;
+                ZoomAt(WipeViewport, e.GetPosition(WipeViewport), e.Delta, WipeLeftImage.Source as BitmapSource);
+                e.Handled = true;
+            };
             Point? start = null;
             double initialX = 0, initialY = 0;
             WipeViewport.MouseLeftButtonDown += (_, e) =>

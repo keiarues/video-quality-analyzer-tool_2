@@ -7,7 +7,7 @@
         Title="VideoQualityAnalyzer"
         Width="1800" Height="900" MinWidth="980" MinHeight="620"
         AllowDrop="True" Drop="Window_Drop" DragOver="Window_DragOver"
-        Closing="Window_Closing">
+        Closing="Window_Closing" PreviewKeyDown="Window_PreviewKeyDown">
     <Window.Resources>
         <Style x:Key="CenteredFileCellStyle" TargetType="TextBlock">
             <Setter Property="TextAlignment" Value="Center" />
@@ -162,7 +162,7 @@
                             BorderBrush="{StaticResource UiPanelBorderBrush}" BorderThickness="1">
                     <TabItem MinHeight="{StaticResource UiControlMinHeight}" HeaderTemplate="{StaticResource UiPreviewTabHeaderTemplate}" BorderBrush="{StaticResource UiControlBorderBrush}" BorderThickness="1">
                         <TabItem.Header><TextBlock Text="2画面" Style="{StaticResource UiPreviewTabHeaderStyle}" /></TabItem.Header>
-                <Grid Name="LegacyPreviewGrid">
+                <Grid Name="LegacyPreviewGrid" Focusable="True" MouseLeftButtonDown="PreviewSurface_MouseLeftButtonDown">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="8" />
@@ -211,14 +211,14 @@
                         <TextBlock Text="比較する動画を2本選択してください。" Margin="12" />
                     </TabItem>
                 </TabControl>
-                <ContentControl Grid.Row="0" Name="ComparisonHost" Visibility="Collapsed" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ContentControl Grid.Row="0" Name="ComparisonHost" Visibility="Collapsed" Focusable="True" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
         <Border Name="PlaybackControls" Grid.Row="2" Background="{StaticResource PanelBrush}"
                 BorderBrush="{StaticResource UiPanelBorderBrush}" BorderThickness="1" CornerRadius="8" Padding="8" Margin="0,8,0,0">
             <StackPanel>
                 <DockPanel>
                     <TextBlock Name="TimeText" DockPanel.Dock="Left" Text="00:00:00 / 00:00:00" MinWidth="190"
                                TextAlignment="Left" VerticalAlignment="Center" Margin="2,0,8,0" />
-                    <Slider Name="SeekSlider" Minimum="0" Maximum="1" IsMoveToPointEnabled="True" ValueChanged="SeekSlider_ValueChanged"
+                    <Slider Name="SeekSlider" Minimum="0" Maximum="1" IsMoveToPointEnabled="True" ValueChanged="SeekSlider_ValueChanged" PreviewMouseWheel="SeekSlider_PreviewMouseWheel"
                             PreviewMouseLeftButtonDown="SeekSlider_MouseDown"
                             PreviewMouseLeftButtonUp="SeekSlider_MouseUp" />
                 </DockPanel>
@@ -244,7 +244,7 @@
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="12,0,0,0" local:PriorityWrapPanel.Priority="1">
                     <TextBlock Text="音量" VerticalAlignment="Center" Margin="0,0,5,0" />
-                    <Slider Name="VolumeSlider" Width="90" Minimum="0" Maximum="1" Value="0.7"
+                    <Slider Name="VolumeSlider" Width="90" Minimum="0" Maximum="1" Value="0.7" PreviewMouseWheel="VolumeSlider_PreviewMouseWheel"
                             VerticalAlignment="Center" ValueChanged="VolumeSlider_ValueChanged" />
                     <CheckBox Name="MuteCheck" Content="ミュート" VerticalAlignment="Center" Margin="10,0,0,0"
                               Checked="MuteCheck_Changed" Unchecked="MuteCheck_Changed" />

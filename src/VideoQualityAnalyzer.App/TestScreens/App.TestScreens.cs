@@ -10,7 +10,9 @@ public partial class App
         string[] Files() => e.Args.Where(System.IO.File.Exists).ToArray();
         Func<Window>? createWindow = null;
 
-        if (e.Args.Contains("--test-evaluation-target-summary"))
+        if (e.Args.Contains("--test-shortcuts"))
+            createWindow = () => new ShortcutTestWindow(automatic);
+        else if (e.Args.Contains("--test-evaluation-target-summary"))
             createWindow = () => new EvaluationTargetSummaryTestWindow(automatic);
         else if (e.Args.Contains("--test-fluent-theme"))
             createWindow = () => new FluentThemeTestWindow(automatic);

@@ -8,6 +8,8 @@
 | FfmpegDownloadTestWindow.cs | FFmpegの取得 | `--test-ffmpeg-download` |
 | SettingsWindow.Verification.cs | 設定画面の無効な入力・保存拒否・自動検出・バージョン表示とダウンロード検証 | `--verify-settings-detection`、`--verify-ffmpeg-settings` |
 | CsvExportTestWindow.cs | 品質CSVの保存・読み戻し | `--test-csv-export --auto` |
+| ShortcutTestWindow.cs | キー割り当てとホイール対象領域の専用画面検証 | `--test-shortcuts --auto` |
+| MainWindow/MainWindow.ShortcutVerification.cs | 主画面のプレビュー・再生UI・グラフ・両一覧のフォーカス判定 | `--verify-main-shortcuts` |
 | GraphPlaybackTestWindow.cs | グラフ表示中の再生 | `--graph-playback-test` |
 | GraphImageSaveWindow.Verification.cs | グラフ画像保存画面のサンプル・画像出力、画像テーマの即時切り替え | `--test-graph-image --auto` |
 | DarkPaletteTestWindow.cs | 共通の暗色配色。実グラフ・操作部品・一覧と、メニュー・選択欄の展開画像を確認 | `--test-dark-palette --auto` |

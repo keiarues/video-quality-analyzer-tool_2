@@ -1,12 +1,18 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 
 namespace VideoQualityAnalyzer.App;
 
 public sealed partial class QualityGraphPanel
 {
+    public event EventHandler<MouseWheelEventArgs>? TimelineWheel;
+
     private void InitializePlayheadInput()
     {
+        timeline.Focusable = true;
+        timeline.PreviewMouseLeftButtonDown += (_, _) => timeline.Focus();
+        timeline.PreviewMouseWheel += (_, e) => TimelineWheel?.Invoke(this, e);
         timeline.Cursor = System.Windows.Input.Cursors.SizeWE;
         timeline.MouseLeftButtonDown += (_, e) =>
         {

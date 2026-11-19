@@ -61,6 +61,7 @@ public partial class MainWindow
             programmaticSlider = false;
             UpdateTimeDisplay();
         };
+        qualityGraphPanel.TimelineWheel += (_, e) => HandleShortcutWheel(e, graph: true);
         QualityGraphHost.Content = qualityGraphPanel;
     }
 

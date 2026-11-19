@@ -106,6 +106,11 @@ public partial class MainWindow : Window
             var startupFiles = arguments.Skip(1).Where(File.Exists).ToArray();
             if (startupFiles.Length > 0 && !verifyConcurrentAdd)
                 await AddFilesAsync(startupFiles);
+            if (arguments.Contains("--verify-main-shortcuts"))
+            {
+                await VerifyMainShortcutsAsync();
+                return;
+            }
             var graphPlaybackCheck = arguments.FirstOrDefault(arg => arg.StartsWith("--verify-main-graph-playback="));
             if (graphPlaybackCheck is not null) await VerifyMainGraphPlaybackAsync(graphPlaybackCheck.Split('=', 2)[1]);
             else if (verifyConcurrentAdd) await VerifyConcurrentAddAsync(startupFiles);
